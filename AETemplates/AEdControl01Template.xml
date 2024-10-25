@@ -1,0 +1,39 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<templates>
+
+    <template name='AEdControl01'>
+                <attribute name='name' type='maya.string'>
+                        <label>Name</label>
+                </attribute>
+
+                <attribute name='side' type='maya.enum'>
+                        <label>Side</label>
+                </attribute>
+
+                <attribute name='index' type='maya.long'>
+                        <label>Index</label>
+                </attribute>
+
+                <attribute name='outputParentIndex' type='maya.long'>
+                        <label>Output Parent Index</label>
+                </attribute>
+
+                <attribute name='createOutputJoint' type='maya.bool'>
+                        <label>Create Output Joint</label>
+                </attribute>
+
+                <attribute name='mirrorAxis' type='maya.enum'>
+                        <label>Mirror Axis</label>
+                </attribute>
+    </template>
+
+    <view name="Rigging" template="AEdControl01">
+                <property name='name'/>
+                <property name='side'/>
+                <property name='index'/>
+                <property name='outputParentIndex'/>
+                <property name='createOutputJoint'/>
+                <property name='mirrorAxis'/>
+    </view>
+
+</templates>

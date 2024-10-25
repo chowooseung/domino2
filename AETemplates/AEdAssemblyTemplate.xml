@@ -1,0 +1,44 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<templates>
+
+    <template name='AEdAssembly'>
+                <attribute name='controllerNameConvention' type='maya.string'>
+                        <label>Controller Name Convention</label>
+                </attribute>
+
+                <attribute name='jointNameConvention' type='maya.string'>
+                        <label>Joint Name Convention</label>
+                </attribute>
+
+                <attribute name='controllerExtension' type='maya.string'>
+                        <label>Controller Extension</label>
+                </attribute>
+
+                <attribute name='jointExtension' type='maya.string'>
+                        <label>Joint Extension</label>
+                </attribute>
+
+                <attribute name='sideCStr' type='maya.string'>
+                        <label>Side Cstr</label>
+                </attribute>
+
+                <attribute name='sideLStr' type='maya.string'>
+                        <label>Side Lstr</label>
+                </attribute>
+
+                <attribute name='sideRStr' type='maya.string'>
+                        <label>Side Rstr</label>
+                </attribute>
+    </template>
+
+    <view name="Rigging" template="AEdAssembly">
+                <property name='controllerNameConvention'/>
+                <property name='jointNameConvention'/>
+                <property name='controllerExtension'/>
+                <property name='jointExtension'/>
+                <property name='sideCStr'/>
+                <property name='sideLStr'/>
+                <property name='sideRStr'/>
+    </view>
+
+</templates>

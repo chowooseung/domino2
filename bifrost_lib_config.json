@@ -1,0 +1,18 @@
+{
+    "AminoConfigurations": [
+        {
+            "libraryName": "Domino",
+            "libraryVersion": "1.0.0",
+            "jsonLibs": [
+                {
+                    "path": "components",
+                    "files": []
+                },
+                {
+                    "path": "compounds",
+                    "files": []
+                }
+            ]
+        }
+    ]
+}
