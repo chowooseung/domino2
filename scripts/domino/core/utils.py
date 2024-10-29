@@ -12,27 +12,27 @@ logger = logging.getLogger("Domino")
 logger.handlers.clear()
 logger.propagate = False
 
-debugHandler = MayaGuiLogHandler()
+debug_handler = MayaGuiLogHandler()
 formatter = logging.Formatter("\t%(message)s")
-debugHandler.setFormatter(formatter)
-debugHandler.addFilter(lambda record: record.levelno == logging.DEBUG)
+debug_handler.setFormatter(formatter)
+debug_handler.addFilter(lambda record: record.levelno == logging.DEBUG)
 
-infoHandler = MayaGuiLogHandler()
+info_handler = MayaGuiLogHandler()
 formatter = logging.Formatter("%(levelname)s %(message)s")
-infoHandler.setFormatter(formatter)
-infoHandler.addFilter(lambda record: record.levelno == logging.INFO)
+info_handler.setFormatter(formatter)
+info_handler.addFilter(lambda record: record.levelno == logging.INFO)
 
-errorHandler = MayaGuiLogHandler()
+error_handler = MayaGuiLogHandler()
 formatter = logging.Formatter("%(message)s")
-errorHandler.setFormatter(formatter)
-errorHandler.addFilter(lambda record: record.levelno == logging.ERROR)
+error_handler.setFormatter(formatter)
+error_handler.addFilter(lambda record: record.levelno == logging.ERROR)
 
-logger.addHandler(debugHandler)
-logger.addHandler(infoHandler)
-logger.addHandler(errorHandler)
+logger.addHandler(debug_handler)
+logger.addHandler(info_handler)
+logger.addHandler(error_handler)
 
 
-def buildLog(level):
+def build_log(level):
     """로깅 데코레이터.
 
     데코레이터를 사용한 함수의 이름, 실행시간, argument, return 을 출력합니다."""
@@ -41,46 +41,46 @@ def buildLog(level):
 
         @functools.wraps(func)
         def wrapper(*args, **kwargs):
-            startTime = time.perf_counter()
+            start_time = time.perf_counter()
 
             try:
-                callMsg = f"Calling `{func.__module__}` `{func.__name__}`"
+                call_msg = f"Calling `{func.__module__}` `{func.__name__}`"
                 if level == logging.DEBUG:
-                    callMsg += "\n\targs\n\t\t"
+                    call_msg += "\n\targs\n\t\t"
 
-                    argsMsg = []
+                    args_msg = []
                     for arg in args:
                         if hasattr(arg, "identifier"):
                             name, side, index = arg.identifier
-                            argsMsg.append(f"`{name} {side} {index}(identifier)`")
+                            args_msg.append(f"`{name} {side} {index}(identifier)`")
                         else:
-                            argsMsg.append(arg)
-                    callMsg += ", ".join(argsMsg)
+                            args_msg.append(arg)
+                    call_msg += ", ".join(args_msg)
 
-                    callMsg += "\n\tkwargs\n\t\t"
+                    call_msg += "\n\tkwargs\n\t\t"
 
-                    kwargsMsg = []
+                    kwargs_msg = []
                     for k, v in kwargs.items():
-                        kwargsMsg.append(f"{k}: {v}")
-                    callMsg += ", ".join(kwargsMsg)
+                        kwargs_msg.append(f"{k}: {v}")
+                    call_msg += ", ".join(kwargs_msg)
 
-                logger.log(level, callMsg)
+                logger.log(level, call_msg)
 
                 result = func(*args, **kwargs)
-                executionTime = time.perf_counter() - startTime
+                execution_time = time.perf_counter() - start_time
 
-                completedMsg = ""
+                completed_msg = ""
                 if level == logging.DEBUG:
-                    completedMsg += f"return\n\t\t{result}\n\t"
-                completedMsg += f"Completed `{func.__module__}` `{func.__name__}` Execution Time : {executionTime:.4f} second"
+                    completed_msg += f"return\n\t\t{result}\n\t"
+                completed_msg += f"Completed `{func.__module__}` `{func.__name__}` Execution Time : {execution_time:.4f} second"
 
-                logger.log(level, completedMsg)
+                logger.log(level, completed_msg)
                 return result
             except Exception as e:
-                errorMsg = f"`{func.__module__}` `{func.__name__}`"
-                errorMsg += "\n\targs"
+                error_msg = f"`{func.__module__}` `{func.__name__}`"
+                error_msg += "\n\targs"
 
-                argsMsg = []
+                args_msg = []
                 for arg in args:
                     msg = ""
                     if hasattr(arg, "identifier"):
@@ -90,16 +90,16 @@ def buildLog(level):
                             msg += f"\n\t\t{k}: {v}"
                     else:
                         msg += f"\n\t\t{arg}"
-                    argsMsg.append(f"{msg}")
-                errorMsg += "\n".join(argsMsg)
+                    args_msg.append(f"{msg}")
+                error_msg += "\n".join(args_msg)
 
-                errorMsg += "\n\tkwargs\n\t\t"
-                kwargsMsg = []
+                error_msg += "\n\tkwargs\n\t\t"
+                kwargs_msg = []
                 for k, v in kwargs.items():
-                    kwargsMsg.append(f"{k}: {v}")
-                errorMsg += ", ".join(kwargsMsg)
+                    kwargs_msg.append(f"{k}: {v}")
+                error_msg += ", ".join(kwargs_msg)
 
-                logger.error(errorMsg, exc_info=True)
+                logger.error(error_msg, exc_info=True)
                 raise
 
         return wrapper
@@ -107,13 +107,9 @@ def buildLog(level):
     return deco
 
 
-def mayaVersion() -> str:
+def maya_version() -> str:
     return cmds.about(version=True)
 
 
-def usedPlugins() -> list:
+def used_plugins() -> list:
     return cmds.pluginInfo(query=True, pluginsInUse=True) or []
-
-
-def localizeBifrostGraph():
-    pass

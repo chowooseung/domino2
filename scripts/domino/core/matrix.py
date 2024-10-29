@@ -1,13 +1,12 @@
 # maya
-from maya import cmds
 from maya.api import OpenMaya as om  # type: ignore
 
-originMatrix = om.MMatrix()
+ORIGINMATRIX = om.MMatrix()
 
 
-def getLookAtMatrix(
+def get_look_at_matrix(
     pos: om.MVector,
-    lookAt: om.MVector,
+    look_at: om.MVector,
     up: om.MVector,
     axis: str = "xy",
     negate: bool = False,
@@ -25,9 +24,9 @@ def getLookAtMatrix(
         om.MMatrix: aim matrix
     """
     if negate:
-        primary = (pos - lookAt).normalize()
+        primary = (pos - look_at).normalize()
     else:
-        primary = (lookAt - pos).normalize()
+        primary = (look_at - pos).normalize()
 
     third = (primary ^ up.normalize()).normalize()
     secondary = (third ^ primary).normalize()
@@ -89,11 +88,11 @@ def getLookAtMatrix(
     return om.MMatrix(m)
 
 
-def getMirrorMatrix(
-    worldM: om.MMatrix,
+def get_mirror_matrix(
+    world_m: om.MMatrix,
     behavior: bool = False,
-    inverseScale: bool = False,
-    planeMatrix: om.MMatrix = originMatrix,
+    inverse_scale: bool = False,
+    plane_m: om.MMatrix = ORIGINMATRIX,
 ) -> om.MMatrix:
     """get mirror matrix
 
@@ -106,13 +105,13 @@ def getMirrorMatrix(
     Returns:
         om.MMatrix: mirror matrix
     """
-    localM = worldM * planeMatrix.inverse()
-    x = localM[12]
-    y = localM[13]
-    z = localM[14]
+    local_m = world_m * plane_m.inverse()
+    x = local_m[12]
+    y = local_m[13]
+    z = local_m[14]
 
     if behavior:
-        mirrorM = om.MMatrix(
+        mirror_m = om.MMatrix(
             [
                 [1.0, 0.0, 0.0, 0.0],
                 [0.0, -1.0, 0.0, 0.0],
@@ -120,15 +119,15 @@ def getMirrorMatrix(
                 [-2.0 * x, 2.0 * y, 2.0 * z, 1.0],
             ]
         )
-        return localM * mirrorM * planeMatrix
-    elif inverseScale:
-        localM[0] = localM[0] * -1.0
-        localM[4] = localM[4] * -1.0
-        localM[8] = localM[8] * -1.0
-        localM[12] = localM[12] * -1.0
-        return localM * planeMatrix
+        return local_m * mirror_m * plane_m
+    elif inverse_scale:
+        local_m[0] = local_m[0] * -1.0
+        local_m[4] = local_m[4] * -1.0
+        local_m[8] = local_m[8] * -1.0
+        local_m[12] = local_m[12] * -1.0
+        return local_m * plane_m
     else:
-        mirrorM = om.MMatrix(
+        mirror_m = om.MMatrix(
             [
                 [1.0, 0.0, 0.0, 0.0],
                 [0.0, 1.0, 0.0, 0.0],
@@ -136,10 +135,10 @@ def getMirrorMatrix(
                 [-2.0 * x, 0.0, 0.0, 1.0],
             ]
         )
-        return localM * mirrorM * planeMatrix
+        return local_m * mirror_m * plane_m
 
 
-def behaviorToInverseScale(m: om.MMatrix) -> om.MMatrix:
+def behavior_to_inverse_scale(m: om.MMatrix) -> om.MMatrix:
     """negate behavior matrix 를 inverse scale mirror matrix 로 제자리에서 변환합니다.
 
     Args:

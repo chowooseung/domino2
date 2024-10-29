@@ -5,11 +5,11 @@ from maya import cmds
 from domino.core import dagmenu
 
 
-averageVectorCommand = """from maya import cmds
+average_vector_command = """from maya import cmds
 """
 
 
-def installRigCommandsMenu(menuID):
+def install_rig_commands_menu(menuID):
     pass
 
 
@@ -25,10 +25,10 @@ def install():
     cmds.setParent(menuID, menu=True)
     cmds.menuItem(divider=True)
 
-    installRigCommandsMenu(menuID=menuID)
+    install_rig_commands_menu(menuID=menuID)
 
-    logMenu = cmds.menuItem("DominoLoggingMenu", label="Log Level", subMenu=True)
-    cmds.setParent(logMenu, menu=True)
+    log_menu = cmds.menuItem("DominoLoggingMenu", label="Log Level", subMenu=True)
+    cmds.setParent(log_menu, menu=True)
     cmds.radioMenuItemCollection()
     cmds.menuItem(
         label="Info",

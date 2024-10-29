@@ -9,37 +9,37 @@ from functools import partial
 ERROR = -11111
 
 
-rootNodeName = "poseManager"
+root_node_name = "poseManager"
 
 
 def initialize():
     selected = cmds.ls(selection=True)
-    if not cmds.objExists(rootNodeName):
-        cmds.createNode("transform", name=rootNodeName)
-    if not cmds.objExists(rootNodeName + "._data"):
-        cmds.addAttr(rootNodeName, longName="_data", dataType="string")
-        cmds.setAttr(rootNodeName + "._data", json.dumps({}), type="string")
+    if not cmds.objExists(root_node_name):
+        cmds.createNode("transform", name=root_node_name)
+    if not cmds.objExists(root_node_name + "._data"):
+        cmds.addAttr(root_node_name, longName="_data", dataType="string")
+        cmds.setAttr(root_node_name + "._data", json.dumps({}), type="string")
     if selected:
         cmds.select(selected)
 
 
-def getData():
-    if not cmds.objExists(rootNodeName):
+def get_data():
+    if not cmds.objExists(root_node_name):
         return None
 
-    return json.loads(cmds.getAttr(rootNodeName + "._data"))
+    return json.loads(cmds.getAttr(root_node_name + "._data"))
 
 
-def setData(data):
-    if cmds.objExists(rootNodeName):
-        cmds.setAttr(rootNodeName + "._data", json.dumps(data), type="string")
+def set_data(data):
+    if cmds.objExists(root_node_name):
+        cmds.setAttr(root_node_name + "._data", json.dumps(data), type="string")
 
 
-def addAttr():
+def add_attr():
     pass
 
 
-def deleteAttr():
+def delete_attr():
     pass
 
 

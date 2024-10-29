@@ -6,7 +6,7 @@ from domino.core import (
     Controller,
     attribute,
 )
-from domino.core.utils import buildLog, logger
+from domino.core.utils import build_log, logger
 
 # maya
 from maya import cmds
@@ -40,7 +40,7 @@ T = TypeVar("T", bound="Rig")
 
 class Rig(dict):
     """
-    Guide Matrix -> Bifrost -> initial Matrix(controller, outputJoint) -> outputJoint
+    Guide Matrix -> Bifrost -> initial Matrix(controller, output_joint) -> outputJoint
 
     Args:
         dict (_type_): _description_
@@ -86,15 +86,15 @@ class Rig(dict):
     def identifier(self) -> tuple:
         return (
             self["name"]["value"],
-            Name.sideStrList[self["side"]["value"]],
+            Name.side_str_list[self["side"]["value"]],
             self["index"]["value"],
         )
 
     @property
-    def guideRoot(self) -> str:
+    def guide_root(self) -> str:
         name, side, index = self.identifier
         return Name.create(
-            convention=Name.controllerNameConvention,
+            convention=Name.controller_name_convention,
             name=name,
             side=side,
             index=index,
@@ -102,10 +102,10 @@ class Rig(dict):
         )
 
     @property
-    def rigRoot(self) -> str:
+    def rig_root(self) -> str:
         name, side, index = self.identifier
         return Name.create(
-            convention=Name.controllerNameConvention,
+            convention=Name.controller_name_convention,
             name=name,
             side=side,
             index=index,
@@ -113,10 +113,10 @@ class Rig(dict):
         )
 
     @property
-    def guideGraph(self) -> str:
+    def guide_graph(self) -> str:
         name, side, index = self.identifier
         return Name.create(
-            convention=Name.controllerNameConvention,
+            convention=Name.controller_name_convention,
             name=name,
             side=side,
             index=index,
@@ -124,80 +124,82 @@ class Rig(dict):
         )
 
     @property
-    def rigGraph(self) -> str:
+    def rig_graph(self) -> str:
         name, side, index = self.identifier
         return Name.create(
-            convention=Name.controllerNameConvention,
+            convention=Name.controller_name_convention,
             name=name,
             side=side,
             index=index,
             extension="bifRigGraph",
         )
 
-    @buildLog(logging.DEBUG)
-    def addRoot(self) -> None:
+    @build_log(logging.DEBUG)
+    def add_root(self) -> None:
         if not cmds.pluginInfo("dominoNodes.py", loaded=True, query=True):
             cmds.loadPlugin("dominoNodes.py")
 
         component = self["component"]["value"].capitalize()
-        cmds.createNode(f"d{component}", name=self.guideRoot, parent=GUIDE)
-        cmds.addAttr(self.guideRoot, longName="isDominoGuideRoot", attributeType="bool")
+        cmds.createNode(f"d{component}", name=self.guide_root, parent=GUIDE)
+        cmds.addAttr(
+            self.guide_root, longName="is_domino_guideRoot", attributeType="bool"
+        )
 
         name, side, index = self.identifier
         parent = RIG
         if self.parent:
-            parentOutput = cmds.listConnections(
-                self.parent.rigRoot + ".output", source=True, destination=False
+            parent_output = cmds.listConnections(
+                self.parent.rig_root + ".output", source=True, destination=False
             )
-            parent = parentOutput[-1]
+            parent = parent_output[-1]
 
         ins = Transform(
             parent=parent, name=name, side=side, index=index, extension="rigRoot"
         )
-        rigRoot = ins.create()
-        cmds.addAttr(rigRoot, longName="isDominoRigRoot", attributeType="bool")
-        cmds.addAttr(rigRoot, longName="parent", attributeType="message")
-        cmds.addAttr(rigRoot, longName="children", attributeType="message")
+        rig_root = ins.create()
+        cmds.addAttr(rig_root, longName="is_domino_rig_root", attributeType="bool")
+        cmds.addAttr(rig_root, longName="parent", attributeType="message")
+        cmds.addAttr(rig_root, longName="children", attributeType="message")
         cmds.addAttr(
-            rigRoot, longName="controller", attributeType="message", multi=True
+            rig_root, longName="controller", attributeType="message", multi=True
         )
-        cmds.addAttr(rigRoot, longName="output", attributeType="message", multi=True)
+        cmds.addAttr(rig_root, longName="output", attributeType="message", multi=True)
         cmds.addAttr(
-            rigRoot, longName="outputJoint", attributeType="message", multi=True
+            rig_root, longName="output_joint", attributeType="message", multi=True
         )
-        cmds.setAttr(rigRoot + ".useOutlinerColor", 1)
-        cmds.setAttr(rigRoot + ".outlinerColor", 0.375, 0.75, 0.75)
+        cmds.setAttr(rig_root + ".useOutlinerColor", 1)
+        cmds.setAttr(rig_root + ".outlinerColor", 0.375, 0.75, 0.75)
 
         # data
-        for longName, data in self.items():
+        for long_name, data in self.items():
             if "dataType" not in data and "attributeType" not in data:
                 continue
             attrType = data["dataType"] if "dataType" in data else data["attributeType"]
-            ins = attribute.TYPETABLE[attrType](longName=longName, **data)
-            ins.node = self.guideRoot
+            ins = attribute.TYPETABLE[attrType](longName=long_name, **data)
+            ins.node = self.guide_root
             ins.create()
 
-            ins.node = self.rigRoot
+            ins.node = self.rig_root
             ins.create()
 
             cmds.connectAttr(
-                self.guideRoot + "." + longName, self.rigRoot + "." + longName
+                self.guide_root + "." + long_name, self.rig_root + "." + long_name
             )
 
         # parent, child
         if self.parent:
             cmds.connectAttr(
-                self.parent.rigRoot + ".children", self.rigRoot + ".parent"
+                self.parent.rig_root + ".children", self.rig_root + ".parent"
             )
 
-    @buildLog(logging.DEBUG)
-    def addGuide(
-        self, parent: str, description: str, m: list | om.MMatrix, mirrorAxis: int = 1
+    @build_log(logging.DEBUG)
+    def add_guide(
+        self, parent: str, description: str, m: list | om.MMatrix, mirror_axis: int = 1
     ) -> str:
         """Guide -> rig root attribute
         ~~_guideRoot
-         ~~_guide -> ~~_rigRoot.guide[0] -> bifrost.~~Data.guideMatrix[0]
-          ~~_guide -> ~~_rigRoot.guide[1] -> bifrost.~~Data.guideMatrix[1]
+         ~~_guide -> ~~_rigRoot.guide[0] -> bifrost.~~Data.guide_matrix[0]
+          ~~_guide -> ~~_rigRoot.guide[1] -> bifrost.~~Data.guide_matrix[1]
 
         Args:
             parent (str): _description_
@@ -219,36 +221,36 @@ class Rig(dict):
         )
         guide = ins.create()
         cmds.setAttr(guide + ".displayHandle", 1)
-        cmds.addAttr(guide, longName="isDominoGuide", attributeType="bool")
-        nextIndex = len(
+        cmds.addAttr(guide, longName="is_domino_guide", attributeType="bool")
+        next_index = len(
             cmds.listConnections(
-                self.guideRoot + ".guideMatrix", source=True, destination=False
+                self.guide_root + ".guide_matrix", source=True, destination=False
             )
             or []
         )
         cmds.connectAttr(
-            guide + ".worldMatrix[0]", self.guideRoot + f".guideMatrix[{nextIndex}]"
+            guide + ".worldMatrix[0]", self.guide_root + f".guide_matrix[{next_index}]"
         )
         at = attribute.Enum(
-            longName="mirrorAxis",
-            enumName=["orientation", "behavior", "inverseScale"],
+            longName="mirror_axis",
+            enumName=["orientation", "behavior", "inverse_scale"],
             defaultValue=1,
-            value=mirrorAxis,
+            value=mirror_axis,
         )
         at.node = guide
         at.create()
         return guide
 
-    @buildLog(logging.DEBUG)
-    def addController(
+    @build_log(logging.DEBUG)
+    def add_controller(
         self,
         parent: str,
-        parentControllers: list,
+        parent_controllers: list,
         description: str,
         shape: str,
         color: int | om.MColor,
-        sourcePlug: str = "",
-        fkikCommandAttr: str = "",
+        source_plug: str = "",
+        fkik_command_attr: str = "",
     ) -> tuple:
         """
         ~~_ctl -> ~~_rigRoot.controller[0]
@@ -268,46 +270,46 @@ class Rig(dict):
         name, side, index = self.identifier
         ins = Controller(
             parent=parent,
-            parentControllers=parentControllers,
+            parent_controllers=parent_controllers,
             name=name,
             side=side,
             index=index,
             description=description,
-            extension=Name.controllerExtension,
+            extension=Name.controller_extension,
             m=ORIGINMATRIX,
             shape=shape,
             color=color,
         )
         npo, ctl = ins.create()
-        if sourcePlug:
-            cmds.connectAttr(sourcePlug, npo + ".offsetParentMatrix")
-        nextIndex = len(
+        if source_plug:
+            cmds.connectAttr(source_plug, npo + ".offsetParentMatrix")
+        next_index = len(
             cmds.listConnections(
-                self.rigRoot + ".controller", source=True, destination=False
+                self.rig_root + ".controller", source=True, destination=False
             )
             or []
         )
         cmds.addAttr(ctl, longName="component", dataType="string")
         cmds.setAttr(ctl + ".component", self["component"]["value"], type="string")
         cmds.setAttr(ctl + ".component", lock=True)
-        cmds.connectAttr(ctl + ".message", self.rigRoot + f".controller[{nextIndex}]")
-        if fkikCommandAttr:
-            cmds.addAttr(ctl, longName="fkikCommandAttr", dataType="message")
-            cmds.connectAttr(fkikCommandAttr, ctl + ".fkikCommandAttr")
+        cmds.connectAttr(ctl + ".message", self.rig_root + f".controller[{next_index}]")
+        if fkik_command_attr:
+            cmds.addAttr(ctl, longName="fkik_command_attr", dataType="message")
+            cmds.connectAttr(fkik_command_attr, ctl + ".fkik_command_attr")
         return npo, ctl
 
-    @buildLog(logging.DEBUG)
-    def addDriverTransform(self, description: str, sourcePlug: str) -> tuple:
+    @build_log(logging.DEBUG)
+    def add_driver_transform(self, description: str, source_plug: str) -> tuple:
         name, side, index = self.identifier
 
         multMatrix = cmds.createNode("multMatrix")
-        cmds.connectAttr(sourcePlug, multMatrix + ".matrixIn[0]")
+        cmds.connectAttr(source_plug, multMatrix + ".matrixIn[0]")
         cmds.connectAttr(
-            self.rigRoot + ".worldInverseMatrix[0]", multMatrix + ".matrixIn[1]"
+            self.rig_root + ".worldInverseMatrix[0]", multMatrix + ".matrixIn[1]"
         )
 
         ins = Transform(
-            parent=self.rigRoot,
+            parent=self.rig_root,
             name=name,
             side=side,
             index=index,
@@ -317,21 +319,21 @@ class Rig(dict):
         )
         driver = ins.create()
         cmds.connectAttr(multMatrix + ".matrixSum", driver + ".offsetParentMatrix")
-        if cmds.objExists(self.rigGraph):
-            nextIndex = len(
+        if cmds.objExists(self.rig_graph):
+            next_index = len(
                 cmds.listConnections(
-                    self.rigGraph + ".driverMatrix", source=True, destination=False
+                    self.rig_graph + ".driver_matrix", source=True, destination=False
                 )
                 or []
             )
             cmds.connectAttr(
                 driver + ".dagLocalMatrix",
-                self.rigGraph + f".driverMatrix[{nextIndex}]",
+                self.rig_graph + f".driver_matrix[{next_index}]",
             )
         return driver
 
-    @buildLog(logging.DEBUG)
-    def addJoint(
+    @build_log(logging.DEBUG)
+    def add_joint(
         self,
         parent: str,
         description: str,
@@ -344,24 +346,24 @@ class Rig(dict):
             side=side,
             index=index,
             description=description,
-            extension=Name.jointExtension,
+            extension=Name.joint_extension,
             m=m,
-            useJointConvention=False,
+            use_joint_convention=False,
         )
         return ins.create()
 
-    @buildLog(logging.DEBUG)
-    def addOutput(self, node: str) -> None:
-        nextIndex = len(
+    @build_log(logging.DEBUG)
+    def add_output(self, node: str) -> None:
+        next_index = len(
             cmds.listConnections(
-                self.rigRoot + ".output", source=True, destination=False
+                self.rig_root + ".output", source=True, destination=False
             )
             or []
         )
-        cmds.connectAttr(node + ".message", self.rigRoot + f".output[{nextIndex}]")
+        cmds.connectAttr(node + ".message", self.rig_root + f".output[{next_index}]")
 
-    @buildLog(logging.DEBUG)
-    def addOutputJoint(
+    @build_log(logging.DEBUG)
+    def add_output_joint(
         self, parent: str, description: str, output: str, neutralPoseObj: str
     ) -> str:
         name, side, index = self.identifier
@@ -371,105 +373,88 @@ class Rig(dict):
             side=side,
             index=index,
             description=description,
-            extension=Name.jointExtension,
+            extension=Name.joint_extension,
             m=cmds.xform(output, query=True, matrix=True, worldSpace=True),
-            useJointConvention=True,
+            use_joint_convention=True,
         )
-        nextIndex = len(
+        next_index = len(
             cmds.listConnections(
-                self.rigRoot + ".outputJoint", source=True, destination=False
+                self.rig_root + ".output_joint", source=True, destination=False
             )
             or []
         )
         jnt = ins.create()
-        cmds.addAttr(jnt, longName="isDominoSkel", attributeType="bool", keyable=False)
+        cmds.addAttr(
+            jnt, longName="is_domino_skel", attributeType="bool", keyable=False
+        )
         cmds.addAttr(jnt, longName="neutralPoseObj", attributeType="message")
         cmds.connectAttr(neutralPoseObj + ".message", jnt + ".neutralPoseObj")
-        cmds.connectAttr(jnt + ".message", self.rigRoot + f".outputJoint[{nextIndex}]")
-
-        # translate, scale, shear
-        multM = cmds.createNode("multMatrix")
-        cmds.connectAttr(output + ".worldMatrix[0]", multM + ".matrixIn[0]")
-        cmds.connectAttr(jnt + ".parentInverseMatrix", multM + ".matrixIn[1]")
-
-        decomM = cmds.createNode("decomposeMatrix")
-        cmds.connectAttr(multM + ".matrixSum", decomM + ".inputMatrix")
-
-        cmds.connectAttr(decomM + ".outputTranslate", jnt + ".t")
-        cmds.connectAttr(decomM + ".outputScale", jnt + ".s")
-        cmds.connectAttr(decomM + ".outputShear", jnt + ".shear")
-
-        # rotate
-        multM = cmds.createNode("multMatrix")
-        cmds.connectAttr(output + ".worldMatrix[0]", multM + ".matrixIn[1]")
-        cmds.connectAttr(jnt + ".parentInverseMatrix", multM + ".matrixIn[2]")
-
-        decomM = cmds.createNode("decomposeMatrix")
-        cmds.connectAttr(multM + ".matrixSum", decomM + ".inputMatrix")
-        cmds.connectAttr(decomM + ".outputRotate", jnt + ".r")
+        cmds.connectAttr(
+            jnt + ".message", self.rig_root + f".output_joint[{next_index}]"
+        )
         return jnt
 
-    @buildLog(logging.DEBUG)
-    def addGuideGraph(self) -> str:
+    @build_log(logging.DEBUG)
+    def add_guide_graph(self) -> str:
         component = self["component"]["value"]
 
         parent = cmds.createNode(
             "transform",
-            name=self.guideGraph.replace("Graph", ""),
-            parent=self.guideRoot,
+            name=self.guide_graph.replace("Graph", ""),
+            parent=self.guide_root,
         )
         graph = cmds.createNode(
-            "bifrostGraphShape", name=self.guideGraph, parent=parent
+            "bifrostGraphShape", name=self.guide_graph, parent=parent
         )
 
         cmds.vnnNode(
             graph,
             "/input",
-            createOutputPort=("guideMatrix", "array<Math::float4x4>"),
+            createOutputPort=("guide_matrix", "array<Math::float4x4>"),
         )
 
-        guideCompound = cmds.vnnCompound(
+        guide_compound = cmds.vnnCompound(
             graph,
             "/",
-            addNode="BifrostGraph,Domino::components," + component + "Guide",
+            addNode="BifrostGraph,Domino::components," + component + "_guide",
         )[0]
-        cmds.vnnConnect(graph, "/input.guideMatrix", f"/{guideCompound}.guideMatrix")
-        cmds.connectAttr(self.rigRoot + ".guideMatrix", graph + ".guideMatrix")
+        cmds.vnnConnect(graph, "/input.guide_matrix", f"/{guide_compound}.guide_matrix")
+        cmds.connectAttr(self.rig_root + ".guide_matrix", graph + ".guide_matrix")
         cmds.vnnNode(
             graph,
             "/output",
-            createInputPort=("initializeTransform", "array<Math::float4x4>"),
+            createInputPort=("initialize_transform", "array<Math::float4x4>"),
         )
         cmds.vnnConnect(
             graph,
-            f"/{guideCompound}.initializeTransform",
-            "/output.initializeTransform",
+            f"/{guide_compound}.initialize_transform",
+            "/output.initialize_transform",
         )
         return graph
 
-    @buildLog(logging.DEBUG)
-    def addRigGraph(self) -> str:
+    @build_log(logging.DEBUG)
+    def add_rig_graph(self) -> str:
         component = self["component"]["value"]
 
         parent = cmds.createNode(
-            "transform", name=self.rigGraph.replace("Graph", ""), parent=self.rigRoot
+            "transform", name=self.rig_graph.replace("Graph", ""), parent=self.rig_root
         )
-        graph = cmds.createNode("bifrostGraphShape", name=self.rigGraph, parent=parent)
+        graph = cmds.createNode("bifrostGraphShape", name=self.rig_graph, parent=parent)
         cmds.vnnNode(
             graph,
             "/input",
-            createOutputPort=("driverMatrix", "array<Math::float4x4>"),
+            createOutputPort=("driver_matrix", "array<Math::float4x4>"),
         )
-        rigCompound = cmds.vnnCompound(
+        rig_compound = cmds.vnnCompound(
             graph,
             "/",
-            addNode="BifrostGraph,Domino::components," + component + "Rig",
+            addNode="BifrostGraph,Domino::components," + component + "_rig",
         )[0]
-        cmds.vnnConnect(graph, "/input.driverMatrix", f"/{rigCompound}.driverMatrix")
+        cmds.vnnConnect(graph, "/input.driver_matrix", f"/{rig_compound}.driver_matrix")
         cmds.vnnNode(
             graph, "/output", createInputPort=("output", "array<Math::float4x4>")
         )
-        cmds.vnnConnect(graph, f"/{rigCompound}.output", "/output.output")
+        cmds.vnnConnect(graph, f"/{rig_compound}.output", "/output.output")
         return graph
 
     def __init__(self, data: list = []) -> None:
@@ -477,7 +462,7 @@ class Rig(dict):
         self["children"] = []
 
         for d in data:
-            if hasattr(d, "longName") and d.longName not in self:
+            if hasattr(d, "long_name") and d.long_name not in self:
                 copydata = copy.deepcopy(d)
                 self.update(copydata)
             else:
@@ -493,7 +478,7 @@ class Rig(dict):
         if not cmds.objExists(RIG):
             ins = Transform(parent=None, name="", side="", index="", extension=RIG)
             rig = ins.create()
-            cmds.addAttr(rig, longName="isDominoRig", attributeType="bool")
+            cmds.addAttr(rig, longName="is_domino_rig", attributeType="bool")
             for attr in attrs:
                 cmds.setAttr(RIG + attr, lock=True, keyable=False)
         if not cmds.objExists(SKEL):
@@ -502,43 +487,43 @@ class Rig(dict):
             for attr in attrs:
                 cmds.setAttr(SKEL + attr, lock=True, keyable=False)
 
-        self.addRoot()
+        self.add_root()
 
-        cmds.addAttr(self.guideRoot, longName="notes", dataType="string")
-        cmds.setAttr(self.guideRoot + ".notes", description, type="string")
-        cmds.setAttr(self.guideRoot + ".notes", lock=True)
-        cmds.addAttr(self.rigRoot, longName="notes", dataType="string")
-        cmds.connectAttr(self.guideRoot + ".notes", self.rigRoot + ".notes")
-        cmds.setAttr(self.rigRoot + ".notes", lock=True)
+        cmds.addAttr(self.guide_root, longName="notes", dataType="string")
+        cmds.setAttr(self.guide_root + ".notes", description, type="string")
+        cmds.setAttr(self.guide_root + ".notes", lock=True)
+        cmds.addAttr(self.rig_root, longName="notes", dataType="string")
+        cmds.connectAttr(self.guide_root + ".notes", self.rig_root + ".notes")
+        cmds.setAttr(self.rig_root + ".notes", lock=True)
 
 
 def serialize() -> T:
     """마야 노드에서 json 으로 저장 할 수 있는 데이터로 직렬화합니다."""
-    assemblyNode = ""
+    assembly_node = ""
     for n in cmds.ls(type="transform"):
         if (
-            cmds.objExists(n + ".isDominoRigRoot")
+            cmds.objExists(n + ".is_domino_rig_root")
             and cmds.getAttr(n + ".component") == "assembly"
         ):
-            assemblyNode = n
+            assembly_node = n
 
-    if not assemblyNode:
+    if not assembly_node:
         return
 
-    def nodeToComponent(node, parent):
-        moduleName = cmds.getAttr(node + ".component")
-        module = importlib.import_module("domino.component." + moduleName)
+    def node_to_component(node, parent):
+        module_name = cmds.getAttr(node + ".component")
+        module = importlib.import_module("domino.component." + module_name)
         component = module.Rig()
 
-        attributeData = module.DATA
-        for attr in attributeData.copy():
-            if attr[attr.longName]["multi"]:
+        attribute_data = module.DATA
+        for attr in attribute_data.copy():
+            if attr[attr.long_name]["multi"]:
                 value = []
-                for a in cmds.listAttr(node + "." + attr.longName, multi=True) or []:
+                for a in cmds.listAttr(node + "." + attr.long_name, multi=True) or []:
                     value.append(cmds.getAttr(node + "." + a))
             else:
-                value = cmds.getAttr(node + "." + attr.longName)
-            component[attr.longName]["value"] = value
+                value = cmds.getAttr(node + "." + attr.long_name)
+            component[attr.long_name]["value"] = value
 
         if parent:
             component.parent = parent
@@ -548,22 +533,22 @@ def serialize() -> T:
             or []
         )
         for child in children:
-            nodeToComponent(child, component)
+            node_to_component(child, component)
         return component
 
-    return nodeToComponent(assemblyNode, None)
+    return node_to_component(assembly_node, None)
 
 
 def deserialize(data: dict, create=True) -> T:
     """직렬화 한 데이터를 마야 노드로 변환합니다."""
 
-    def dataToNode(componentData, parent):
-        moduleName = componentData["component"]["value"]
-        module = importlib.import_module("domino.component." + moduleName)
+    def data_to_node(component_data, parent):
+        module_name = component_data["component"]["value"]
+        module = importlib.import_module("domino.component." + module_name)
         component = module.Rig()
 
         for attr in module.DATA:
-            component[attr.longName]["value"] = componentData[attr.longName]["value"]
+            component[attr.long_name]["value"] = component_data[attr.long_name]["value"]
 
         if parent:
             component.parent = parent
@@ -571,18 +556,18 @@ def deserialize(data: dict, create=True) -> T:
         if create:
             component.rig()
 
-        for child in componentData["children"]:
-            dataToNode(child, component)
+        for child in component_data["children"]:
+            data_to_node(child, component)
 
         return component
 
-    return dataToNode(data, None)
+    return data_to_node(data, None)
 
 
-@buildLog(logging.INFO)
-def save(filePath: str) -> None:
+@build_log(logging.INFO)
+def save(file_path: str) -> None:
     """리그를 json 으로 저장합니다."""
-    if not filePath:
+    if not file_path:
         return
 
     data = serialize()
@@ -590,21 +575,21 @@ def save(filePath: str) -> None:
     if not data:
         return
 
-    with open(filePath, "w") as f:
+    with open(file_path, "w") as f:
         json.dump(data, f, indent=2, ensure_ascii=False)
 
-    logger.info(f"Save filePath: {filePath}")
+    logger.info(f"Save filePath: {file_path}")
 
 
-@buildLog(logging.INFO)
-def load(filePath: str, create=True) -> T:
+@build_log(logging.INFO)
+def load(file_path: str, create=True) -> T:
     """json 을 리그로 불러옵니다."""
-    if not filePath:
+    if not file_path:
         return
 
-    with open(filePath, "r") as f:
+    with open(file_path, "r") as f:
         data = json.load(f)
 
-    logger.info(f"Load filePath: {filePath}")
+    logger.info(f"Load filePath: {file_path}")
 
     return deserialize(data, create)

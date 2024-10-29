@@ -1,7 +1,7 @@
 # domino
 from domino import component
 from domino.core import attribute, Name
-from domino.core.utils import buildLog
+from domino.core.utils import build_log
 
 # maya
 from maya.api import OpenMaya as om  # type: ignore
@@ -14,15 +14,15 @@ ORIGINMATRIX = om.MMatrix()
 DATA = [
     attribute.String(longName="component", value="control01"),
     attribute.String(longName="name", value="control"),
-    attribute.Enum(longName="side", enumName=Name.sideList, value=0),
+    attribute.Enum(longName="side", enumName=Name.side_list, value=0),
     attribute.Integer(longName="index", minValue=0),
-    attribute.Matrix(longName="guideMatrix", multi=True, value=[list(ORIGINMATRIX)]),
-    attribute.Integer(longName="outputParentIndex", minValue=-1),
-    attribute.String(longName="outputJointHierarchy"),
-    attribute.Bool(longName="createOutputJoint", value=1),
+    attribute.Matrix(longName="guide_matrix", multi=True, value=[list(ORIGINMATRIX)]),
+    attribute.Integer(longName="output_parent_index", minValue=-1),
+    attribute.String(longName="output_joint_hierarchy"),
+    attribute.Bool(longName="create_output_joint", value=1),
     attribute.Enum(
-        longName="mirrorAxis",
-        enumName=["orientation", "behavior", "inverseScale"],
+        longName="mirror_axis",
+        enumName=["orientation", "behavior", "inverse_scale"],
         defaultValue=1,
         value=1,
     ),
@@ -38,32 +38,32 @@ class Rig(component.Rig):
     def __init__(self):
         super().__init__(DATA)
 
-    @buildLog(logging.INFO)
+    @build_log(logging.INFO)
     def rig(self):
         super().rig(description=description)
 
-        self.addGuideGraph()
+        self.add_guide_graph()
 
-        for i, m in enumerate(self["guideMatrix"]["value"]):
+        for i, m in enumerate(self["guide_matrix"]["value"]):
             # guide
-            self.addGuide(parent=self.guideRoot, description=i, m=m)
+            self.add_guide(parent=self.guide_root, description=i, m=m)
 
             # rig
-            npo, ctl = self.addController(
-                parent=self.rigRoot,
-                parentControllers=[],
+            npo, ctl = self.add_controller(
+                parent=self.rig_root,
+                parent_controllers=[],
                 description=i,
                 shape="cube",
                 color=12,
-                sourcePlug=self.guideGraph + f".initializeTransform[{i}]",
+                source_plug=self.guide_graph + f".initialize_transform[{i}]",
             )
 
-            self.addOutput(ctl)
+            self.add_output(ctl)
 
             # output
-            if self["createOutputJoint"]["value"]:
+            if self["create_output_joint"]["value"]:
                 # outputJoint
-                outputJoint = self.addOutputJoint(
+                output_joint = self.add_output_joint(
                     parent=None,
                     description=i,
                     output=ctl,

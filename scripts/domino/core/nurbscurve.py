@@ -2,21 +2,21 @@
 from maya import cmds
 from maya.api import OpenMaya as om  # type: ignore
 
-originMatrix = om.MMatrix()
+ORIGINMATRIX = om.MMatrix()
 
 
-def replaceShape(source: str, destination: str) -> None:
-    sourceShapes = cmds.listRelatives(source, shapes=True, fullPath=True) or []
-    destinationShapes = (
+def replace_shape(source: str, destination: str) -> None:
+    source_shapes = cmds.listRelatives(source, shapes=True, fullPath=True) or []
+    destination_shapes = (
         cmds.listRelatives(destination, shapes=True, fullPath=True) or []
     )
-    if destinationShapes:
-        cmds.delete(destinationShapes)
-    shapes = cmds.parent(sourceShapes, destination, relative=True, shape=True)
+    if destination_shapes:
+        cmds.delete(destination_shapes)
+    shapes = cmds.parent(source_shapes, destination, relative=True, shape=True)
     [cmds.rename(shape, destination + "Shape") for shape in shapes]
 
 
-def translateShape(node: str, t: list) -> None:
+def translate_shape(node: str, t: list) -> None:
     shapes = cmds.listRelatives(node, shapes=True) or []
     for shape in shapes:
         cmds.move(
@@ -28,7 +28,7 @@ def translateShape(node: str, t: list) -> None:
         )
 
 
-def rotateShape(node: str, r: list) -> None:
+def rotate_shape(node: str, r: list) -> None:
     shapes = cmds.listRelatives(node, shapes=True) or []
     t = cmds.xform(node, query=True, translation=True, worldSpace=True)
     for shape in shapes:
@@ -42,21 +42,21 @@ def rotateShape(node: str, r: list) -> None:
         )
 
 
-def scaleShape(node: str, s: list) -> None:
+def scale_shape(node: str, s: list) -> None:
     shapes = cmds.listRelatives(node, shapes=True) or []
     t = cmds.xform(node, query=True, translation=True, worldSpace=True)
     for shape in shapes:
         cmds.scale(*s, shape + ".cv[*]", pivot=t)
 
 
-def mirrorShape(node: str) -> None:
+def mirror_shape(node: str) -> None:
     shapes = cmds.listRelatives(node, shapes=True) or []
     t = cmds.xform(node, query=True, translation=True, worldSpace=True)
     for shape in shapes:
         cmds.scale(-1, 1, 1, shape + ".cv[*]", pivot=t)
 
 
-def create(shape: str, color: om.MColor | int, m: om.MMatrix = originMatrix) -> str:
+def create(shape: str, color: om.MColor | int, m: om.MMatrix = ORIGINMATRIX) -> str:
     func = globals().get(shape)
     if func and callable(func):
         return func(color=color, m=m)
@@ -348,11 +348,11 @@ def circle(color: om.MColor | int, m: om.MMatrix) -> str:
 
 
 def sphere(color: om.MColor | int, m: om.MMatrix) -> str:
-    c0 = circle(color, originMatrix)
+    c0 = circle(color, ORIGINMATRIX)
     cmds.setAttr(c0 + ".rz", 90)
-    c1 = circle(color, originMatrix)
+    c1 = circle(color, ORIGINMATRIX)
     cmds.setAttr(c1 + ".rx", 90)
-    c2 = circle(color, originMatrix)
+    c2 = circle(color, ORIGINMATRIX)
     cmds.makeIdentity([c0, c1], apply=True, rotate=True)
 
     node = cmds.createNode("transform", name="sphere")
@@ -427,15 +427,17 @@ def cylinder(color: om.MColor | int, m: om.MMatrix) -> str:
     v6 = om.MVector(-dlen * 1.108, 0, 0)
     v7 = om.MVector(-dlen * 0.78, 0, -dlen * 0.78)
 
-    upCirclePoints = [
+    up_circle_points = [
         p + om.MVector(0, 0.5, 0) for p in [v0, v1, v2, v3, v4, v5, v6, v7]
     ]
-    downCirclePoints = [
+    down_circle_points = [
         p + om.MVector(0, -0.5, 0) for p in [v0, v1, v2, v3, v4, v5, v6, v7]
     ]
-    generate(destination=node, points=upCirclePoints, degree=3, color=color, close=True)
     generate(
-        destination=node, points=downCirclePoints, degree=3, color=color, close=True
+        destination=node, points=up_circle_points, degree=3, color=color, close=True
+    )
+    generate(
+        destination=node, points=down_circle_points, degree=3, color=color, close=True
     )
 
     points = [om.MVector(0.354, 0.5, 0.354), om.MVector(0.354, -0.5, 0.354)]

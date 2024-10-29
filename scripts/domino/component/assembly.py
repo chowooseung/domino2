@@ -4,15 +4,15 @@ from domino.core import (
     attribute,
     Name,
     Transform,
-    controllerNameConvention,
-    jointNameConvention,
-    controllerExtension,
-    jointExtension,
+    controller_name_convention,
+    joint_name_convention,
+    controller_extension,
+    joint_extension,
     center,
     left,
     right,
 )
-from domino.core.utils import buildLog
+from domino.core.utils import build_log
 
 # maya
 from maya.api import OpenMaya as om  # type: ignore
@@ -26,15 +26,15 @@ ORIGINMATRIX = om.MMatrix()
 DATA = [
     attribute.String(longName="component", value="assembly"),
     attribute.String(
-        longName="controllerNameConvention", value=controllerNameConvention
+        longName="controller_name_convention", value=controller_name_convention
     ),
-    attribute.String(longName="jointNameConvention", value=jointNameConvention),
-    attribute.String(longName="sideCStr", value=center),
-    attribute.String(longName="sideLStr", value=left),
-    attribute.String(longName="sideRStr", value=right),
-    attribute.String(longName="controllerExtension", value=controllerExtension),
-    attribute.String(longName="jointExtension", value=jointExtension),
-    attribute.Matrix(longName="guideMatrix", multi=True, value=[list(ORIGINMATRIX)]),
+    attribute.String(longName="joint_name_convention", value=joint_name_convention),
+    attribute.String(longName="side_c_str", value=center),
+    attribute.String(longName="side_l_str", value=left),
+    attribute.String(longName="side_r_str", value=right),
+    attribute.String(longName="controller_extension", value=controller_extension),
+    attribute.String(longName="joint_extension", value=joint_extension),
+    attribute.Matrix(longName="guide_matrix", multi=True, value=[list(ORIGINMATRIX)]),
 ]
 
 description = """assembly component.
@@ -54,63 +54,63 @@ class Rig(component.Rig):
     def __init__(self):
         super().__init__(DATA)
 
-    @buildLog(logging.INFO)
+    @build_log(logging.INFO)
     def rig(self):
         super().rig(description=description)
         name, side, index = self.identifier
 
-        Name.sideStrList = (
-            self["sideCStr"]["value"],
-            self["sideLStr"]["value"],
-            self["sideRStr"]["value"],
+        Name.side_str_list = (
+            self["side_c_str"]["value"],
+            self["side_l_str"]["value"],
+            self["side_r_str"]["value"],
         )
-        Name.controllerNameConvention = self["controllerNameConvention"]["value"]
-        Name.jointNameConvention = self["jointNameConvention"]["value"]
-        Name.controllerExtension = self["controllerExtension"]["value"]
-        Name.jointExtension = self["jointExtension"]["value"]
+        Name.controller_name_convention = self["controller_name_convention"]["value"]
+        Name.joint_name_convention = self["joint_name_convention"]["value"]
+        Name.controller_extension = self["controller_extension"]["value"]
+        Name.joint_extension = self["joint_extension"]["value"]
 
-        m = self["guideMatrix"]["value"][0]
-        guide = self.addGuide(parent=self.guideRoot, description="COG", m=m)
+        m = self["guide_matrix"]["value"][0]
+        guide = self.add_guide(parent=self.guide_root, description="COG", m=m)
 
         # rig
-        originNpo, originCtl = self.addController(
-            parent=self.rigRoot,
-            parentControllers=[],
+        origin_npo, origin_ctl = self.add_controller(
+            parent=self.rig_root,
+            parent_controllers=[],
             description="",
             shape="origin",
             color=12,
         )
-        originCtlIns = component.Controller(node=originCtl)
-        originCtlIns.scaleShape((24, 24, 24))
+        origin_ctl_ins = component.Controller(node=origin_ctl)
+        origin_ctl_ins.scale_shape((24, 24, 24))
 
-        subNpo, subCtl = self.addController(
-            parent=originCtl,
-            parentControllers=[originCtl],
+        sub_npo, sub_ctl = self.add_controller(
+            parent=origin_ctl,
+            parent_controllers=[origin_ctl],
             description="sub",
             shape="circle",
             color=12,
         )
-        subCtlIns = component.Controller(node=subCtl)
-        subCtlIns.scaleShape((18, 18, 18))
+        sub_ctl_ins = component.Controller(node=sub_ctl)
+        sub_ctl_ins.scale_shape((18, 18, 18))
 
-        pickM = cmds.createNode("pickMatrix")
-        cmds.setAttr(pickM + ".useScale", 0)
-        cmds.setAttr(pickM + ".useShear", 0)
-        cmds.connectAttr(guide + ".worldMatrix[0]", pickM + ".inputMatrix")
+        pick_m = cmds.createNode("pickMatrix")
+        cmds.setAttr(pick_m + ".useScale", 0)
+        cmds.setAttr(pick_m + ".useShear", 0)
+        cmds.connectAttr(guide + ".worldMatrix[0]", pick_m + ".inputMatrix")
 
-        COGNpo, COGCtl = self.addController(
-            parent=subCtl,
-            parentControllers=[subCtl],
+        COG_npo, COG_ctl = self.add_controller(
+            parent=sub_ctl,
+            parent_controllers=[sub_ctl],
             description="COG",
             shape="circle",
             color=12,
-            sourcePlug=pickM + ".outputMatrix",
+            source_plug=pick_m + ".outputMatrix",
         )
-        COGCtlIns = component.Controller(node=COGCtl)
-        COGCtlIns.scaleShape((12, 12, 12))
+        COG_ctl_ins = component.Controller(node=COG_ctl)
+        COG_ctl_ins.scale_shape((12, 12, 12))
 
         ins = Transform(
-            parent=COGCtl,
+            parent=COG_ctl,
             name=name,
             side=side,
             index=index,
@@ -119,15 +119,15 @@ class Rig(component.Rig):
         )
         output = ins.create()
 
-        inverseM = cmds.createNode("inverseMatrix")
-        cmds.connectAttr(pickM + ".outputMatrix", inverseM + ".inputMatrix")
-        cmds.connectAttr(inverseM + ".outputMatrix", output + ".offsetParentMatrix")
+        inverse_m = cmds.createNode("inverseMatrix")
+        cmds.connectAttr(pick_m + ".outputMatrix", inverse_m + ".inputMatrix")
+        cmds.connectAttr(inverse_m + ".outputMatrix", output + ".offsetParentMatrix")
 
-        self.addOutput(output)
+        self.add_output(output)
 
-        outputJoint = self.addOutputJoint(
+        output_joint = self.add_output_joint(
             parent=None,
             description="",
-            output=subCtl,
-            neutralPoseObj=originNpo,
+            output=sub_ctl,
+            neutralPoseObj=origin_npo,
         )

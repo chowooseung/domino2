@@ -11,8 +11,8 @@
     "types": [],
     "compounds": [
         {
-            "name": "Domino::components::control01Guide",
-            "uriImported": "file:///control01Guide.json",
+            "name": "Domino::components::control01_guide",
+            "uriImported": "file:///control01_guide.json",
             "metadata": [
                 {
                     "metaName": "io_nodes",
@@ -37,7 +37,7 @@
                                             "metaName": "io_ports",
                                             "metadata": [
                                                 {
-                                                    "metaName": "guideMatrix"
+                                                    "metaName": "guide_matrix"
                                                 }
                                             ]
                                         },
@@ -75,7 +75,7 @@
                                             "metaName": "io_ports",
                                             "metadata": [
                                                 {
-                                                    "metaName": "initializeTransform"
+                                                    "metaName": "initialize_transform"
                                                 }
                                             ]
                                         },
@@ -118,13 +118,13 @@
             ],
             "ports": [
                 {
-                    "portName": "guideMatrix",
+                    "portName": "guide_matrix",
                     "portDirection": "input",
                     "portType": "array<Math::float4x4>",
                     "portDefault": []
                 },
                 {
-                    "portName": "initializeTransform",
+                    "portName": "initialize_transform",
                     "portDirection": "output"
                 }
             ],
@@ -164,10 +164,10 @@
             "connections": [
                 {
                     "source": "pick_matrix.out_transform",
-                    "target": ".initializeTransform"
+                    "target": ".initialize_transform"
                 },
                 {
-                    "source": ".guideMatrix",
+                    "source": ".guide_matrix",
                     "target": "pick_matrix.transform"
                 }
             ],

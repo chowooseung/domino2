@@ -7,30 +7,30 @@ ORIGINMATRIX = om.MMatrix()
 
 class Integer(dict):
 
-    defaultValue = 0
-    defaultMinValue = None
-    defaultMaxValue = None
-    defaultKeyable = False
-    defaultLock = False
-    defaultChannelBox = False
-    defaultMulti = False
-    attributeType = "long"
+    default_value = 0
+    default_min_value = None
+    default_max_value = None
+    default_keyable = False
+    default_lock = False
+    default_channelbox = False
+    default_multi = False
+    attribute_type = "long"
 
     @property
     def data(self) -> dict:
-        return self[self._longName]
+        return self[self._long_name]
 
     @data.setter
     def data(self, d: dict) -> None:
-        self[self._longName] = d
+        self[self._long_name] = d
 
     @property
-    def longName(self) -> str:
-        return self._longName
+    def long_name(self) -> str:
+        return self._long_name
 
-    @longName.setter
-    def longName(self, n: str) -> None:
-        self._longName = n
+    @long_name.setter
+    def long_name(self, n: str) -> None:
+        self._long_name = n
 
     @property
     def node(self) -> str:
@@ -42,36 +42,40 @@ class Integer(dict):
 
     @property
     def attribute(self) -> str:
-        return self.node + "." + self.longName
+        return self.node + "." + self.long_name
 
     def __init__(self, longName: str, **kwargs: dict) -> None:
-        self.longName = longName
+        self.long_name = longName
         self.data = {
             "minValue": (
-                kwargs["minValue"] if "minValue" in kwargs else self.defaultMinValue
+                kwargs["minValue"] if "minValue" in kwargs else self.default_min_value
             ),
             "maxValue": (
-                kwargs["minValue"] if "minValue" in kwargs else self.defaultMinValue
+                kwargs["minValue"] if "minValue" in kwargs else self.default_min_value
             ),
             "keyable": (
-                kwargs["keyable"] if "keyable" in kwargs else self.defaultKeyable
+                kwargs["keyable"] if "keyable" in kwargs else self.default_keyable
             ),
-            "lock": kwargs["lock"] if "lock" in kwargs else self.defaultLock,
+            "lock": kwargs["lock"] if "lock" in kwargs else self.default_lock,
             "channelBox": (
                 kwargs["channelBox"]
                 if "channelBox" in kwargs
-                else self.defaultChannelBox
+                else self.default_channelbox
             ),
-            "multi": kwargs["multi"] if "multi" in kwargs else self.defaultMulti,
-            "attributeType": self.attributeType,
+            "multi": kwargs["multi"] if "multi" in kwargs else self.default_multi,
+            "attributeType": self.attribute_type,
         }
         if self.data["multi"]:
             self.data.update(
-                {"value": kwargs["value"] if "value" in kwargs else [self.defaultValue]}
+                {
+                    "value": (
+                        kwargs["value"] if "value" in kwargs else [self.default_value]
+                    )
+                }
             )
         else:
             self.data.update(
-                {"value": kwargs["value"] if "value" in kwargs else self.defaultValue}
+                {"value": kwargs["value"] if "value" in kwargs else self.default_value}
             )
 
     def create(self) -> str:
@@ -83,9 +87,9 @@ class Integer(dict):
         try:
             cmds.addAttr(
                 self.node,
-                longName=self.longName,
-                shortName=self.longName,
-                attributeType=self.attributeType,
+                longName=self.long_name,
+                shortName=self.long_name,
+                attributeType=self.attribute_type,
                 multi=data["multi"],
             )
         except:
@@ -117,32 +121,32 @@ class Integer(dict):
 
 class Float(Integer):
 
-    attributeType = "float"
+    attribute_type = "float"
 
 
 class Enum(dict):
 
-    defaultValue = 0
-    defaultKeyable = False
-    defaultLock = False
-    defaultChannelBox = False
-    attributeType = "enum"
+    default_value = 0
+    default_keyable = False
+    default_lock = False
+    default_channelbox = False
+    attribute_type = "enum"
 
     @property
     def data(self) -> dict:
-        return self[self._longName]
+        return self[self._long_name]
 
     @data.setter
     def data(self, d: dict) -> None:
-        self[self._longName] = d
+        self[self._long_name] = d
 
     @property
-    def longName(self) -> str:
-        return self._longName
+    def long_name(self) -> str:
+        return self._long_name
 
-    @longName.setter
-    def longName(self, n: str) -> None:
-        self._longName = n
+    @long_name.setter
+    def long_name(self, n: str) -> None:
+        self._long_name = n
 
     @property
     def node(self) -> str:
@@ -154,23 +158,23 @@ class Enum(dict):
 
     @property
     def attribute(self) -> str:
-        return self.node + "." + self.longName
+        return self.node + "." + self.long_name
 
     def __init__(self, longName: str, enumName: list, **kwargs: dict) -> None:
-        self.longName = longName
+        self.long_name = longName
         self.data = {
             "enumName": enumName,
-            "value": kwargs["value"] if "value" in kwargs else self.defaultValue,
+            "value": kwargs["value"] if "value" in kwargs else self.default_value,
             "keyable": (
-                kwargs["keyable"] if "keyable" in kwargs else self.defaultKeyable
+                kwargs["keyable"] if "keyable" in kwargs else self.default_keyable
             ),
-            "lock": kwargs["lock"] if "lock" in kwargs else self.defaultLock,
+            "lock": kwargs["lock"] if "lock" in kwargs else self.default_lock,
             "channelBox": (
                 kwargs["channelBox"]
                 if "channelBox" in kwargs
-                else self.defaultChannelBox
+                else self.default_channelbox
             ),
-            "attributeType": self.attributeType,
+            "attributeType": self.attribute_type,
             "multi": False,
         }
 
@@ -183,9 +187,9 @@ class Enum(dict):
         try:
             cmds.addAttr(
                 data["node"],
-                longName=self.longName,
-                shortName=self.longName,
-                attributeType=self.attributeType,
+                longName=self.long_name,
+                shortName=self.long_name,
+                attributeType=self.attribute_type,
                 enumName="TEMP:TEMP",  # 넣어주지 않으면 enumName을 수정할 때 작동하지 않음.
             )
         except:
@@ -206,28 +210,28 @@ class Enum(dict):
 
 class Bool(dict):
 
-    defaultValue = 0
-    defaultKeyable = False
-    defaultLock = False
-    defaultChannelBox = False
-    defaultMulti = False
-    attributeType = "bool"
+    default_value = 0
+    default_keyable = False
+    default_lock = False
+    default_channelbox = False
+    default_multi = False
+    attribute_type = "bool"
 
     @property
     def data(self) -> dict:
-        return self[self._longName]
+        return self[self._long_name]
 
     @data.setter
     def data(self, d: dict) -> None:
-        self[self._longName] = d
+        self[self._long_name] = d
 
     @property
-    def longName(self) -> str:
-        return self._longName
+    def long_name(self) -> str:
+        return self._long_name
 
-    @longName.setter
-    def longName(self, n: str) -> None:
-        self._longName = n
+    @long_name.setter
+    def long_name(self, n: str) -> None:
+        self._long_name = n
 
     @property
     def node(self) -> str:
@@ -239,30 +243,34 @@ class Bool(dict):
 
     @property
     def attribute(self) -> str:
-        return self.node + "." + self.longName
+        return self.node + "." + self.long_name
 
     def __init__(self, longName: str, **kwargs: dict) -> None:
-        self.longName = longName
+        self.long_name = longName
         self.data = {
             "keyable": (
-                kwargs["keyable"] if "keyable" in kwargs else self.defaultKeyable
+                kwargs["keyable"] if "keyable" in kwargs else self.default_keyable
             ),
-            "lock": kwargs["lock"] if "lock" in kwargs else self.defaultLock,
+            "lock": kwargs["lock"] if "lock" in kwargs else self.default_lock,
             "channelBox": (
                 kwargs["channelBox"]
                 if "channelBox" in kwargs
-                else self.defaultChannelBox
+                else self.default_channelbox
             ),
-            "multi": kwargs["multi"] if "multi" in kwargs else self.defaultMulti,
-            "attributeType": self.attributeType,
+            "multi": kwargs["multi"] if "multi" in kwargs else self.default_multi,
+            "attributeType": self.attribute_type,
         }
         if self.data["multi"]:
             self.data.update(
-                {"value": kwargs["value"] if "value" in kwargs else [self.defaultValue]}
+                {
+                    "value": (
+                        kwargs["value"] if "value" in kwargs else [self.default_value]
+                    )
+                }
             )
         else:
             self.data.update(
-                {"value": kwargs["value"] if "value" in kwargs else self.defaultValue}
+                {"value": kwargs["value"] if "value" in kwargs else self.default_value}
             )
 
     def create(self) -> str:
@@ -274,9 +282,9 @@ class Bool(dict):
         try:
             cmds.addAttr(
                 self.node,
-                longName=self.longName,
-                shortName=self.longName,
-                attributeType=self.attributeType,
+                longName=self.long_name,
+                shortName=self.long_name,
+                attributeType=self.attribute_type,
                 multi=data["multi"],
             )
         except:
@@ -296,26 +304,26 @@ class Bool(dict):
 
 class String(dict):
 
-    defaultValue = ""
-    defaultLock = False
-    defaultMulti = False
-    dataType = "string"
+    default_value = ""
+    default_lock = False
+    default_multi = False
+    data_type = "string"
 
     @property
     def data(self) -> dict:
-        return self[self._longName]
+        return self[self._long_name]
 
     @data.setter
     def data(self, d: dict) -> None:
-        self[self._longName] = d
+        self[self._long_name] = d
 
     @property
-    def longName(self) -> str:
-        return self._longName
+    def long_name(self) -> str:
+        return self._long_name
 
-    @longName.setter
-    def longName(self, n: str) -> None:
-        self._longName = n
+    @long_name.setter
+    def long_name(self, n: str) -> None:
+        self._long_name = n
 
     @property
     def node(self) -> str:
@@ -327,22 +335,26 @@ class String(dict):
 
     @property
     def attribute(self) -> str:
-        return self.node + "." + self.longName
+        return self.node + "." + self.long_name
 
     def __init__(self, longName: str, **kwargs: dict) -> None:
-        self.longName = longName
+        self.long_name = longName
         self.data = {
-            "lock": kwargs["lock"] if "lock" in kwargs else self.defaultLock,
-            "multi": kwargs["multi"] if "multi" in kwargs else self.defaultMulti,
-            "dataType": self.dataType,
+            "lock": kwargs["lock"] if "lock" in kwargs else self.default_lock,
+            "multi": kwargs["multi"] if "multi" in kwargs else self.default_multi,
+            "dataType": self.data_type,
         }
         if self.data["multi"]:
             self.data.update(
-                {"value": kwargs["value"] if "value" in kwargs else [self.defaultValue]}
+                {
+                    "value": (
+                        kwargs["value"] if "value" in kwargs else [self.default_value]
+                    )
+                }
             )
         else:
             self.data.update(
-                {"value": kwargs["value"] if "value" in kwargs else self.defaultValue}
+                {"value": kwargs["value"] if "value" in kwargs else self.default_value}
             )
 
     def create(self) -> str:
@@ -354,9 +366,9 @@ class String(dict):
         try:
             cmds.addAttr(
                 self.node,
-                longName=self.longName,
-                shortName=self.longName,
-                dataType=self.dataType,
+                longName=self.long_name,
+                shortName=self.long_name,
+                dataType=self.data_type,
                 multi=data["multi"],
             )
         except:
@@ -373,25 +385,25 @@ class String(dict):
 
 class Matrix(dict):
 
-    dataType = "matrix"
-    defaultValue = list(ORIGINMATRIX)
-    defaultMulti = False
+    data_type = "matrix"
+    default_value = list(ORIGINMATRIX)
+    default_multi = False
 
     @property
     def data(self) -> dict:
-        return self[self._longName]
+        return self[self._long_name]
 
     @data.setter
     def data(self, d: dict) -> None:
-        self[self._longName] = d
+        self[self._long_name] = d
 
     @property
-    def longName(self) -> str:
-        return self._longName
+    def long_name(self) -> str:
+        return self._long_name
 
-    @longName.setter
-    def longName(self, n: str) -> None:
-        self._longName = n
+    @long_name.setter
+    def long_name(self, n: str) -> None:
+        self._long_name = n
 
     @property
     def node(self) -> str:
@@ -403,17 +415,17 @@ class Matrix(dict):
 
     @property
     def attribute(self) -> str:
-        return self.node + "." + self.longName
+        return self.node + "." + self.long_name
 
     def __init__(self, longName: str, **kwargs: dict) -> None:
-        self.longName = longName
+        self.long_name = longName
         self.data = {
-            "multi": kwargs["multi"] if "multi" in kwargs else self.defaultMulti,
-            "dataType": self.dataType,
+            "multi": kwargs["multi"] if "multi" in kwargs else self.default_multi,
+            "dataType": self.data_type,
         }
         if self.data["multi"]:
             value = []
-            for v in kwargs["value"] if "value" in kwargs else [self.defaultValue]:
+            for v in kwargs["value"] if "value" in kwargs else [self.default_value]:
                 value.append([float(_v) for _v in v])
             self.data.update({"value": value})
         else:
@@ -424,7 +436,7 @@ class Matrix(dict):
                         for v in (
                             kwargs["value"]
                             if "value" in kwargs
-                            else [self.defaultValue]
+                            else [self.default_value]
                         )
                     ]
                 }
@@ -439,9 +451,9 @@ class Matrix(dict):
         try:
             cmds.addAttr(
                 self.node,
-                longName=self.longName,
-                shortName=self.longName,
-                dataType=self.dataType,
+                longName=self.long_name,
+                shortName=self.long_name,
+                dataType=self.data_type,
                 multi=data["multi"],
             )
         except:
@@ -457,24 +469,24 @@ class Matrix(dict):
 
 class Message(dict):
 
-    attributeType = "message"
-    defaultMulti = False
+    attribute_type = "message"
+    default_multi = False
 
     @property
     def data(self) -> dict:
-        return self[self._longName]
+        return self[self._long_name]
 
     @data.setter
     def data(self, d: dict) -> None:
-        self[self._longName] = d
+        self[self._long_name] = d
 
     @property
-    def longName(self) -> str:
-        return self._longName
+    def long_name(self) -> str:
+        return self._long_name
 
-    @longName.setter
-    def longName(self, n: str) -> None:
-        self._longName = n
+    @long_name.setter
+    def long_name(self, n: str) -> None:
+        self._long_name = n
 
     @property
     def node(self) -> str:
@@ -486,13 +498,13 @@ class Message(dict):
 
     @property
     def attribute(self) -> str:
-        return self.node + "." + self.longName
+        return self.node + "." + self.long_name
 
     def __init__(self, longName: str, **kwargs: dict) -> None:
-        self.longName = longName
+        self.long_name = longName
         self.data = {
-            "multi": kwargs.pop("multi", self.defaultMulti),
-            "attributeType": self.attributeType,
+            "multi": kwargs.pop("multi", self.default_multi),
+            "attributeType": self.attribute_type,
         }
 
     def create(self) -> str:
@@ -504,9 +516,9 @@ class Message(dict):
         try:
             cmds.addAttr(
                 self.node,
-                longName=self.longName,
-                shortName=self.longName,
-                attributeType=self.attributeType,
+                longName=self.long_name,
+                shortName=self.long_name,
+                attributeType=self.attribute_type,
                 multi=data["multi"],
             )
         except:

@@ -25,96 +25,96 @@ def ui(*args, **kwargs) -> None:
 
     # total node count
     nodes = list(set(cmds.ls()) - set(cmds.ls(defaultNodes=True)))
-    meshNodes = len(cmds.ls(type="mesh"))
+    mesh_nodes = len(cmds.ls(type="mesh"))
     cmds.text(f"total node count : {len(nodes)}")
-    cmds.text(f"total mesh count : {meshNodes}")
+    cmds.text(f"total mesh count : {mesh_nodes}")
 
     # clashes
-    clashesIns = ValidateClashes()
-    clashesIns.createUI(layout)
-    clashesIns.isValid()
+    clashes_ins = ValidateClashes()
+    clashes_ins.create_ui(layout)
+    clashes_ins.is_valid()
 
     # same name
-    sameNameIns = ValidateSameName()
-    sameNameIns.createUI(layout)
-    sameNameIns.isValid()
+    same_name_ins = ValidateSameName()
+    same_name_ins.create_ui(layout)
+    same_name_ins.is_valid()
 
     # namespace
-    namespaceIns = ValidateNamespace()
-    namespaceIns.createUI(layout)
-    namespaceIns.isValid()
+    namespace_ins = ValidateNamespace()
+    namespace_ins.create_ui(layout)
+    namespace_ins.is_valid()
 
     # display layer
-    displayLayerIns = ValidateDiaplayLayer()
-    displayLayerIns.createUI(layout)
-    displayLayerIns.isValid()
+    display_layer_ins = ValidateDiaplayLayer()
+    display_layer_ins.create_ui(layout)
+    display_layer_ins.is_valid()
 
     # anim layer
-    animLayerIns = ValidateAnimLayer()
-    animLayerIns.createUI(layout)
-    animLayerIns.isValid()
+    anim_layer_ins = ValidateAnimLayer()
+    anim_layer_ins.create_ui(layout)
+    anim_layer_ins.is_valid()
 
     # unknown plug-ins
-    unknownPluginIns = ValidateUnknownPlugins()
-    unknownPluginIns.createUI(layout)
-    unknownPluginIns.isValid()
+    unknown_plugin_ins = ValidateUnknownPlugins()
+    unknown_plugin_ins.create_ui(layout)
+    unknown_plugin_ins.is_valid()
 
     # unknown nodes
-    unknownNodeIns = ValidateUnknownNode()
-    unknownNodeIns.createUI(layout)
-    unknownNodeIns.isValid()
+    unknown_node_ins = ValidateUnknownNode()
+    unknown_node_ins.create_ui(layout)
+    unknown_node_ins.is_valid()
 
     # expression
-    expressionIns = ValidateExpression()
-    expressionIns.createUI(layout)
-    expressionIns.isValid()
+    expression_ins = ValidateExpression()
+    expression_ins.create_ui(layout)
+    expression_ins.is_valid()
 
     # script
-    scriptIns = ValidateScript()
-    scriptIns.createUI(layout)
-    scriptIns.isValid()
+    script_ins = ValidateScript()
+    script_ins.create_ui(layout)
+    script_ins.is_valid()
 
     # orig shape
-    origShapeIns = ValidateOrigShape()
-    origShapeIns.createUI(layout)
-    origShapeIns.isValid()
+    orig_shape_ins = ValidateOrigShape()
+    orig_shape_ins.create_ui(layout)
+    orig_shape_ins.is_valid()
 
     # default controller
-    defaultValueControllerIns = ValidateController()
-    defaultValueControllerIns.createUI(layout)
-    defaultValueControllerIns.isValid()
+    default_value_controller_ins = ValidateController()
+    default_value_controller_ins.create_ui(layout)
+    default_value_controller_ins.is_valid()
 
     # keyframe
-    keyframeIns = ValidateKeyframe()
-    keyframeIns.createUI(layout)
-    keyframeIns.isValid()
+    keyframe_ins = ValidateKeyframe()
+    keyframe_ins.create_ui(layout)
+    keyframe_ins.is_valid()
 
     # groupID, groupParts
-    groupIDPartsIns = ValidateGroupIDParts()
-    groupIDPartsIns.createUI(layout)
-    groupIDPartsIns.isValid()
+    groupID_parts_ins = ValidateGroupIDParts()
+    groupID_parts_ins.create_ui(layout)
+    groupID_parts_ins.is_valid()
 
     # validate All
-    def validate(insList: list, *args) -> None:
-        for ins in insList:
-            ins.isValid()
+    def validate(ins_list: list, *args) -> None:
+        for ins in ins_list:
+            ins.is_valid()
 
-    insList = []
+    ins_list = []
     for key, value in locals().items():
-        if key.endswith("Ins"):
-            insList.append(value)
+        if key.endswith("_ins"):
+            ins_list.append(value)
     cmds.separator(parent=layout, height=10)
     cmds.button(
         "Validate",
         parent=layout,
-        command=partial(validate, insList),
+        command=partial(validate, ins_list),
     )
 
 
 class Validate:
 
-    def setColorFrameLayout(self, isValid: bool, level: int) -> None:
-        def setColorFromLevel(level: int) -> None:
+    def set_color_frame_layout(self, is_valid: bool, level: int) -> None:
+        def set_color_from_level(level: int) -> None:
             if level == 0:
                 cmds.frameLayout(
                     self.layout,
@@ -137,442 +137,456 @@ class Validate:
                     collapse=False,
                 )
 
-        if isValid:
-            setColorFromLevel(level=0)
+        if is_valid:
+            set_color_from_level(level=0)
         else:
-            setColorFromLevel(level=level)
+            set_color_from_level(level=level)
 
-    def callbackSelectItems(self, *args) -> None:
-        nodes = cmds.textScrollList(self.textScrollList, query=True, selectItem=True)
+    def callback_select_items(self, *args) -> None:
+        nodes = cmds.textScrollList(self.text_scroll_list, query=True, selectItem=True)
         cmds.select(nodes)
 
-    def _isValid(self, data: Iterable) -> bool:
+    def _is_valid(self, data: Iterable) -> bool:
         return False if data else True
 
 
 class ValidateClashes(Validate):
-    uiName = "Validate Clash node"
+    ui_name = "Validate Clash node"
 
     def __init__(self):
         self.layout = None
-        self.textScrollList = None
+        self.text_scroll_list = None
         self.button = None
 
-    def createUI(self, parent: str) -> None:
+    def create_ui(self, parent: str) -> None:
         self.layout = cmds.frameLayout(
             parent=parent,
             collapsable=True,
-            label=self.uiName,
+            label=self.ui_name,
             backgroundShade=True,
         )
         cmds.text("Scene 내 의 Clash 노드를 검사합니다.")
-        self.textScrollList = cmds.textScrollList(
-            selectCommand=self.callbackSelectItems, allowMultiSelection=True
+        self.text_scroll_list = cmds.textScrollList(
+            selectCommand=self.callback_select_items, allowMultiSelection=True
         )
-        self.button = cmds.button("Cleaning", command=self.cleanUp)
+        self.button = cmds.button("Cleaning", command=self.clean_up)
 
-    def isValid(self) -> tuple:
-        cmds.textScrollList(self.textScrollList, edit=True, removeAll=True)
+    def is_valid(self) -> tuple:
+        cmds.textScrollList(self.text_scroll_list, edit=True, removeAll=True)
         nodes = cmds.ls("clash*") + cmds.ls("*:clash*")
-        isValid = self._isValid(nodes)
+        is_valid = self._is_valid(nodes)
 
         if not self.layout:
-            return isValid, nodes
+            return is_valid, nodes
 
-        self.setColorFrameLayout(isValid, 2)
+        self.set_color_frame_layout(is_valid, 2)
 
         for node in nodes:
-            cmds.textScrollList(self.textScrollList, edit=True, append=node)
-        return isValid, nodes
+            cmds.textScrollList(self.text_scroll_list, edit=True, append=node)
+        return is_valid, nodes
 
-    def cleanUp(self, *args) -> None:
-        allItems = cmds.textScrollList(self.textScrollList, query=True, allItems=True)
-        if allItems:
-            cmds.delete(allItems)
-        self.isValid()
+    def clean_up(self, *args) -> None:
+        all_items = cmds.textScrollList(
+            self.text_scroll_list, query=True, allItems=True
+        )
+        if all_items:
+            cmds.delete(all_items)
+        self.is_valid()
 
 
 class ValidateSameName(Validate):
-    uiName = "Validate Same name"
+    ui_name = "Validate Same name"
 
     def __init__(self):
         self.layout = None
-        self.textScrollList = None
+        self.text_scroll_list = None
         self.button = None
 
-    def createUI(self, parent: str) -> None:
+    def create_ui(self, parent: str) -> None:
         self.layout = cmds.frameLayout(
             parent=parent,
             collapsable=True,
-            label=self.uiName,
+            label=self.ui_name,
             backgroundShade=True,
         )
         cmds.text("Scene 내 의 같은 이름의 노드를 검사합니다.")
-        self.textScrollList = cmds.textScrollList(
-            selectCommand=self.callbackSelectItems, allowMultiSelection=True
+        self.text_scroll_list = cmds.textScrollList(
+            selectCommand=self.callback_select_items, allowMultiSelection=True
         )
-        self.button = cmds.button("is valid?", command=self.isValid)
+        self.button = cmds.button("is valid?", command=self.is_valid)
 
-    def isValid(self, *args) -> tuple:
-        cmds.textScrollList(self.textScrollList, edit=True, removeAll=True)
+    def is_valid(self, *args) -> tuple:
+        cmds.textScrollList(self.text_scroll_list, edit=True, removeAll=True)
         nodes = []
         for node in cmds.ls():
             if "|" in node:
                 nodes.append(node)
-        isValid = self._isValid(nodes)
+        is_valid = self._is_valid(nodes)
 
         if not self.layout:
-            return isValid, nodes
+            return is_valid, nodes
 
-        self.setColorFrameLayout(isValid, 2)
+        self.set_color_frame_layout(is_valid, 2)
 
         for node in nodes:
-            cmds.textScrollList(self.textScrollList, edit=True, append=node)
-        return isValid, nodes
+            cmds.textScrollList(self.text_scroll_list, edit=True, append=node)
+        return is_valid, nodes
 
 
 class ValidateNamespace(Validate):
-    uiName = "Validate Namespace"
+    ui_name = "Validate Namespace"
 
     def __init__(self):
         self.layout = None
-        self.treeView = None
+        self.tree_view = None
         self.button = None
 
-    def createUI(self, parent: str) -> None:
+    def create_ui(self, parent: str) -> None:
         self.layout = cmds.frameLayout(
             parent=parent,
             collapsable=True,
-            label=self.uiName,
+            label=self.ui_name,
             backgroundShade=True,
         )
         cmds.text("Scene 내 의 namespace 를 검사합니다.")
-        self.treeView = cmds.treeView(parent=self.layout, height=80)
-        self.button = cmds.button("Cleaning", command=partial(self.cleanUp))
+        self.tree_view = cmds.treeView(parent=self.layout, height=80)
+        self.button = cmds.button("Cleaning", command=partial(self.clean_up))
 
-    def getNamespaceHierarchy(self, parent: str = ":") -> dict:
+    def get_namespace_hierarchy(self, parent: str = ":") -> dict:
         data = {parent: {}}
         for ns in cmds.namespaceInfo(parent, listOnlyNamespaces=True) or []:
-            data[parent][ns] = self.getNamespaceHierarchy(ns)[ns]
+            data[parent][ns] = self.get_namespace_hierarchy(ns)[ns]
         return data
 
-    def populateNamespace(self, data, parent=":"):
+    def populate_namespace(self, data, parent=":"):
         for key, value in data.items():
             label = key.split(":")[-1]
-            cmds.treeView(self.treeView, edit=True, addItem=(key, parent))
-            cmds.treeView(self.treeView, edit=True, displayLabel=(key, label))
-            self.populateNamespace(value, key)
+            cmds.treeView(self.tree_view, edit=True, addItem=(key, parent))
+            cmds.treeView(self.tree_view, edit=True, displayLabel=(key, label))
+            self.populate_namespace(value, key)
 
-    def isValid(self, *args) -> tuple:
-        cmds.treeView(self.treeView, edit=True, removeAll=True)
+    def is_valid(self, *args) -> tuple:
+        cmds.treeView(self.tree_view, edit=True, removeAll=True)
 
-        hierarchy = self.getNamespaceHierarchy()
+        hierarchy = self.get_namespace_hierarchy()
         hierarchy[":"].pop("UI", None)
         hierarchy[":"].pop("shared", None)
-        isValid = self._isValid(hierarchy[":"])
+        is_valid = self._is_valid(hierarchy[":"])
 
         if not self.layout:
-            return isValid, hierarchy
+            return is_valid, hierarchy
 
-        self.setColorFrameLayout(isValid, 2)
+        self.set_color_frame_layout(is_valid, 2)
 
-        self.populateNamespace(hierarchy)
-        return isValid, hierarchy
+        self.populate_namespace(hierarchy)
+        return is_valid, hierarchy
 
-    def cleanUp(self, *args) -> None:
-        hierarchy = self.getNamespaceHierarchy()
+    def clean_up(self, *args) -> None:
+        hierarchy = self.get_namespace_hierarchy()
         hierarchy[":"].pop("UI", None)
         hierarchy[":"].pop("shared", None)
 
         cmds.namespace(setNamespace=":")
 
-        def removeNamespace(data):
+        def remove_namespace(data):
             for key, value in data.items():
-                removeNamespace(value)
+                remove_namespace(value)
                 if key != ":":
                     cmds.namespace(removeNamespace=key, mergeNamespaceWithRoot=True)
 
-        removeNamespace(hierarchy)
-        self.isValid()
+        remove_namespace(hierarchy)
+        self.is_valid()
 
 
 class ValidateDiaplayLayer(Validate):
-    uiName = "Validate Display layer"
+    ui_name = "Validate Display layer"
 
     def __init__(self):
         self.layout = None
-        self.textScrollList = None
+        self.text_scroll_list = None
         self.button = None
 
-    def createUI(self, parent: str) -> None:
+    def create_ui(self, parent: str) -> None:
         self.layout = cmds.frameLayout(
             parent=parent,
             collapsable=True,
-            label=self.uiName,
+            label=self.ui_name,
             backgroundShade=True,
         )
         cmds.text("Scene 내 의 display layer 를 검사합니다.")
-        self.textScrollList = cmds.textScrollList(
-            selectCommand=self.callbackSelectItems, allowMultiSelection=True
+        self.text_scroll_list = cmds.textScrollList(
+            selectCommand=self.callback_select_items, allowMultiSelection=True
         )
-        self.button = cmds.button("Cleaning", command=self.cleanUp)
+        self.button = cmds.button("Cleaning", command=self.clean_up)
 
-    def isValid(self, *args) -> tuple:
-        cmds.textScrollList(self.textScrollList, edit=True, removeAll=True)
+    def is_valid(self, *args) -> tuple:
+        cmds.textScrollList(self.text_scroll_list, edit=True, removeAll=True)
         nodes = cmds.ls(type="displayLayer")[1:]
-        isValid = self._isValid(nodes)
+        is_valid = self._is_valid(nodes)
 
         if not self.layout:
-            return isValid, nodes
+            return is_valid, nodes
 
-        self.setColorFrameLayout(isValid, 1)
+        self.set_color_frame_layout(is_valid, 1)
 
         for node in nodes:
-            cmds.textScrollList(self.textScrollList, edit=True, append=node)
-        return isValid, nodes
+            cmds.textScrollList(self.text_scroll_list, edit=True, append=node)
+        return is_valid, nodes
 
-    def cleanUp(self, *args) -> None:
-        allItems = cmds.textScrollList(self.textScrollList, query=True, allItems=True)
-        if allItems:
-            cmds.delete(allItems)
-        self.isValid()
+    def clean_up(self, *args) -> None:
+        all_items = cmds.textScrollList(
+            self.text_scroll_list, query=True, allItems=True
+        )
+        if all_items:
+            cmds.delete(all_items)
+        self.is_valid()
 
 
 class ValidateAnimLayer(Validate):
-    uiName = "Validate Anim layer"
+    ui_name = "Validate Anim layer"
 
     def __init__(self):
         self.layout = None
-        self.textScrollList = None
+        self.text_scroll_list = None
         self.button = None
 
-    def createUI(self, parent: str) -> None:
+    def create_ui(self, parent: str) -> None:
         self.layout = cmds.frameLayout(
             parent=parent,
             collapsable=True,
-            label=self.uiName,
+            label=self.ui_name,
             backgroundShade=True,
         )
         cmds.text("Scene 내 의 anim layer 를 검사합니다.")
-        self.textScrollList = cmds.textScrollList(
-            selectCommand=self.callbackSelectItems, allowMultiSelection=True
+        self.text_scroll_list = cmds.textScrollList(
+            selectCommand=self.callback_select_items, allowMultiSelection=True
         )
-        self.button = cmds.button("Cleaning", command=self.cleanUp)
+        self.button = cmds.button("Cleaning", command=self.clean_up)
 
-    def isValid(self, *args) -> tuple:
-        cmds.textScrollList(self.textScrollList, edit=True, removeAll=True)
+    def is_valid(self, *args) -> tuple:
+        cmds.textScrollList(self.text_scroll_list, edit=True, removeAll=True)
         nodes = cmds.ls(type="animLayer")
-        isValid = self._isValid(nodes)
+        is_valid = self._is_valid(nodes)
 
         if not self.layout:
-            return isValid, nodes
+            return is_valid, nodes
 
-        self.setColorFrameLayout(isValid, 2)
+        self.set_color_frame_layout(is_valid, 2)
 
         for node in nodes:
-            cmds.textScrollList(self.textScrollList, edit=True, append=node)
-        return isValid, nodes
+            cmds.textScrollList(self.text_scroll_list, edit=True, append=node)
+        return is_valid, nodes
 
-    def cleanUp(self, *args) -> None:
-        allItems = cmds.textScrollList(self.textScrollList, query=True, allItems=True)
-        if allItems:
-            cmds.delete(allItems)
-        self.isValid()
+    def clean_up(self, *args) -> None:
+        all_items = cmds.textScrollList(
+            self.text_scroll_list, query=True, allItems=True
+        )
+        if all_items:
+            cmds.delete(all_items)
+        self.is_valid()
 
 
 class ValidateUnknownPlugins(Validate):
-    uiName = "Validate Unknown plug-ins"
+    ui_name = "Validate Unknown plug-ins"
 
     def __init__(self):
         self.layout = None
-        self.textScrollList = None
+        self.text_scroll_list = None
         self.button = None
 
-    def createUI(self, parent: str) -> None:
+    def create_ui(self, parent: str) -> None:
         self.layout = cmds.frameLayout(
             parent=parent,
             collapsable=True,
-            label=self.uiName,
+            label=self.ui_name,
             backgroundShade=True,
         )
         cmds.text("Scene 내 의 unknown plug-ins 를 검사합니다.")
-        self.textScrollList = cmds.textScrollList()
-        self.button = cmds.button("Cleaning", command=self.cleanUp)
+        self.text_scroll_list = cmds.textScrollList()
+        self.button = cmds.button("Cleaning", command=self.clean_up)
 
-    def isValid(self, *args) -> tuple:
-        cmds.textScrollList(self.textScrollList, edit=True, removeAll=True)
+    def is_valid(self, *args) -> tuple:
+        cmds.textScrollList(self.text_scroll_list, edit=True, removeAll=True)
         plugins = cmds.unknownPlugin(query=True, list=True) or []
-        isValid = self._isValid(plugins)
+        is_valid = self._is_valid(plugins)
 
         if not self.layout:
-            return isValid, plugins
+            return is_valid, plugins
 
-        self.setColorFrameLayout(isValid, 2)
+        self.set_color_frame_layout(is_valid, 2)
 
         for plugin in plugins:
-            cmds.textScrollList(self.textScrollList, edit=True, append=plugin)
-        return isValid, plugins
+            cmds.textScrollList(self.text_scroll_list, edit=True, append=plugin)
+        return is_valid, plugins
 
-    def cleanUp(self, *args) -> None:
-        allItems = cmds.textScrollList(self.textScrollList, query=True, allItems=True)
-        if allItems:
-            cmds.delete(allItems)
-        self.isValid()
+    def clean_up(self, *args) -> None:
+        all_items = cmds.textScrollList(
+            self.text_scroll_list, query=True, allItems=True
+        )
+        if all_items:
+            cmds.delete(all_items)
+        self.is_valid()
 
 
 class ValidateUnknownNode(Validate):
-    uiName = "Validate Unknown node"
+    ui_name = "Validate Unknown node"
 
     def __init__(self):
         self.layout = None
-        self.textScrollList = None
+        self.text_scroll_list = None
         self.button = None
 
-    def createUI(self, parent: str) -> None:
+    def create_ui(self, parent: str) -> None:
         self.layout = cmds.frameLayout(
             parent=parent,
             collapsable=True,
-            label=self.uiName,
+            label=self.ui_name,
             backgroundShade=True,
         )
         cmds.text("Scene 내 의 unknown node 를 검사합니다.")
-        self.textScrollList = cmds.textScrollList(
-            selectCommand=self.callbackSelectItems, allowMultiSelection=True
+        self.text_scroll_list = cmds.textScrollList(
+            selectCommand=self.callback_select_items, allowMultiSelection=True
         )
-        self.button = cmds.button("Cleaning", command=self.cleanUp)
+        self.button = cmds.button("Cleaning", command=self.clean_up)
 
-    def isValid(self, *args) -> tuple:
-        cmds.textScrollList(self.textScrollList, edit=True, removeAll=True)
+    def is_valid(self, *args) -> tuple:
+        cmds.textScrollList(self.text_scroll_list, edit=True, removeAll=True)
         nodes = (
             cmds.ls(type="unknown")
             + cmds.ls(type="unknownDag")
             + cmds.ls(type="unknownTransform")
         )
-        isValid = self._isValid(nodes)
+        is_valid = self._is_valid(nodes)
 
         if not self.layout:
-            return isValid, nodes
+            return is_valid, nodes
 
-        self.setColorFrameLayout(isValid, 2)
+        self.set_color_frame_layout(is_valid, 2)
 
         for node in nodes:
-            cmds.textScrollList(self.textScrollList, edit=True, append=node)
-        return isValid, nodes
+            cmds.textScrollList(self.text_scroll_list, edit=True, append=node)
+        return is_valid, nodes
 
-    def cleanUp(self, *args) -> None:
-        allItems = cmds.textScrollList(self.textScrollList, query=True, allItems=True)
-        if allItems:
-            cmds.delete(allItems)
-        self.isValid()
+    def clean_up(self, *args) -> None:
+        all_items = cmds.textScrollList(
+            self.text_scroll_list, query=True, allItems=True
+        )
+        if all_items:
+            cmds.delete(all_items)
+        self.is_valid()
 
 
 class ValidateExpression(Validate):
-    uiName = "Validate Expression"
+    ui_name = "Validate Expression"
 
     def __init__(self):
         self.layout = None
-        self.textScrollList = None
+        self.text_scroll_list = None
         self.button = None
 
-    def createUI(self, parent: str) -> None:
+    def create_ui(self, parent: str) -> None:
         self.layout = cmds.frameLayout(
             parent=parent,
             collapsable=True,
-            label=self.uiName,
+            label=self.ui_name,
             backgroundShade=True,
         )
         cmds.text("Scene 내 의 expression 를 검사합니다.")
-        self.textScrollList = cmds.textScrollList(
-            selectCommand=self.callbackSelectItems, allowMultiSelection=True
+        self.text_scroll_list = cmds.textScrollList(
+            selectCommand=self.callback_select_items, allowMultiSelection=True
         )
-        self.button = cmds.button("Cleaning", command=self.cleanUp)
+        self.button = cmds.button("Cleaning", command=self.clean_up)
 
-    def isValid(self, *args) -> tuple:
-        cmds.textScrollList(self.textScrollList, edit=True, removeAll=True)
+    def is_valid(self, *args) -> tuple:
+        cmds.textScrollList(self.text_scroll_list, edit=True, removeAll=True)
         expression = cmds.ls(type="expression")
-        isValid = self._isValid(expression)
+        is_valid = self._is_valid(expression)
 
         if not self.layout:
-            return isValid, expression
+            return is_valid, expression
 
-        self.setColorFrameLayout(isValid, 1)
+        self.set_color_frame_layout(is_valid, 1)
 
         for exp in expression:
-            cmds.textScrollList(self.textScrollList, edit=True, append=exp)
-        return isValid, expression
+            cmds.textScrollList(self.text_scroll_list, edit=True, append=exp)
+        return is_valid, expression
 
-    def cleanUp(self, *args) -> None:
-        allItems = cmds.textScrollList(self.textScrollList, query=True, allItems=True)
-        if allItems:
-            cmds.delete(allItems)
-        self.isValid()
+    def clean_up(self, *args) -> None:
+        all_items = cmds.textScrollList(
+            self.text_scroll_list, query=True, allItems=True
+        )
+        if all_items:
+            cmds.delete(all_items)
+        self.is_valid()
 
 
 class ValidateScript(Validate):
-    uiName = "Validate Script node"
+    ui_name = "Validate Script node"
 
     def __init__(self):
         self.layout = None
-        self.textScrollList = None
+        self.text_scroll_list = None
         self.button = None
 
-    def createUI(self, parent: str) -> None:
+    def create_ui(self, parent: str) -> None:
         self.layout = cmds.frameLayout(
             parent=parent,
             collapsable=True,
-            label=self.uiName,
+            label=self.ui_name,
             backgroundShade=True,
         )
         cmds.text("Scene 내 의 script node 를 검사합니다.")
-        self.textScrollList = cmds.textScrollList(
-            selectCommand=self.callbackSelectItems, allowMultiSelection=True
+        self.text_scroll_list = cmds.textScrollList(
+            selectCommand=self.callback_select_items, allowMultiSelection=True
         )
-        self.button = cmds.button("Cleaning", command=self.cleanUp)
+        self.button = cmds.button("Cleaning", command=self.clean_up)
 
-    def isValid(self, *args) -> tuple:
-        cmds.textScrollList(self.textScrollList, edit=True, removeAll=True)
+    def is_valid(self, *args) -> tuple:
+        cmds.textScrollList(self.text_scroll_list, edit=True, removeAll=True)
         nodes = cmds.ls(type="script")
-        isValid = self._isValid(nodes)
+        is_valid = self._is_valid(nodes)
 
         if not self.layout:
-            return isValid, nodes
+            return is_valid, nodes
 
-        self.setColorFrameLayout(isValid, 1)
+        self.set_color_frame_layout(is_valid, 1)
 
         for node in nodes:
-            cmds.textScrollList(self.textScrollList, edit=True, append=node)
-        return isValid, nodes
+            cmds.textScrollList(self.text_scroll_list, edit=True, append=node)
+        return is_valid, nodes
 
-    def cleanUp(self, *args) -> None:
-        allItems = cmds.textScrollList(self.textScrollList, query=True, allItems=True)
-        if allItems:
-            cmds.delete(allItems)
-        self.isValid()
+    def clean_up(self, *args) -> None:
+        all_items = cmds.textScrollList(
+            self.text_scroll_list, query=True, allItems=True
+        )
+        if all_items:
+            cmds.delete(all_items)
+        self.is_valid()
 
 
 class ValidateOrigShape(Validate):
-    uiName = "Validate Orig shape"
+    ui_name = "Validate Orig shape"
 
     def __init__(self):
         self.layout = None
-        self.textScrollList = None
+        self.text_scroll_list = None
         self.button = None
 
-    def createUI(self, parent: str) -> None:
+    def create_ui(self, parent: str) -> None:
         self.layout = cmds.frameLayout(
             parent=parent,
             collapsable=True,
-            label=self.uiName,
+            label=self.ui_name,
             backgroundShade=True,
         )
         cmds.text("Scene 내 의 Orig shape 를 검사합니다.")
-        self.textScrollList = cmds.textScrollList(
-            selectCommand=self.callbackSelectItems, allowMultiSelection=True
+        self.text_scroll_list = cmds.textScrollList(
+            selectCommand=self.callback_select_items, allowMultiSelection=True
         )
-        self.button = cmds.button("Cleaning", command=self.cleanUp)
+        self.button = cmds.button("Cleaning", command=self.clean_up)
 
-    def isValid(self, *args) -> tuple:
-        cmds.textScrollList(self.textScrollList, edit=True, removeAll=True)
+    def is_valid(self, *args) -> tuple:
+        cmds.textScrollList(self.text_scroll_list, edit=True, removeAll=True)
         nodes = [
             x
             for x in cmds.ls("*Orig*", type="mesh", intermediateObjects=True)
@@ -580,26 +594,28 @@ class ValidateOrigShape(Validate):
             + cmds.ls("*Orig*", type="nurbsSurface", intermediateObjects=True)
             if not x.endswith("Orig")
         ]
-        isValid = self._isValid(nodes)
+        is_valid = self._is_valid(nodes)
 
         if not self.layout:
-            return isValid, nodes
+            return is_valid, nodes
 
-        self.setColorFrameLayout(isValid, 2)
+        self.set_color_frame_layout(is_valid, 2)
 
         for node in nodes:
-            cmds.textScrollList(self.textScrollList, edit=True, append=node)
-        return isValid, nodes
+            cmds.textScrollList(self.text_scroll_list, edit=True, append=node)
+        return is_valid, nodes
 
-    def cleanUp(self, *args) -> None:
-        allItems = cmds.textScrollList(self.textScrollList, query=True, allItems=True)
-        if allItems:
-            cmds.delete(allItems)
-        self.isValid()
+    def clean_up(self, *args) -> None:
+        all_items = cmds.textScrollList(
+            self.text_scroll_list, query=True, allItems=True
+        )
+        if all_items:
+            cmds.delete(all_items)
+        self.is_valid()
 
 
 class ValidateController(Validate):
-    uiName = "Validate Controller"
+    ui_name = "Validate Controller"
 
     tr = (
         ".tx",
@@ -616,24 +632,24 @@ class ValidateController(Validate):
 
     def __init__(self):
         self.layout = None
-        self.textScrollList = None
+        self.text_scroll_list = None
         self.button = None
 
-    def createUI(self, parent: str) -> None:
+    def create_ui(self, parent: str) -> None:
         self.layout = cmds.frameLayout(
             parent=parent,
             collapsable=True,
-            label=self.uiName,
+            label=self.ui_name,
             backgroundShade=True,
         )
         cmds.text("Scene 내 의 controller default value 를 검사합니다.")
-        self.textScrollList = cmds.textScrollList(
-            selectCommand=self.callbackSelectItems, allowMultiSelection=True
+        self.text_scroll_list = cmds.textScrollList(
+            selectCommand=self.callback_select_items, allowMultiSelection=True
         )
-        self.button = cmds.button("Cleaning", command=self.cleanUp)
+        self.button = cmds.button("Cleaning", command=self.clean_up)
 
-    def isValid(self, *args) -> tuple:
-        cmds.textScrollList(self.textScrollList, edit=True, removeAll=True)
+    def is_valid(self, *args) -> tuple:
+        cmds.textScrollList(self.text_scroll_list, edit=True, removeAll=True)
         controllers = cmds.controller(query=True, allControllers=True)
 
         result = []
@@ -648,101 +664,103 @@ class ValidateController(Validate):
                     result.append(ctl + attr)
             attrs = keyable + channelbox
             for attr in ["." + x for x in attrs]:
-                defaultValue = cmds.addAttr(ctl + attr, query=True, defaultValue=True)
-                if defaultValue != cmds.getAttr(ctl + attr):
+                default_value = cmds.addAttr(ctl + attr, query=True, defaultValue=True)
+                if default_value != cmds.getAttr(ctl + attr):
                     result.append(ctl + attr)
-        isValid = self._isValid(result)
+        is_valid = self._is_valid(result)
 
         if not self.layout:
-            return isValid, result
+            return is_valid, result
 
-        self.setColorFrameLayout(isValid, 2)
+        self.set_color_frame_layout(is_valid, 2)
 
         for attr in result:
-            cmds.textScrollList(self.textScrollList, edit=True, append=attr)
-        return isValid, result
+            cmds.textScrollList(self.text_scroll_list, edit=True, append=attr)
+        return is_valid, result
 
-    def cleanUp(self, *args) -> None:
-        items = cmds.textScrollList(self.textScrollList, query=True, selectItem=True)
+    def clean_up(self, *args) -> None:
+        items = cmds.textScrollList(self.text_scroll_list, query=True, selectItem=True)
         for attr in items:
             if "." + attr.split(".")[-1] in self.tr:
                 cmds.setAttr(attr, 0.0)
             elif "." + attr.split(".")[-1] in self.s:
                 cmds.setAttr(attr, 1.0)
             else:
-                defaultValue = cmds.addAttr(attr, query=True, defaultValue=True)
-                cmds.setAttr(attr, defaultValue)
-        self.isValid()
+                default_value = cmds.addAttr(attr, query=True, defaultValue=True)
+                cmds.setAttr(attr, default_value)
+        self.is_valid()
 
 
 class ValidateKeyframe(Validate):
-    uiName = "Validate Keyframe"
+    ui_name = "Validate Keyframe"
 
     def __init__(self):
         self.layout = None
-        self.textScrollList = None
+        self.text_scroll_list = None
         self.button = None
 
-    def createUI(self, parent: str) -> None:
+    def create_ui(self, parent: str) -> None:
         self.layout = cmds.frameLayout(
             parent=parent,
             collapsable=True,
-            label=self.uiName,
+            label=self.ui_name,
             backgroundShade=True,
         )
         cmds.text("Scene 내 의 keyframe 를 검사합니다.")
-        self.textScrollList = cmds.textScrollList(
-            selectCommand=self.callbackSelectItems, allowMultiSelection=True
+        self.text_scroll_list = cmds.textScrollList(
+            selectCommand=self.callback_select_items, allowMultiSelection=True
         )
-        self.button = cmds.button("Cleaning", command=self.cleanUp)
+        self.button = cmds.button("Cleaning", command=self.clean_up)
 
-    def isValid(self, *args) -> tuple:
-        cmds.textScrollList(self.textScrollList, edit=True, removeAll=True)
+    def is_valid(self, *args) -> tuple:
+        cmds.textScrollList(self.text_scroll_list, edit=True, removeAll=True)
         translate = cmds.ls(type="animCurveTL")
         rotate = cmds.ls(type="animCurveTA")
         scale = cmds.ls(type="animCurveTU")
         nodes = translate + rotate + scale
-        isValid = self._isValid(nodes)
+        is_valid = self._is_valid(nodes)
 
         if not self.layout:
-            return isValid, nodes
+            return is_valid, nodes
 
-        self.setColorFrameLayout(isValid, 2)
+        self.set_color_frame_layout(is_valid, 2)
 
         for node in nodes:
-            cmds.textScrollList(self.textScrollList, edit=True, append=node)
-        return isValid, nodes
+            cmds.textScrollList(self.text_scroll_list, edit=True, append=node)
+        return is_valid, nodes
 
-    def cleanUp(self, *args) -> None:
-        allItems = cmds.textScrollList(self.textScrollList, query=True, allItems=True)
-        if allItems:
-            cmds.delete(allItems)
-        self.isValid()
+    def clean_up(self, *args) -> None:
+        all_items = cmds.textScrollList(
+            self.text_scroll_list, query=True, allItems=True
+        )
+        if all_items:
+            cmds.delete(all_items)
+        self.is_valid()
 
 
 class ValidateGroupIDParts(Validate):
-    uiName = "Validate GroupID, GroupParts"
+    ui_name = "Validate GroupID, GroupParts"
 
     def __init__(self):
         self.layout = None
-        self.textScrollList = None
+        self.text_scroll_list = None
         self.button = None
 
-    def createUI(self, parent: str) -> None:
+    def create_ui(self, parent: str) -> None:
         self.layout = cmds.frameLayout(
             parent=parent,
             collapsable=True,
-            label=self.uiName,
+            label=self.ui_name,
             backgroundShade=True,
         )
         cmds.text("Scene 내 의 groupId, groupParts 를 검사합니다.")
-        self.textScrollList = cmds.textScrollList(
-            selectCommand=self.callbackSelectItems, allowMultiSelection=True
+        self.text_scroll_list = cmds.textScrollList(
+            selectCommand=self.callback_select_items, allowMultiSelection=True
         )
-        self.button = cmds.button("Cleaning", command=self.cleanUp)
+        self.button = cmds.button("Cleaning", command=self.clean_up)
 
-    def isValid(self, *args) -> tuple:
-        cmds.textScrollList(self.textScrollList, edit=True, removeAll=True)
+    def is_valid(self, *args) -> tuple:
+        cmds.textScrollList(self.text_scroll_list, edit=True, removeAll=True)
         nodes = []
         for node in cmds.ls(type="groupId") + cmds.ls(type="groupParts"):
             connections = (
@@ -750,19 +768,21 @@ class ValidateGroupIDParts(Validate):
             )
             if not connections:
                 nodes.append(node)
-        isValid = self._isValid(nodes)
+        is_valid = self._is_valid(nodes)
 
         if not self.layout:
-            return isValid, nodes
+            return is_valid, nodes
 
-        self.setColorFrameLayout(isValid, 2)
+        self.set_color_frame_layout(is_valid, 2)
 
         for node in nodes:
-            cmds.textScrollList(self.textScrollList, edit=True, append=node)
-        return isValid, nodes
+            cmds.textScrollList(self.text_scroll_list, edit=True, append=node)
+        return is_valid, nodes
 
-    def cleanUp(self, *args) -> None:
-        allItems = cmds.textScrollList(self.textScrollList, query=True, allItems=True)
-        if allItems:
-            cmds.delete(allItems)
-        self.isValid()
+    def clean_up(self, *args) -> None:
+        all_items = cmds.textScrollList(
+            self.text_scroll_list, query=True, allItems=True
+        )
+        if all_items:
+            cmds.delete(all_items)
+        self.is_valid()
