@@ -99,7 +99,7 @@ def build_log(level):
                     kwargs_msg.append(f"{k}: {v}")
                 error_msg += ", ".join(kwargs_msg)
 
-                logger.error(error_msg, exc_info=True)
+                logger.error(error_msg)
                 raise
 
         return wrapper
