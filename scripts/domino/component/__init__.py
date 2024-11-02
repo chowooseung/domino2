@@ -291,7 +291,6 @@ class Rig(dict):
         @data.setter
         def data(self, d: dict) -> None:
             self.update(d)
-            name, side, index = self.instance.identifier
             self._node = self.name
 
         @build_log(logging.DEBUG)
