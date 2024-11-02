@@ -5,7 +5,7 @@ from maya import cmds
 from functools import partial
 from typing import Iterable
 
-ID = "dominoValidationUI"
+ID = "domino_validation_ui"
 
 
 def show(*args) -> None:

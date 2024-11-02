@@ -9,7 +9,7 @@ from functools import partial
 ERROR = -11111
 
 
-root_node_name = "spaceManager"
+root_node_name = "space_manager"
 
 
 def initialize() -> None:
@@ -156,7 +156,7 @@ def build(*args: tuple) -> None:
     cmds.undoInfo(closeChunk=True)
 
 
-ID = "spaceManagerUI"
+ID = "space_manager_ui"
 
 
 def show(*args) -> None:
@@ -217,7 +217,7 @@ def push_data(table_view: str, *args: tuple) -> None:
             )
             if status == ERROR:
                 cmds.warning(
-                    f"addAttr {current_target} {current_attribute} {current_constraint_type}"
+                    f"add_attr {current_target} {current_attribute} {current_constraint_type}"
                 )
         else:
             if current_target and current_attribute and current_constraint_type:
@@ -229,7 +229,7 @@ def push_data(table_view: str, *args: tuple) -> None:
                 )
                 if status == ERROR:
                     cmds.warning(
-                        f"addSource {current_target} {current_attribute} {row_data[3]} {row_data[4]}"
+                        f"add_source {current_target} {current_attribute} {row_data[3]} {row_data[4]}"
                     )
     cmds.undoInfo(closeChunk=True)
 
@@ -333,7 +333,7 @@ def ui(*args, **kwargs) -> None:
     menu_layout = cmds.menuBarLayout(parent=ID)
     layout = cmds.formLayout(parent=ID)
     table_view = cmds.scriptTable(
-        "SMScriptTable",
+        "sm_script_table",
         parent=layout,
         multiEditEnabled=True,
         cellChangedCmd=edit_cell,
@@ -352,13 +352,13 @@ def ui(*args, **kwargs) -> None:
         cmds.scriptTable(table_view, edit=True, deleteRow=1)
 
     insert_row_btn = cmds.button(
-        "SMinsertRowBtn",
+        "sm_insert_row_btn",
         parent=layout,
         label="insert row",
         command=partial(insert_row, table_view),
     )
     delete_row_btn = cmds.button(
-        "SMdeleteRowBtn",
+        "sm_delete_row_btn",
         parent=layout,
         label="delete row",
         command=partial(delete_row, table_view),

@@ -4,8 +4,8 @@ from maya import cmds, mel
 # built-ins
 from functools import partial
 
-STATEOPTION = "dominoDagMenuState"
-PARENTMENUS = "dominoCommandParentMenus"
+STATEOPTION = "domino_dag_menu_state"
+PARENTMENUS = "domino_command_parent_menus"
 
 
 def install(menuID: str) -> None:

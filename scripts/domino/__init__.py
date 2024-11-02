@@ -15,7 +15,7 @@ def install_rig_commands_menu(menuID):
 
 ## maya menu
 def install():
-    menuID = "Domino"
+    menuID = "domino"
 
     cmds.menu(
         menuID, parent="MayaWindow", tearOff=True, allowOptionBoxes=True, label=menuID
@@ -27,7 +27,7 @@ def install():
 
     install_rig_commands_menu(menuID=menuID)
 
-    log_menu = cmds.menuItem("DominoLoggingMenu", label="Log Level", subMenu=True)
+    log_menu = cmds.menuItem("domino_logging_menu", label="Log Level", subMenu=True)
     cmds.setParent(log_menu, menu=True)
     cmds.radioMenuItemCollection()
     cmds.menuItem(

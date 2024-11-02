@@ -9,7 +9,7 @@ from functools import partial
 ERROR = -11111
 
 
-root_node_name = "sdkManager"
+root_node_name = "sdk_manager"
 
 
 def initialize():
@@ -43,7 +43,7 @@ def delete_attr():
     pass
 
 
-ID = "sdkManagerUI"
+ID = "sdk_manager_ui"
 
 
 def show(*args) -> None:
