@@ -33,10 +33,10 @@ def install():
     cmds.menuItem(
         label="Info",
         radioButton=True,
-        command="import logging;from domino.core.utils import LOGGER;LOGGER.setLevel(logging.INFO)",
+        command="import logging;from domino.core.utils import logger;logger.setLevel(logging.INFO)",
     )
     cmds.menuItem(
         label="Debug",
         radioButton=False,
-        command="import logging;from domino.core.utils import LOGGER;LOGGER.setLevel(logging.DEBUG)",
+        command="import logging;from domino.core.utils import logger;logger.setLevel(logging.DEBUG)",
     )
