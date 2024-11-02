@@ -1,11 +1,5 @@
 # domino
-from domino.core import (
-    Name,
-    Transform,
-    Joint,
-    Controller,
-    attribute,
-)
+from domino.core import Name, Transform, Joint, Controller, attribute, Curve
 from domino.core.utils import build_log, logger
 
 # maya
@@ -241,62 +235,137 @@ class Rig(dict):
         at.create()
         return guide
 
-    @build_log(logging.DEBUG)
-    def add_controller(
-        self,
-        parent: str,
-        parent_controllers: list,
-        description: str,
-        shape: str,
-        color: int | om.MColor,
-        source_plug: str = "",
-        fkik_command_attr: str = "",
-    ) -> tuple:
-        """
-        ~~_ctl -> ~~_rigRoot.controller[0]
-        ~~_ctl -> ~~_rigRoot.controller[1]
+    class _Controller(dict):
 
-        Args:
-            parent (str): _description_
-            parentControllers (list): _description_
-            description (str): _description_
-            source (str): _description_
-            shape (str): _description_
-            color (int | om.MColor): _description_
-
-        Returns:
-            tuple: _description_
-        """
-        name, side, index = self.identifier
-        ins = Controller(
-            parent=parent,
-            parent_controllers=parent_controllers,
-            name=name,
-            side=side,
-            index=index,
-            description=description,
-            extension=Name.controller_extension,
-            m=ORIGINMATRIX,
-            shape=shape,
-            color=color,
-        )
-        npo, ctl = ins.create()
-        if source_plug:
-            cmds.connectAttr(source_plug, npo + ".offsetParentMatrix")
-        next_index = len(
-            cmds.listConnections(
-                self.rig_root + ".controller", source=True, destination=False
+        @property
+        def name(self) -> str:
+            name, side, index = self.instance.identifier
+            return Name.create(
+                convention=Name.controller_name_convention,
+                name=name,
+                side=side,
+                index=index,
+                description=self["description"],
+                extension=Name.controller_extension,
             )
-            or []
-        )
-        cmds.addAttr(ctl, longName="component", dataType="string")
-        cmds.setAttr(ctl + ".component", self["component"]["value"], type="string")
-        cmds.setAttr(ctl + ".component", lock=True)
-        cmds.connectAttr(ctl + ".message", self.rig_root + f".controller[{next_index}]")
-        if fkik_command_attr:
-            cmds.addAttr(ctl, longName="fkik_command_attr", dataType="message")
-            cmds.connectAttr(fkik_command_attr, ctl + ".fkik_command_attr")
-        return npo, ctl
+
+        @property
+        def node(self) -> str:
+            return self._node
+
+        @node.setter
+        def node(self, n: str) -> None:
+            self._node = n
+            self["description"] = cmds.getAttr(self._node + ".description")
+
+            # parent controllers 데이터 구하기.
+            self["parent_controllers"] = []
+            for parent_ctl in (
+                cmds.listConnections(
+                    self._node + ".parent_controllers", source=True, destination=False
+                )
+                or []
+            ):
+                ins = Controller(node=parent_ctl)
+                parent_root = ins.root
+
+                if cmds.getAttr(parent_root + ".component") == "assembly":
+                    identifier = ("origin", "", "")
+                else:
+                    name = cmds.getAttr(parent_root + ".name")
+                    side = cmds.getAttr(parent_root + ".side")
+                    index = cmds.getAttr(parent_root + ".index")
+                    identifier = (name, side, index)
+                description = cmds.getAttr(parent_ctl + ".description")
+                parent_controllers = (identifier, description)
+                self["parent_controllers"].append(parent_controllers)
+
+            # shape 데이터 구하기.
+            ins = Curve(node=self._node)
+            self["shape"] = ins.data
+
+        @property
+        def data(self) -> dict:
+            return self
+
+        @data.setter
+        def data(self, d: dict) -> None:
+            self.update(d)
+            name, side, index = self.instance.identifier
+            self._node = self.name
+
+        @build_log(logging.DEBUG)
+        def create(
+            self,
+            parent: str,
+            parent_controllers: list,
+            shape: dict | str,
+            color: int | om.MColor,
+            source_plug: str = "",
+            fkik_command_attr: str = "",
+        ) -> tuple:
+            parent_controllers_str = []
+            for identifier, description in parent_controllers:
+                parent_controllers_str.append(
+                    Name.create(
+                        convention=Name.controller_name_convention,
+                        name=identifier[0],
+                        side=identifier[1],
+                        index=identifier[2],
+                        description=description,
+                        extension=Name.controller_extension,
+                    )
+                )
+
+            name, side, index = self.instance.identifier
+            ins = Controller(
+                parent=parent,
+                parent_controllers=parent_controllers_str,
+                name=name,
+                side=side,
+                index=index,
+                description=self["description"],
+                extension=Name.controller_extension,
+                m=ORIGINMATRIX,
+                shape=shape,
+                color=color,
+            )
+            npo, ctl = ins.create()
+            if source_plug:
+                cmds.connectAttr(source_plug, npo + ".offsetParentMatrix")
+            next_index = len(
+                cmds.listConnections(
+                    self.instance.rig_root + ".controller",
+                    source=True,
+                    destination=False,
+                )
+                or []
+            )
+            cmds.addAttr(ctl, longName="component", dataType="string")
+            cmds.setAttr(
+                ctl + ".component", self.instance["component"]["value"], type="string"
+            )
+            cmds.setAttr(ctl + ".component", lock=True)
+            cmds.connectAttr(
+                ctl + ".message", self.instance.rig_root + f".controller[{next_index}]"
+            )
+            if fkik_command_attr:
+                cmds.addAttr(ctl, longName="fkik_command_attr", dataType="message")
+                cmds.connectAttr(fkik_command_attr, ctl + ".fkik_command_attr")
+            return npo, ctl
+
+        def __init__(
+            self,
+            description: str,
+            rig_instance: T,
+        ):
+            self.instance = rig_instance
+            self.instance["controller"].append(self)
+            self["description"] = description
+            self._node = self.name
+
+    def add_controller(self, description: str) -> None:
+        self._Controller(description=description, rig_instance=self)
 
     @build_log(logging.DEBUG)
     def add_driver_transform(self, description: str, source_plug: str) -> tuple:
@@ -460,6 +529,12 @@ class Rig(dict):
     def __init__(self, data: list = []) -> None:
         """initialize 시 component 의 데이터를 instance 에 업데이트 합니다."""
         self["children"] = []
+        self["controller"] = []
+        self["output"] = []
+        self["output_joint"] = []
+        self._controller = []
+        self._output = []
+        self._output_joint = []
 
         for d in data:
             if hasattr(d, "long_name") and d.long_name not in self:
@@ -525,6 +600,14 @@ def serialize() -> T:
                 value = cmds.getAttr(node + "." + attr.long_name)
             component[attr.long_name]["value"] = value
 
+        # controller data.
+        for ctl in (
+            cmds.listConnections(node + ".controller", source=True, destination=False)
+            or []
+        ):
+            ctl_ins = component._Controller("", component)
+            ctl_ins.node = ctl
+
         if parent:
             component.parent = parent
 
@@ -550,10 +633,19 @@ def deserialize(data: dict, create=True) -> T:
         for attr in module.DATA:
             component[attr.long_name]["value"] = component_data[attr.long_name]["value"]
 
+        for controller_data in component_data["controller"]:
+            ins = component._Controller("", component)
+            ins.data = controller_data
+        component["output"] = component_data["output"]
+        component["output_joint"] = component_data["output_joint"]
+
         if parent:
             component.parent = parent
 
         if create:
+            component.populate_controller()
+            component.populate_output()
+            component.populate_output_joint()
             component.rig()
 
         for child in component_data["children"]:

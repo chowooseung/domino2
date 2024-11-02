@@ -38,6 +38,20 @@ class Rig(component.Rig):
     def __init__(self):
         super().__init__(DATA)
 
+    def populate_controller(self):
+        if not self["controller"]:
+            self._controller = []
+            for i in range(len(self["guide_matrix"]["value"])):
+                self.add_controller(description=i)
+
+    def populate_output(self):
+        if not self["output"]:
+            pass
+
+    def populate_output_joint(self):
+        if not self["output_joint"]:
+            pass
+
     @build_log(logging.INFO)
     def rig(self):
         super().rig(description=description)
@@ -49,11 +63,18 @@ class Rig(component.Rig):
             self.add_guide(parent=self.guide_root, description=i, m=m)
 
             # rig
-            npo, ctl = self.add_controller(
+            npo, ctl = self["controller"][i].create(
                 parent=self.rig_root,
-                parent_controllers=[],
-                description=i,
-                shape="cube",
+                parent_controllers=(
+                    self["controller"][i]["parent_controllers"]
+                    if "parent_controllers" in self["controller"][i]
+                    else []
+                ),
+                shape=(
+                    self["controller"][i]["shape"]
+                    if "shape" in self["controller"][i]
+                    else "cube"
+                ),
                 color=12,
                 source_plug=self.guide_graph + f".initialize_transform[{i}]",
             )

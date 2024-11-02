@@ -54,6 +54,19 @@ class Rig(component.Rig):
     def __init__(self):
         super().__init__(DATA)
 
+    def populate_controller(self):
+        if not self["controller"]:
+            self._controller = []
+            self.add_controller(description="")
+            self.add_controller(description="sub")
+            self.add_controller(description="COG")
+
+    def populate_output(self):
+        pass
+
+    def populate_output_joint(self):
+        pass
+
     @build_log(logging.INFO)
     def rig(self):
         super().rig(description=description)
@@ -73,41 +86,44 @@ class Rig(component.Rig):
         guide = self.add_guide(parent=self.guide_root, description="COG", m=m)
 
         # rig
-        origin_npo, origin_ctl = self.add_controller(
+        origin_npo, origin_ctl = self["controller"][0].create(
             parent=self.rig_root,
             parent_controllers=[],
-            description="",
-            shape="origin",
+            shape=(
+                self["controller"][0]["shape"]
+                if "shape" in self["controller"][0]
+                else "origin"
+            ),
             color=12,
         )
-        origin_ctl_ins = component.Controller(node=origin_ctl)
-        origin_ctl_ins.scale_shape((24, 24, 24))
 
-        sub_npo, sub_ctl = self.add_controller(
+        sub_npo, sub_ctl = self["controller"][1].create(
             parent=origin_ctl,
-            parent_controllers=[origin_ctl],
-            description="sub",
-            shape="circle",
+            parent_controllers=[(self.identifier, "")],
+            shape=(
+                self["controller"][1]["shape"]
+                if "shape" in self["controller"][1]
+                else "wave"
+            ),
             color=12,
         )
-        sub_ctl_ins = component.Controller(node=sub_ctl)
-        sub_ctl_ins.scale_shape((18, 18, 18))
 
         pick_m = cmds.createNode("pickMatrix")
         cmds.setAttr(pick_m + ".useScale", 0)
         cmds.setAttr(pick_m + ".useShear", 0)
         cmds.connectAttr(guide + ".worldMatrix[0]", pick_m + ".inputMatrix")
 
-        COG_npo, COG_ctl = self.add_controller(
+        COG_npo, COG_ctl = self["controller"][2].create(
             parent=sub_ctl,
-            parent_controllers=[sub_ctl],
-            description="COG",
-            shape="circle",
+            parent_controllers=[(self.identifier, "sub")],
+            shape=(
+                self["controller"][2]["shape"]
+                if "shape" in self["controller"][2]
+                else "cylinder"
+            ),
             color=12,
             source_plug=pick_m + ".outputMatrix",
         )
-        COG_ctl_ins = component.Controller(node=COG_ctl)
-        COG_ctl_ins.scale_shape((12, 12, 12))
 
         ins = Transform(
             parent=COG_ctl,

@@ -423,7 +423,7 @@ class Controller(Transform):
         extension: str = "",
         node: str = "",
         m: om.MMatrix | list = ORIGINMATRIX,
-        shape: str = "",
+        shape: str | dict = "",
         color: om.MColor | int = 0,
     ) -> None:
         """
@@ -486,6 +486,12 @@ class Controller(Transform):
         if node:
             assert cmds.objExists(node), f"{node} 가 존재하지 않습니다."
             self._node = node
+
+    @property
+    def root(self) -> str:
+        return cmds.listConnections(
+            self._node + ".message", source=False, destination=True, type="transform"
+        )[0]
 
     @property
     def npo(self) -> str:
@@ -588,16 +594,24 @@ class Controller(Transform):
         p = cmds.listRelatives(self.npo, parent=True)
         return p[0] if p else ""
 
-    def replace_shape(self, shape: str, color: om.MColor | int) -> None:
+    def replace_shape(self, shape: str | dict, color: om.MColor | int) -> None:
         """replace controller shape
 
         Args:
             shape (str): nurbscurve.create shape name
             color (om.MColor | int): controller color
         """
-        node = nurbscurve.create(shape, color)
-        nurbscurve.replace_shape(node, self._node)
-        cmds.delete(node)
+        if isinstance(shape, str):
+            node = nurbscurve.create(shape, color)
+            nurbscurve.replace_shape(node, self._node)
+            cmds.delete(node)
+        elif isinstance(shape, dict):
+            shape["curve_name"] = "TEMPCRV1"
+            crv = Curve()
+            crv.data = shape
+            crv = crv.create_from_data()
+            nurbscurve.replace_shape(crv, self._node)
+            cmds.delete(crv)
 
     def translate_shape(self, t: list) -> None:
         """move controller shape
@@ -858,7 +872,7 @@ class Curve:
         Returns:
             str: new node
         """
-        transform = cmds.createNode("transform", name=self._data["curveName"])
+        transform = cmds.createNode("transform", name=self._data["curve_name"])
 
         for data in self._data["shapes"].values():
             shape_transform = cmds.curve(

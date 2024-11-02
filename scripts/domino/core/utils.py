@@ -50,9 +50,11 @@ def build_log(level):
 
                     args_msg = []
                     for arg in args:
-                        if hasattr(arg, "identifier"):
+                        if arg.__class__.__name__ == "Rig":
                             name, side, index = arg.identifier
-                            args_msg.append(f"`{name} {side} {index}(identifier)`")
+                            args_msg.append(f"`{name} {side} {index}(Rig)`")
+                        elif arg.__class__.__name__ == "_Controller":
+                            args_msg.append(f"`{arg.name}(_Controller)`")
                         else:
                             args_msg.append(arg)
                     call_msg += ", ".join(args_msg)
