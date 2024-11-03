@@ -94,7 +94,7 @@ class Rig(component.Rig):
                 if "shape" in self["controller"][0]
                 else "origin"
             ),
-            color=12,
+            color=17,
         )
 
         sub_npo, sub_ctl = self["controller"][1].create(
@@ -105,7 +105,7 @@ class Rig(component.Rig):
                 if "shape" in self["controller"][1]
                 else "wave"
             ),
-            color=12,
+            color=21,
         )
 
         pick_m = cmds.createNode("pickMatrix")
@@ -121,7 +121,7 @@ class Rig(component.Rig):
                 if "shape" in self["controller"][2]
                 else "cylinder"
             ),
-            color=12,
+            color=17,
             source_plug=pick_m + ".outputMatrix",
         )
 
