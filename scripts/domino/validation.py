@@ -9,11 +9,13 @@ ID = "domino_validation_ui"
 
 
 def show(*args) -> None:
-    if cmds.window(ID, query=True, exists=True):
+    if cmds.workspaceControl(ID, query=True, exists=True):
+        if not cmds.workspaceControl(ID, query=True, floating=True):
+            cmds.workspaceControl(ID, edit=True, restore=True)
+            return
         cmds.deleteUI(ID)
     cmds.workspaceControl(
         ID,
-        retain=False,
         floating=True,
         label="Validate Rig Scene",
         uiScript="from domino import validation;validation.ui()",

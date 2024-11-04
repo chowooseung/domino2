@@ -49,11 +49,30 @@ def scale_shape(node: str, s: list) -> None:
         cmds.scale(*s, shape + ".cv[*]", pivot=t)
 
 
-def mirror_shape(node: str) -> None:
-    shapes = cmds.listRelatives(node, shapes=True) or []
-    t = cmds.xform(node, query=True, translation=True, worldSpace=True)
+def mirror_shape(node: str, left_str: str = "_L", right_str: str = "_R") -> None:
+    source = node
+    if left_str in source:
+        destination = source.replace(left_str, right_str)
+    elif right_str in source:
+        destination = source.replace(right_str, left_str)
+    if not destination:
+        return
+
+    shapes = cmds.listRelatives(source, shapes=True) or []
+    cmds.delete(cmds.listRelatives(destination, shapes=True) or [])
+    delete_list = []
     for shape in shapes:
-        cmds.scale(-1, 1, 1, shape + ".cv[*]", pivot=t)
+        dup_curve = cmds.duplicateCurve(shape, constructionHistory=False)[0]
+        cmds.scale(-1, 1, 1, dup_curve + ".cv[*]", relative=True)
+        shapes = cmds.parent(
+            cmds.listRelatives(dup_curve, shapes=True),
+            destination,
+            relative=True,
+            shape=True,
+        )
+        [cmds.rename(shape, destination + "Shape") for shape in shapes]
+        delete_list.append(dup_curve)
+    cmds.delete(delete_list)
 
 
 def create(shape: str, color: om.MColor | int, m: om.MMatrix = ORIGINMATRIX) -> str:
@@ -382,13 +401,13 @@ def locator(color: om.MColor | int, m: om.MMatrix) -> str:
     v4 = om.MVector(0, 0, dlen)
     v5 = om.MVector(0, 0, -dlen)
 
-    points = [v0 * 2, v1 * 2]
+    points = [v0, v1]
     generate(destination=node, points=points, degree=1, color=color)
 
-    points = [v2 * 2, v3 * 2]
+    points = [v2, v3]
     generate(destination=node, points=points, degree=1, color=color)
 
-    points = [v4 * 2, v5 * 2]
+    points = [v4, v5]
     generate(destination=node, points=points, degree=1, color=color)
     cmds.xform(node, matrix=m)
     return node

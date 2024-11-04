@@ -8,17 +8,20 @@ STATEOPTION = "domino_dag_menu_state"
 PARENTMENUS = "domino_command_parent_menus"
 
 
-def install(menuID: str) -> None:
+def install(menu_id: str) -> None:
     if STATEOPTION not in cmds.optionVar(list=True):
         cmds.optionVar(intValue=(STATEOPTION, 0))
 
-    parent_menus = []
-    for menu in cmds.lsUI(menus=True):
-        menu_command = cmds.menu(menu, query=True, postMenuCommand=True) or []
-        if isinstance(menu_command, str):
-            if "buildObjectMenuItemsNow" in menu_command:
-                parent_menus.append(menu_command.split(" ")[-1][1:-1])
-    cmds.optionVar(stringValue=(PARENTMENUS, " ".join(parent_menus)))
+    state = cmds.optionVar(query=STATEOPTION)
+    if not state:
+        parent_menus = []
+        for menu in cmds.lsUI(menus=True):
+            menu_command = cmds.menu(menu, query=True, postMenuCommand=True) or []
+            if isinstance(menu_command, str):
+                if "buildObjectMenuItemsNow" in menu_command:
+                    m_id = menu_command.split(" ")[-1]
+                    parent_menus.append(m_id.replace('"', ""))
+        cmds.optionVar(stringValue=(PARENTMENUS, " ".join(parent_menus)))
 
     def callback_dag_menu_install() -> None:
         state = cmds.optionVar(query=STATEOPTION)
@@ -41,11 +44,11 @@ def install(menuID: str) -> None:
 
     original_status = cmds.optionVar(query=STATEOPTION)
 
-    cmds.setParent(menuID, menu=True)
+    cmds.setParent(menu_id, menu=True)
     cmds.menuItem(divider=True)
     cmds.menuItem(
-        STATEOPTION + "Menu",
-        label="DagMenu",
+        STATEOPTION + "_menu",
+        label="Dag Menu",
         command=partial(toggle_domino_dag_menu_status),
         checkBox=original_status,
     )
@@ -321,6 +324,9 @@ def rig_menu(parent_menu: str) -> None:
     )
 
 
+controller_panel_command = """from domino import controllerpanel
+controllerpanel.show()"""
+
 reset_command = """from domino.core import Controller
 from maya import cmds
 tr_attrs = [".tx", ".ty", ".tz", ".rx", ".ry", ".rz"]
@@ -382,6 +388,14 @@ def controller_menu(
 ) -> None:
     cmds.menu(parent_menu, edit=True, deleteAllItems=True)
 
+    cmds.menuItem(
+        parent=parent_menu,
+        label="Controller Panel",
+        radialPosition="NW",
+        command=controller_panel_command,
+        image="refresh.png",
+        enableCommandRepeat=True,
+    )
     cmds.menuItem(
         parent=parent_menu,
         label="Reset",
