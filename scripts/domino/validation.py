@@ -26,78 +26,68 @@ def ui(*args, **kwargs) -> None:
     layout = cmds.scrollLayout(parent=ID, childResizable=True)
 
     # total node count
-    nodes = list(set(cmds.ls()) - set(cmds.ls(defaultNodes=True)))
-    mesh_nodes = len(cmds.ls(type="mesh"))
-    cmds.text(f"total node count : {len(nodes)}")
-    cmds.text(f"total mesh count : {mesh_nodes}")
+    node_count_text = cmds.text(parent=layout)
+    mesh_count_text = cmds.text(parent=layout)
 
     # clashes
     clashes_ins = ValidateClashes()
     clashes_ins.create_ui(layout)
-    clashes_ins.is_valid()
 
     # same name
     same_name_ins = ValidateSameName()
     same_name_ins.create_ui(layout)
-    same_name_ins.is_valid()
 
     # namespace
     namespace_ins = ValidateNamespace()
     namespace_ins.create_ui(layout)
-    namespace_ins.is_valid()
 
     # display layer
     display_layer_ins = ValidateDiaplayLayer()
     display_layer_ins.create_ui(layout)
-    display_layer_ins.is_valid()
 
     # anim layer
     anim_layer_ins = ValidateAnimLayer()
     anim_layer_ins.create_ui(layout)
-    anim_layer_ins.is_valid()
 
     # unknown plug-ins
     unknown_plugin_ins = ValidateUnknownPlugins()
     unknown_plugin_ins.create_ui(layout)
-    unknown_plugin_ins.is_valid()
 
     # unknown nodes
     unknown_node_ins = ValidateUnknownNode()
     unknown_node_ins.create_ui(layout)
-    unknown_node_ins.is_valid()
 
     # expression
     expression_ins = ValidateExpression()
     expression_ins.create_ui(layout)
-    expression_ins.is_valid()
 
     # script
     script_ins = ValidateScript()
     script_ins.create_ui(layout)
-    script_ins.is_valid()
 
     # orig shape
     orig_shape_ins = ValidateOrigShape()
     orig_shape_ins.create_ui(layout)
-    orig_shape_ins.is_valid()
 
     # default controller
     default_value_controller_ins = ValidateController()
     default_value_controller_ins.create_ui(layout)
-    default_value_controller_ins.is_valid()
 
     # keyframe
     keyframe_ins = ValidateKeyframe()
     keyframe_ins.create_ui(layout)
-    keyframe_ins.is_valid()
 
     # groupID, groupParts
     groupID_parts_ins = ValidateGroupIDParts()
     groupID_parts_ins.create_ui(layout)
-    groupID_parts_ins.is_valid()
 
     # validate All
     def validate(ins_list: list, *args) -> None:
+        nodes = list(set(cmds.ls()) - set(cmds.ls(defaultNodes=True)))
+        mesh_nodes = len(cmds.ls(type="mesh"))
+        cmds.text(node_count_text, edit=True, label=f"total node count : {len(nodes)}")
+        cmds.text(mesh_count_text, edit=True, label=f"total mesh count : {mesh_nodes}")
+
         for ins in ins_list:
             ins.is_valid()
 
@@ -111,6 +101,7 @@ def ui(*args, **kwargs) -> None:
         parent=layout,
         command=partial(validate, ins_list),
     )
+    validate(ins_list)
 
 
 class Validate:
