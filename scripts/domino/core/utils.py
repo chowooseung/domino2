@@ -55,16 +55,42 @@ def build_log(level):
                             args_msg.append(f"`{name} {side} {index}(Rig)`")
                         elif arg.__class__.__name__ == "_Controller":
                             args_msg.append(f"`{arg.name}(_Controller)`")
+                        elif arg.__class__.__name__ == "_Output":
+                            args_msg.append(f"`{arg.name}(_Output)`")
+                        elif arg.__class__.__name__ == "_OutputJoint":
+                            args_msg.append(f"`{arg.name}(_OutputJoint)`")
                         else:
                             args_msg.append(arg)
                     call_msg += ", ".join(args_msg)
 
                     call_msg += "\n\tkwargs\n\t\t"
 
-                    kwargs_msg = []
-                    for k, v in kwargs.items():
-                        kwargs_msg.append(f"{k}: {v}")
-                    call_msg += ", ".join(kwargs_msg)
+                    if func.__name__ == "print_context":
+                        call_msg += f"Identifier {kwargs['identifier']}\n\n"
+                        call_msg += "\t\tController\n"
+                        for ctl in kwargs["controller"]:
+                            call_msg += f"\t\t\tdescription {ctl['description']}\n"
+                            call_msg += f"\t\t\t\tparent controller\n"
+                            for parent_ctl in ctl["parent_controllers"]:
+                                parent_identifier = "_".join(
+                                    [str(x) for x in parent_ctl[0] if x]
+                                )
+                                call_msg += (
+                                    f"\t\t\t\t\t{parent_identifier}, {parent_ctl[1]}\n"
+                                )
+                        call_msg += "\t\tOutput\n"
+                        for output in kwargs["output"]:
+                            call_msg += f"\t\t\tdescription {output['description']} extension {output['extension']}\n"
+                        call_msg += "\t\tOutput Joint\n"
+                        for output_joint in kwargs["output_joint"]:
+                            call_msg += (
+                                f"\t\t\tdescription {output_joint['description']}\n"
+                            )
+                    else:
+                        kwargs_msg = []
+                        for k, v in kwargs.items():
+                            kwargs_msg.append(f"{k}: {v}")
+                        call_msg += ", ".join(kwargs_msg)
 
                 logger.log(level, call_msg)
 

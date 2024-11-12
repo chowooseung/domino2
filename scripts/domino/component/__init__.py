@@ -1,5 +1,5 @@
 # domino
-from domino.core import Name, Transform, Joint, Controller, attribute, Curve
+from domino.core import Name, Transform, Joint, Controller, Curve, attribute, nurbscurve
 from domino.core.utils import build_log, logger
 
 # maya
@@ -129,7 +129,7 @@ class Rig(dict):
         )
 
     @build_log(logging.DEBUG)
-    def add_root(self) -> None:
+    def add_guide_root(self) -> None:
         if not cmds.pluginInfo("dominoNodes.py", loaded=True, query=True):
             cmds.loadPlugin("dominoNodes.py")
 
@@ -138,7 +138,20 @@ class Rig(dict):
         cmds.addAttr(
             self.guide_root, longName="is_domino_guideRoot", attributeType="bool"
         )
+        cmds.addAttr(
+            self.guide_root, longName="npo_matrix", attributeType="matrix", multi=True
+        )
 
+        for long_name, data in self.items():
+            if "dataType" not in data and "attributeType" not in data:
+                continue
+            attrType = data["dataType"] if "dataType" in data else data["attributeType"]
+            ins = attribute.TYPETABLE[attrType](longName=long_name, **data)
+            ins.node = self.guide_root
+            ins.create()
+
+    @build_log(logging.DEBUG)
+    def add_rig_root(self) -> None:
         name, side, index = self.identifier
         parent = RIG
         if self.parent:
@@ -157,6 +170,9 @@ class Rig(dict):
         cmds.addAttr(
             rig_root, longName="controller", attributeType="message", multi=True
         )
+        cmds.addAttr(
+            rig_root, longName="npo_matrix", attributeType="matrix", multi=True
+        )
         cmds.addAttr(rig_root, longName="output", attributeType="message", multi=True)
         cmds.addAttr(
             rig_root, longName="output_joint", attributeType="message", multi=True
@@ -170,15 +186,8 @@ class Rig(dict):
                 continue
             attrType = data["dataType"] if "dataType" in data else data["attributeType"]
             ins = attribute.TYPETABLE[attrType](longName=long_name, **data)
-            ins.node = self.guide_root
-            ins.create()
-
             ins.node = self.rig_root
             ins.create()
-
-            cmds.connectAttr(
-                self.guide_root + "." + long_name, self.rig_root + "." + long_name
-            )
 
         # parent, child
         if self.parent:
@@ -188,7 +197,7 @@ class Rig(dict):
 
     @build_log(logging.DEBUG)
     def add_guide(
-        self, parent: str, description: str, m: list | om.MMatrix, mirror_axis: int = 1
+        self, parent: str, description: str, m: list | om.MMatrix, mirror_type: int = 1
     ) -> str:
         """Guide -> rig root attribute
         ~~_guideRoot
@@ -214,6 +223,11 @@ class Rig(dict):
             m=m,
         )
         guide = ins.create()
+        crv = nurbscurve.create("axis", 0)
+        for shape in cmds.listRelatives(crv, shapes=True):
+            shape = cmds.parent(shape, guide, relative=True, shape=True)
+            cmds.rename(shape, guide + "Shape")
+        cmds.delete(crv)
         cmds.setAttr(guide + ".displayHandle", 1)
         cmds.addAttr(guide, longName="is_domino_guide", attributeType="bool")
         next_index = len(
@@ -226,13 +240,22 @@ class Rig(dict):
             guide + ".worldMatrix[0]", self.guide_root + f".guide_matrix[{next_index}]"
         )
         at = attribute.Enum(
-            longName="mirror_axis",
+            longName="mirror_type",
             enumName=["orientation", "behavior", "inverse_scale"],
             defaultValue=1,
-            value=mirror_axis,
+            value=mirror_type,
+            keyable=True,
         )
         at.node = guide
         at.create()
+        cmds.connectAttr(
+            guide + ".mirror_type",
+            self.guide_root + f".guide_mirror_type[{next_index}]",
+        )
+        cmds.setAttr(guide + ".sx", lock=True, keyable=False)
+        cmds.setAttr(guide + ".sy", lock=True, keyable=False)
+        cmds.setAttr(guide + ".sz", lock=True, keyable=False)
+        cmds.setAttr(guide + ".v", lock=True, keyable=False)
         return guide
 
     class _Controller(dict):
@@ -300,7 +323,7 @@ class Rig(dict):
             parent_controllers: list,
             shape: dict | str,
             color: int | om.MColor,
-            source_plug: str = "",
+            npo_matrix_index: int | None = None,
             fkik_command_attr: str = "",
         ) -> tuple:
             parent_controllers_str = []
@@ -330,8 +353,12 @@ class Rig(dict):
                 color=color,
             )
             npo, ctl = ins.create()
-            if source_plug:
-                cmds.connectAttr(source_plug, npo + ".offsetParentMatrix")
+            if npo_matrix_index is not None:
+                cmds.connectAttr(
+                    self.instance.rig_root
+                    + ".npo_matrix[{0}]".format(npo_matrix_index),
+                    npo + ".offsetParentMatrix",
+                )
             next_index = len(
                 cmds.listConnections(
                     self.instance.rig_root + ".controller",
@@ -420,47 +447,135 @@ class Rig(dict):
         )
         return ins.create()
 
-    @build_log(logging.DEBUG)
-    def add_output(self, node: str) -> None:
-        next_index = len(
-            cmds.listConnections(
-                self.rig_root + ".output", source=True, destination=False
-            )
-            or []
-        )
-        cmds.connectAttr(node + ".message", self.rig_root + f".output[{next_index}]")
+    class _Output(dict):
 
-    @build_log(logging.DEBUG)
-    def add_output_joint(
-        self, parent: str, description: str, output: str, neutralPoseObj: str
-    ) -> str:
-        name, side, index = self.identifier
-        ins = Joint(
-            parent=parent if parent else SKEL,
-            name=name,
-            side=side,
-            index=index,
-            description=description,
-            extension=Name.joint_extension,
-            m=cmds.xform(output, query=True, matrix=True, worldSpace=True),
-            use_joint_convention=True,
-        )
-        next_index = len(
-            cmds.listConnections(
-                self.rig_root + ".output_joint", source=True, destination=False
+        @property
+        def name(self) -> str:
+            name, side, index = self.instance.identifier
+            return Name.create(
+                convention=Name.controller_name_convention,
+                name=name,
+                side=side,
+                index=index,
+                description=self["description"],
+                extension=self["extension"],
             )
-            or []
-        )
-        jnt = ins.create()
-        cmds.addAttr(
-            jnt, longName="is_domino_skel", attributeType="bool", keyable=False
-        )
-        cmds.addAttr(jnt, longName="neutralPoseObj", attributeType="message")
-        cmds.connectAttr(neutralPoseObj + ".message", jnt + ".neutralPoseObj")
-        cmds.connectAttr(
-            jnt + ".message", self.rig_root + f".output_joint[{next_index}]"
-        )
-        return jnt
+
+        @property
+        def data(self) -> dict:
+            return self
+
+        @data.setter
+        def data(self, d: dict) -> None:
+            self.update(d)
+
+        def connect(self) -> tuple:
+            next_index = len(
+                cmds.listConnections(
+                    self.instance.rig_root + ".output",
+                    source=True,
+                    destination=False,
+                )
+                or []
+            )
+            cmds.connectAttr(
+                self.name + ".message",
+                self.instance.rig_root + f".output[{next_index}]",
+            )
+
+        def __init__(
+            self,
+            description: str,
+            extension: str,
+            rig_instance: T,
+        ):
+            self.instance = rig_instance
+            self.instance["output"].append(self)
+            self["description"] = description
+            self["extension"] = extension
+
+    def add_output(self, description: str, extension: str) -> None:
+        self._Output(description=description, extension=extension, rig_instance=self)
+
+    class _OutputJoint(dict):
+
+        @property
+        def name(self) -> str:
+            name, side, index = self.instance.identifier
+            return Name.create(
+                convention=Name.joint_name_convention,
+                name=name,
+                side=side,
+                index=index,
+                description=self["description"],
+                extension=Name.joint_extension,
+            )
+
+        @property
+        def node(self) -> str:
+            return self._node
+
+        @node.setter
+        def node(self, n: str) -> None:
+            self._node = n
+            self["description"] = cmds.getAttr(self._node + ".description")
+            self["parent"] = cmds.listRelatives(self._node, parent=True)[0]
+            self["name"] = self._node
+
+        @property
+        def data(self) -> dict:
+            return self
+
+        @data.setter
+        def data(self, d: dict) -> None:
+            self.update(d)
+            self._node = self.name
+
+        @build_log(logging.DEBUG)
+        def create(self, parent: str, output: str) -> str:
+            name, side, index = self.instance.identifier
+            ins = Joint(
+                parent=parent if parent else SKEL,
+                name=name,
+                side=side,
+                index=index,
+                description=self["description"],
+                extension=Name.joint_extension,
+                m=cmds.xform(output, query=True, matrix=True, worldSpace=True),
+                use_joint_convention=True,
+            )
+            next_index = len(
+                cmds.listConnections(
+                    self.instance.rig_root + ".output_joint",
+                    source=True,
+                    destination=False,
+                )
+                or []
+            )
+            jnt = ins.create()
+            cmds.addAttr(
+                jnt, longName="is_domino_skel", attributeType="bool", keyable=False
+            )
+            cmds.connectAttr(
+                jnt + ".message",
+                self.instance.rig_root + f".output_joint[{next_index}]",
+            )
+            cmds.parentConstraint(output, jnt)
+            cmds.scaleConstraint(output, jnt)
+            return jnt
+
+        def __init__(
+            self,
+            description: str,
+            rig_instance: T,
+        ):
+            self.instance = rig_instance
+            self.instance["output_joint"].append(self)
+            self["description"] = description
+            self._node = self.name
+
+    def add_output_joint(self, description: str) -> None:
+        self._OutputJoint(description=description, rig_instance=self)
 
     @build_log(logging.DEBUG)
     def add_guide_graph(self) -> str:
@@ -531,9 +646,6 @@ class Rig(dict):
         self["controller"] = []
         self["output"] = []
         self["output_joint"] = []
-        self._controller = []
-        self._output = []
-        self._output_joint = []
 
         for d in data:
             if hasattr(d, "long_name") and d.long_name not in self:
@@ -542,13 +654,23 @@ class Rig(dict):
             else:
                 self.update(d)
 
-    def rig(self, description: str = "") -> None:
-        attrs = [".tx", ".ty", ".tz", ".rx", ".ry", ".rz", ".sx", ".sy", ".sz"]
+    def guide(self, description: str = "") -> None:
+        attrs = [".tx", ".ty", ".tz", ".rx", ".ry", ".rz"]
         if not cmds.objExists(GUIDE):
             ins = Transform(parent=None, name="", side="", index="", extension=GUIDE)
             ins.create()
             for attr in attrs:
                 cmds.setAttr(GUIDE + attr, lock=True, keyable=False)
+
+        self.add_guide_root()
+        cmds.addAttr(self.guide_root, longName="notes", dataType="string")
+        cmds.setAttr(self.guide_root + ".notes", description, type="string")
+        cmds.setAttr(self.guide_root + ".notes", lock=True)
+
+    def rig(self, description: str = "") -> None:
+        # TODO same name check
+
+        attrs = [".tx", ".ty", ".tz", ".rx", ".ry", ".rz", ".sx", ".sy", ".sz"]
         if not cmds.objExists(RIG):
             ins = Transform(parent=None, name="", side="", index="", extension=RIG)
             rig = ins.create()
@@ -556,19 +678,123 @@ class Rig(dict):
             for attr in attrs:
                 cmds.setAttr(RIG + attr, lock=True, keyable=False)
         if not cmds.objExists(SKEL):
-            ins = Transform(parent=None, name="", side="", index="", extension=SKEL)
+            ins = Transform(parent=RIG, name="", side="", index="", extension=SKEL)
             ins.create()
             for attr in attrs:
                 cmds.setAttr(SKEL + attr, lock=True, keyable=False)
 
-        self.add_root()
-
-        cmds.addAttr(self.guide_root, longName="notes", dataType="string")
-        cmds.setAttr(self.guide_root + ".notes", description, type="string")
-        cmds.setAttr(self.guide_root + ".notes", lock=True)
+        self.add_rig_root()
         cmds.addAttr(self.rig_root, longName="notes", dataType="string")
-        cmds.connectAttr(self.guide_root + ".notes", self.rig_root + ".notes")
+        cmds.setAttr(self.rig_root + ".notes", description, type="string")
         cmds.setAttr(self.rig_root + ".notes", lock=True)
+        for i, m in enumerate(self["guide_matrix"]["value"]):
+            cmds.setAttr(self.rig_root + f".guide_matrix[{i}]", m, type="matrix")
+
+    def attach_guide(self) -> None:
+        self.guide()
+        for long_name, data in self.items():
+            if "dataType" not in data and "attributeType" not in data:
+                continue
+            if "multi" in data:
+                for attr in (
+                    cmds.listAttr(self.rig_root + "." + long_name, multi=True) or []
+                ):
+                    cmds.connectAttr(
+                        self.guide_root + "." + attr, self.rig_root + "." + attr
+                    )
+            else:
+                cmds.connectAttr(
+                    self.guide_root + "." + long_name, self.rig_root + "." + long_name
+                )
+        for attr in cmds.listAttr(self.rig_root + ".npo_matrix", multi=True) or []:
+            cmds.connectAttr(self.guide_root + "." + attr, self.rig_root + "." + attr)
+
+        for output in (
+            cmds.listConnections(
+                self.rig_root + ".output", source=True, destination=False
+            )
+            or []
+        ):
+            children = cmds.listRelatives(output, children=True, type="transform") or []
+            for child in children:
+                cmds.parentConstraint(GUIDE, child)
+
+    def detach_guide(self) -> None:
+        cons = []
+        for output in (
+            cmds.listConnections(
+                self.rig_root + ".output", source=True, destination=False
+            )
+            or []
+        ):
+            children = cmds.listRelatives(output, children=True, type="transform") or []
+            for child in children:
+                cons.append(cmds.parentConstraint(child, query=True)[0])
+        # constraint 삭제시 마지막 값으로 업데이트 되지 않는 문제. 강제 업데이트.
+        for attr in cmds.listAttr(self.rig_root + ".guide_matrix", multi=True):
+            cmds.getAttr(self.rig_root + "." + attr)
+        # output 아래 rigRoot 가 offset 되는 문제. constaint 먼저 삭제.
+        if cons:
+            cmds.delete(cons)
+        cmds.delete(self.guide_root)
+        if not cmds.listRelatives(GUIDE):
+            cmds.delete(GUIDE)
+
+    def set_output_joint_hierarchy(self) -> None:
+        pass
+
+    def mirror_guide(self) -> None:
+        guides = cmds.listConnections(
+            self.guide_root + ".guide_matrix", source=True, destination=False
+        )
+        mirror_matrices = []
+        for guide in guides:
+            mirror_type = cmds.getAttr(guide + ".mirror_type")
+            m = cmds.xform(guide, query=True, matrix=True, worldSpace=True)
+            mirror_matrices.append(
+                Transform.get_mirror_matrix(m, mirror_type=mirror_type)
+            )
+        for guide, mirror_m in zip(guides, mirror_matrices):
+            cmds.xform(guide, matrix=mirror_m, worldSpace=True)
+
+
+@build_log(logging.INFO)
+def build(context, component) -> dict:
+
+    def recursive_build_component(component):
+        component.populate_controller()
+        component.populate_output()
+        component.populate_output_joint()
+        component.rig()
+        identifier = "_".join([str(x) for x in component.identifier if x])
+        context[identifier] = {
+            "controller": component["controller"],
+            "output": component["output"],
+            "output_joint": component["output_joint"],
+        }
+        for child in component["children"]:
+            recursive_build_component(child)
+
+    # 하위 component 가 없는 상태로 attch guide 시 constraint 이 걸리지 않음.
+    def recursive_attach_guide(component):
+        component.attach_guide()
+        for child in component["children"]:
+            recursive_attach_guide(child)
+
+    recursive_build_component(component=component)
+    recursive_attach_guide(component=component)
+
+    @build_log(logging.DEBUG)
+    def print_context(*args, **kwargs): ...
+
+    for identifier, value in context.items():
+        print_context(
+            identifier=identifier,
+            controller=value["controller"],
+            output=value["output"],
+            output_joint=value["output_joint"],
+        )
+    return context
 
 
 def serialize() -> T:
@@ -584,7 +810,7 @@ def serialize() -> T:
     if not assembly_node:
         return
 
-    def node_to_component(node, parent):
+    def convert_node_to_component(node: str, parent: T) -> T:
         module_name = cmds.getAttr(node + ".component")
         module = importlib.import_module("domino.component." + module_name)
         component = module.Rig()
@@ -615,16 +841,16 @@ def serialize() -> T:
             or []
         )
         for child in children:
-            node_to_component(child, component)
+            convert_node_to_component(child, component)
         return component
 
-    return node_to_component(assembly_node, None)
+    return convert_node_to_component(assembly_node, None)
 
 
 def deserialize(data: dict, create=True) -> T:
     """직렬화 한 데이터를 마야 노드로 변환합니다."""
 
-    def data_to_node(component_data, parent):
+    def convert_data_to_component(component_data: dict, parent: T) -> T:
         module_name = component_data["component"]["value"]
         module = importlib.import_module("domino.component." + module_name)
         component = module.Rig()
@@ -641,18 +867,15 @@ def deserialize(data: dict, create=True) -> T:
         if parent:
             component.parent = parent
 
-        if create:
-            component.populate_controller()
-            component.populate_output()
-            component.populate_output_joint()
-            component.rig()
-
         for child in component_data["children"]:
-            data_to_node(child, component)
+            convert_data_to_component(child, component)
 
         return component
 
-    return data_to_node(data, None)
+    component = convert_data_to_component(data, None)
+    if create:
+        build({}, component=component)
+    return component
 
 
 @build_log(logging.INFO)

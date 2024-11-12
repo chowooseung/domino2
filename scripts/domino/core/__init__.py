@@ -21,6 +21,7 @@ controller_extension = "ctl"
 group_extension = "grp"
 npo_extension = "npo"
 loc_extension = "loc"
+output_extension = "out"
 curve_extension = "crv"
 polygon_extension = "poly"
 ikh_extension = "ikh"
@@ -72,6 +73,13 @@ class Name:
     side_str_list = side_list = [center, left, right]
     controller_extension = controller_extension
     joint_extension = joint_extension
+    group_extension = group_extension
+    npo_extension = npo_extension
+    output_extension = output_extension
+    curve_extension = curve_extension
+    polygon_extension = polygon_extension
+    ikh_extension = ikh_extension
+    loc_extension = loc_extension
 
     @classmethod
     def create(
@@ -251,6 +259,56 @@ class Transform:
         """
         self._m = list(m)
         cmds.xform(self._node, matrix=m, worldSpace=True)
+
+    @staticmethod
+    def get_mirror_RT(t: list, r: list, mirror_type: int) -> tuple:
+        """get mirror translate, rotate value
+
+        dagmenu 에서 사용합니다.
+
+        Args:
+            node (str): domino controller
+
+        Returns:
+            tuple: translate, rotate
+        """
+        ORIENTATION = 0
+        BEHAVIOR = 1
+        if mirror_type == ORIENTATION:
+            return (t[0] * -1, t[1], t[2]), (r[0] * -1, r[1] * -1, r[2] * -1)
+        elif mirror_type == BEHAVIOR:
+            return (t[0] * -1, t[1] * -1, t[2] * -1), (r[0], r[1], r[2])
+        return t, r
+
+    @staticmethod
+    def get_mirror_matrix(
+        m: list,
+        mirror_type: int,
+        plane_matrix: om.MMatrix = ORIGINMATRIX,
+    ) -> om.MMatrix:
+        """get mirror matrix
+
+        mirror type 으로 mirror matrix 를 구합니다.
+        dagmenu 에서 사용합니다.
+
+        Args:
+            node (str): domino controller
+            planeMatrix (om.MMatrix, optional): custom plane matrix. Defaults to originMatrix.
+
+        Returns:
+            om.MMatrix: mirror matrix
+        """
+        ORIENTATION = 0
+        BEHAVIOR = 1
+        if mirror_type == ORIENTATION:
+            return matrix.get_mirror_matrix(om.MMatrix(m), plane_m=plane_matrix)
+        elif mirror_type == BEHAVIOR:
+            return matrix.get_mirror_matrix(
+                om.MMatrix(m), behavior=True, plane_m=plane_matrix
+            )
+        return matrix.get_mirror_matrix(
+            om.MMatrix(m), inverse_scale=True, plane_m=plane_matrix
+        )
 
 
 class Joint(Transform):
@@ -703,53 +761,6 @@ class Controller(Transform):
         return children
 
     @staticmethod
-    def get_mirror_RT(node: str) -> tuple:
-        """get mirror translate, rotate value
-
-        dagmenu 에서 사용합니다.
-
-        Args:
-            node (str): domino controller
-
-        Returns:
-            tuple: translate, rotate
-        """
-        ORIENTATION = 0
-        BEHAVIOR = 1
-        t = cmds.getAttr(node + ".t")[0]
-        r = cmds.getAttr(node + ".r")[0]
-        if cmds.getAttr(node + ".mirror_type") == ORIENTATION:
-            return (t[0] * -1, t[1], t[2]), (r[0] * -1, r[1] * -1, r[2] * -1)
-        elif cmds.getAttr(node + ".mirror_type") == BEHAVIOR:
-            return (t[0] * -1, t[1] * -1, t[2] * -1), (r[0], r[1], r[2])
-        return t, r
-
-    @staticmethod
-    def get_mirror_matrix(
-        node: str, plane_matrix: om.MMatrix = ORIGINMATRIX
-    ) -> om.MMatrix:
-        """get mirror matrix
-
-        mirror type 으로 mirror matrix 를 구합니다.
-        dagmenu 에서 사용합니다.
-
-        Args:
-            node (str): domino controller
-            planeMatrix (om.MMatrix, optional): custom plane matrix. Defaults to originMatrix.
-
-        Returns:
-            om.MMatrix: mirror matrix
-        """
-        ORIENTATION = 0
-        BEHAVIOR = 1
-        m = cmds.xform(node, query=True, matrix=True, worldSpace=True)
-        if cmds.getAttr(node + ".mirror_type") == ORIENTATION:
-            return matrix.get_mirror_matrix(m, plane_m=plane_matrix)
-        elif cmds.getAttr(node + ".mirror_type") == BEHAVIOR:
-            return matrix.get_mirror_matrix(m, behavior=True, plane_m=plane_matrix)
-        return matrix.get_mirror_matrix(m, inverse_scale=True, plane_m=plane_matrix)
-
-    @staticmethod
     def reset(node: str) -> None:
         attrs = [".tx", ".ty", ".tz", ".rx", ".ry", ".rz"]
         for attr in attrs:
@@ -761,7 +772,9 @@ class Controller(Transform):
             if cmds.getAttr(node + attr, lock=True):
                 continue
             cmds.setAttr(node + attr, 1)
-        attrs = ["." + x for x in cmds.listAttr(node, userDefined=True, keyable=True)]
+        attrs = [
+            "." + x for x in cmds.listAttr(node, userDefined=True, keyable=True) or []
+        ]
         for attr in attrs:
             default_value = cmds.addAttr(node + attr, query=True, defaultValue=True)
             cmds.setAttr(node + attr, default_value)

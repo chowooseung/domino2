@@ -14,15 +14,15 @@
                         <label>Index</label>
                 </attribute>
 
-                <attribute name='outputParentIndex' type='maya.long'>
+                <attribute name='output_parent_index' type='maya.long'>
                         <label>Output Parent Index</label>
                 </attribute>
 
-                <attribute name='createOutputJoint' type='maya.bool'>
+                <attribute name='create_output_joint' type='maya.bool'>
                         <label>Create Output Joint</label>
                 </attribute>
 
-                <attribute name='mirrorAxis' type='maya.enum'>
+                <attribute name='mirror_axis' type='maya.enum'>
                         <label>Mirror Axis</label>
                 </attribute>
     </template>
@@ -31,9 +31,9 @@
                 <property name='name'/>
                 <property name='side'/>
                 <property name='index'/>
-                <property name='outputParentIndex'/>
-                <property name='createOutputJoint'/>
-                <property name='mirrorAxis'/>
+                <property name='output_parent_index'/>
+                <property name='create_output_joint'/>
+                <property name='mirror_axis'/>
     </view>
 
 </templates>

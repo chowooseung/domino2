@@ -35,6 +35,7 @@ DATA = [
     attribute.String(longName="controller_extension", value=controller_extension),
     attribute.String(longName="joint_extension", value=joint_extension),
     attribute.Matrix(longName="guide_matrix", multi=True, value=[list(ORIGINMATRIX)]),
+    attribute.Integer(longName="guide_mirror_type", multi=True),
 ]
 
 description = """assembly component.
@@ -62,10 +63,10 @@ class Rig(component.Rig):
             self.add_controller(description="COG")
 
     def populate_output(self):
-        pass
+        self.add_output(description="", extension="output")
 
     def populate_output_joint(self):
-        pass
+        self.add_output_joint(description="")
 
     @build_log(logging.INFO)
     def rig(self):
@@ -82,10 +83,7 @@ class Rig(component.Rig):
         Name.controller_extension = self["controller_extension"]["value"]
         Name.joint_extension = self["joint_extension"]["value"]
 
-        m = self["guide_matrix"]["value"][0]
-        guide = self.add_guide(parent=self.guide_root, description="COG", m=m)
-
-        # rig
+        # controller
         origin_npo, origin_ctl = self["controller"][0].create(
             parent=self.rig_root,
             parent_controllers=[],
@@ -108,11 +106,6 @@ class Rig(component.Rig):
             color=21,
         )
 
-        pick_m = cmds.createNode("pickMatrix")
-        cmds.setAttr(pick_m + ".useScale", 0)
-        cmds.setAttr(pick_m + ".useShear", 0)
-        cmds.connectAttr(guide + ".worldMatrix[0]", pick_m + ".inputMatrix")
-
         COG_npo, COG_ctl = self["controller"][2].create(
             parent=sub_ctl,
             parent_controllers=[(self.identifier, "sub")],
@@ -122,9 +115,10 @@ class Rig(component.Rig):
                 else "cylinder"
             ),
             color=17,
-            source_plug=pick_m + ".outputMatrix",
+            npo_matrix_index=0,
         )
 
+        # output
         ins = Transform(
             parent=COG_ctl,
             name=name,
@@ -134,16 +128,23 @@ class Rig(component.Rig):
             m=ORIGINMATRIX,
         )
         output = ins.create()
+        self["output"][0].connect()
 
-        inverse_m = cmds.createNode("inverseMatrix")
-        cmds.connectAttr(pick_m + ".outputMatrix", inverse_m + ".inputMatrix")
-        cmds.connectAttr(inverse_m + ".outputMatrix", output + ".offsetParentMatrix")
+        # output joint
+        self["output_joint"][0].create(parent=None, output=sub_ctl)
 
-        self.add_output(output)
-
-        output_joint = self.add_output_joint(
-            parent=None,
-            description="",
-            output=sub_ctl,
-            neutralPoseObj=origin_npo,
+    @build_log(logging.INFO)
+    def guide(self):
+        super().guide(description=description)
+        m = cmds.getAttr(self.rig_root + ".guide_matrix[0]")
+        guide = self.add_guide(
+            parent=self.guide_root,
+            description="COG",
+            m=m,
+            mirror_type=self["guide_mirror_type"]["value"][0],
         )
+        pick_m = cmds.createNode("pickMatrix")
+        cmds.setAttr(pick_m + ".useScale", 0)
+        cmds.setAttr(pick_m + ".useShear", 0)
+        cmds.connectAttr(guide + ".worldMatrix[0]", pick_m + ".inputMatrix")
+        cmds.connectAttr(pick_m + ".outputMatrix", self.guide_root + ".npo_matrix[0]")

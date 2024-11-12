@@ -2,43 +2,43 @@
 <templates>
 
     <template name='AEdAssembly'>
-                <attribute name='controllerNameConvention' type='maya.string'>
+                <attribute name='controller_name_convention' type='maya.string'>
                         <label>Controller Name Convention</label>
                 </attribute>
 
-                <attribute name='jointNameConvention' type='maya.string'>
+                <attribute name='joint_name_convention' type='maya.string'>
                         <label>Joint Name Convention</label>
                 </attribute>
 
-                <attribute name='controllerExtension' type='maya.string'>
+                <attribute name='controller_extension' type='maya.string'>
                         <label>Controller Extension</label>
                 </attribute>
 
-                <attribute name='jointExtension' type='maya.string'>
+                <attribute name='joint_extension' type='maya.string'>
                         <label>Joint Extension</label>
                 </attribute>
 
-                <attribute name='sideCStr' type='maya.string'>
+                <attribute name='side_c_str' type='maya.string'>
                         <label>Side Cstr</label>
                 </attribute>
 
-                <attribute name='sideLStr' type='maya.string'>
+                <attribute name='side_l_str' type='maya.string'>
                         <label>Side Lstr</label>
                 </attribute>
 
-                <attribute name='sideRStr' type='maya.string'>
+                <attribute name='side_r_str' type='maya.string'>
                         <label>Side Rstr</label>
                 </attribute>
     </template>
 
     <view name="Rigging" template="AEdAssembly">
-                <property name='controllerNameConvention'/>
-                <property name='jointNameConvention'/>
-                <property name='controllerExtension'/>
-                <property name='jointExtension'/>
-                <property name='sideCStr'/>
-                <property name='sideLStr'/>
-                <property name='sideRStr'/>
+                <property name='controller_name_convention'/>
+                <property name='joint_name_convention'/>
+                <property name='controller_extension'/>
+                <property name='joint_extension'/>
+                <property name='side_c_str'/>
+                <property name='side_l_str'/>
+                <property name='side_r_str'/>
     </view>
 
 </templates>

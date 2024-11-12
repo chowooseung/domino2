@@ -6,14 +6,16 @@ from functools import partial
 
 STATEOPTION = "domino_dag_menu_state"
 PARENTMENUS = "domino_command_parent_menus"
+CONTROLLER_APPLY_CHILDREN_OPTION = "domino_controller_apply_children"
+GUIDE_APPLY_CHILDREN_OPTION = "domino_guide_apply_children"
 
 
 def install(menu_id: str) -> None:
     if STATEOPTION not in cmds.optionVar(list=True):
         cmds.optionVar(intValue=(STATEOPTION, 0))
 
-    state = cmds.optionVar(query=STATEOPTION)
-    if not state:
+    status = cmds.optionVar(query=STATEOPTION)
+    if not status:
         parent_menus = []
         for menu in cmds.lsUI(menus=True):
             menu_command = cmds.menu(menu, query=True, postMenuCommand=True) or []
@@ -24,10 +26,10 @@ def install(menu_id: str) -> None:
         cmds.optionVar(stringValue=(PARENTMENUS, " ".join(parent_menus)))
 
     def callback_dag_menu_install() -> None:
-        state = cmds.optionVar(query=STATEOPTION)
+        status = cmds.optionVar(query=STATEOPTION)
         parent_menus = cmds.optionVar(query=PARENTMENUS).split(" ")
         for menu in parent_menus:
-            if state:
+            if status:
                 cmds.menu(menu, edit=True, postMenuCommand=partial(popup_menu, menu))
             else:
                 mel.eval(
@@ -180,13 +182,13 @@ from domino import spacemanager
 selected = cmds.ls(selection=True)[0]
 spacemanager.show()
 spacemanager.initialize()
-parent = cmds.listRelatives("spaceManager", parent=True)
-if not parent or parent[0] != selected:
-    cmds.parent("spaceManager", selected)
-if not cmds.objExists(selected + ".spacemanager"):
-    cmds.addAttr(selected, longName="spacemanager", attributeType="message")
-if cmds.connectionInfo(selected + ".spacemanager", sourceFromDestination=True) != "spaceManager.message":
-    cmds.connectAttr("spaceManager.message", selected + ".spacemanager", force=True)
+parent = cmds.listRelatives("space_manager", parent=True)
+if not parent or parent[0] != "origin_sub_ctl":
+    cmds.parent("space_manager", "origin_sub_ctl")
+if not cmds.objExists(selected + ".space_manager"):
+    cmds.addAttr(selected, longName="space_manager", attributeType="message")
+if cmds.connectionInfo(selected + ".space_manager", sourceFromDestination=True) != "space_manager.message":
+    cmds.connectAttr("space_manager.message", selected + ".space_manager", force=True)
 cmds.select(selected)"""
 
 posemanager_command = """from maya import cmds
@@ -194,13 +196,13 @@ from domino import posemanager
 selected = cmds.ls(selection=True)[0]
 posemanager.show()
 posemanager.initialize()
-parent = cmds.listRelatives("poseManager", parent=True)
-if not parent or parent[0] != selected:
-    cmds.parent("poseManager", selected)
-if not cmds.objExists(selected + ".posemanager"):
-    cmds.addAttr(selected, longName="posemanager", attributeType="message")
-if cmds.connectionInfo(selected + ".posemanager", sourceFromDestination=True) != "poseManager.message":
-    cmds.connectAttr("poseManager.message", selected + ".posemanager", force=True)
+parent = cmds.listRelatives("pose_manager", parent=True)
+if not parent or parent[0] != "origin_sub_ctl":
+    cmds.parent("pose_manager", "origin_sub_ctl")
+if not cmds.objExists(selected + ".pose_manager"):
+    cmds.addAttr(selected, longName="pose_manager", attributeType="message")
+if cmds.connectionInfo(selected + ".pose_manager", sourceFromDestination=True) != "pose_manager.message":
+    cmds.connectAttr("pose_manager.message", selected + ".pose_manager", force=True)
 cmds.select(selected)"""
 
 sdkmanager_command = """from maya import cmds
@@ -208,13 +210,13 @@ from domino import sdkmanager
 selected = cmds.ls(selection=True)[0]
 sdkmanager.show()
 sdkmanager.initialize()
-parent = cmds.listRelatives("sdkManager", parent=True)
-if not parent or parent[0] != selected:
-    cmds.parent("sdkManager", selected)
-if not cmds.objExists(selected + ".sdkmanager"):
-    cmds.addAttr(selected, longName="sdkmanager", attributeType="message")
-if cmds.connectionInfo(selected + ".sdkmanager", sourceFromDestination=True) != "sdkManager.message":
-    cmds.connectAttr("sdkManager.message", selected + ".sdkmanager", force=True)
+parent = cmds.listRelatives("sdk_manager", parent=True)
+if not parent or parent[0] != "origin_sub_ctl":
+    cmds.parent("sdk_manager", "origin_sub_ctl")
+if not cmds.objExists(selected + ".sdk_manager"):
+    cmds.addAttr(selected, longName="sdk_manager", attributeType="message")
+if cmds.connectionInfo(selected + ".sdk_manager", sourceFromDestination=True) != "sdk_manager.message":
+    cmds.connectAttr("sdk_manager.message", selected + ".sdk_manager", force=True)
 cmds.select(selected)"""
 
 add_data_command = """from maya import cmds
@@ -281,10 +283,18 @@ def rig_menu(parent_menu: str) -> None:
     )
     cmds.menuItem(
         parent=parent_menu,
-        label="Pack up Rig",
-        radialPosition="W",
-        command=pack_up_rig_command,
-        image="empty-state.png",
+        label="Attach Guide",
+        radialPosition="NE",
+        command=attach_guide_command,
+        image="plug-connected.svg",
+        enableCommandRepeat=True,
+    )
+    cmds.menuItem(
+        parent=parent_menu,
+        label="Detach Guide",
+        radialPosition="E",
+        command=detach_guide_command,
+        image="plug-connected-x.svg",
         enableCommandRepeat=True,
     )
 
@@ -324,56 +334,106 @@ def rig_menu(parent_menu: str) -> None:
     )
 
 
+apply_children_option_commnad = f"""from maya import cmds
+apply_children_state = cmds.optionVar(query="{CONTROLLER_APPLY_CHILDREN_OPTION}")
+state = False if apply_children_state else True
+cmds.optionVar(intValue=("{CONTROLLER_APPLY_CHILDREN_OPTION}", state))"""
+
 controller_panel_command = """from domino import controllerpanel
 controllerpanel.show()"""
 
+attach_guide_command = """from maya import cmds
+selected = [x for x in cmds.ls(selection=True) if cmds.objExists(x + ".is_domino_controller")]
+roots = []
+for sel in selected:
+    roots.append(cmds.listConnections(sel + ".message", type="transform", connections=True)[1])
+for root in set(roots):
+    if cmds.objExists(root.replace("rigRoot", "guideRoot")):
+        continue   
+    component = cmds.getAttr(root + ".component")
+    module = importlib.import_module("domino.component." + component)
+    rig = module.Rig()
+    attribute_data = module.DATA
+    for attr in attribute_data.copy():
+        if attr[attr.long_name]["multi"]:
+            value = []
+            for a in cmds.listAttr(root + "." + attr.long_name, multi=True) or []:
+                value.append(cmds.getAttr(root + "." + a))
+        else:
+            value = cmds.getAttr(root + "." + attr.long_name)
+        rig[attr.long_name]["value"] = value
+    rig.attach_guide()
+cmds.select(selected)"""
+
+detach_guide_command = """from maya import cmds
+selected = [x for x in cmds.ls(selection=True) if cmds.objExists(x + ".is_domino_controller")]
+roots = []
+for sel in selected:
+    roots.append(cmds.listConnections(sel + ".message", type="transform", connections=True)[1])
+for root in set(roots):
+    if not cmds.objExists(root.replace("rigRoot", "guideRoot")):
+        continue   
+    component = cmds.getAttr(root + ".component")
+    module = importlib.import_module("domino.component." + component)
+    rig = module.Rig()
+    attribute_data = module.DATA
+    for attr in attribute_data.copy():
+        if attr[attr.long_name]["multi"]:
+            value = []
+            for a in cmds.listAttr(root + "." + attr.long_name, multi=True) or []:
+                value.append(cmds.getAttr(root + "." + a))
+        else:
+            value = cmds.getAttr(root + "." + attr.long_name)
+        rig[attr.long_name]["value"] = value
+    rig.detach_guide()
+cmds.select(selected)"""
+
 reset_command = """from domino.core import Controller
 from maya import cmds
-tr_attrs = [".tx", ".ty", ".tz", ".rx", ".ry", ".rz"]
-s_attrs = [".sx", ".sy", ".sz"]
 for sel in cmds.ls(selection=True):
     if not cmds.objExists(sel + ".is_domino_controller"):
         continue
-    for attr in tr_attrs:
-        if cmds.getAttr(sel + attr, lock=True):
-            continue
-        cmds.setAttr(sel + attr, 0)
-    for attr in s_attrs:
-        if cmds.getAttr(sel + attr, lock=True):
-            continue
-        cmds.setAttr(sel + attr, 1)
-    keyable_attrs = cmds.listAttr(sel, userDefined=True, keyable=True) or []
-    for attr in keyable_attrs:
-        default_value = cmds.addAttr(sel + "." + attr, query=True, defaultValue=True)
-        cmds.setAttr(sel + "." + attr, default_value)"""
+    Controller.reset(node=sel)"""
 
 reset_child_command = """from domino.core import Controller
 from maya import cmds
 selected = cmds.ls(selection=True)
-tr_attrs = [".tx", ".ty", ".tz", ".rx", ".ry", ".rz"]
-s_attrs = [".sx", ".sy", ".sz"]
 controllers = []
 for sel in selected:
     if cmds.objExists(sel + ".is_domino_controller"):
         controllers.append(sel)
         controllers.extend(Controller.get_child_controller(sel))
-for con in controllers:
-    for attr in tr_attrs:
-        if cmds.getAttr(con + attr, lock=True):
-            continue
-        cmds.setAttr(con + attr, 0)
-    for attr in s_attrs:
-        if cmds.getAttr(con + attr, lock=True):
-            continue
-        cmds.setAttr(con + attr, 1)
-    keyable_attrs = cmds.listAttr(con, userDefined=True, keyable=True) or []
-    for attr in keyable_attrs:
-        default_value = cmds.addAttr(con + "." + attr, query=True, defaultValue=True)
-        cmds.setAttr(con + "." + attr, default_value)"""
+for con in set(controllers):
+    Controller.reset(node=con)"""
 
-symmetry_controller_command = """"""
+rt_symmetry_controller_command = """from maya import cmds
+from domino.core import Controller
+selected = [x for x in cmds.ls(selection=True) if cmds.objExists(x + ".is_domino_controller")]
+for sel in selected:
+    mirror_ctl = cmds.getAttr(sel + ".mirror_controller_name")
+    if not cmds.objExists(mirror_ctl) or mirror_ctl == sel: 
+        continue
+    t, r = Controller.get_mirror_RT(node=sel)
+    cmds.setAttr(mirror_ctl + ".t", *t)
+    cmds.setAttr(mirror_ctl + ".r", *r)"""
 
-flip_controller_command = """"""
+rt_flip_controller_command = """from maya import cmds
+from domino.core import Controller
+selected = [x for x in cmds.ls(selection=True) if cmds.objExists(x + ".is_domino_controller")]
+for sel in selected:
+    mirror_ctl = cmds.getAttr(sel + ".mirror_controller_name")
+    if not cmds.objExists(mirror_ctl) or mirror_ctl == sel: 
+        continue
+    t, r = Controller.get_mirror_RT(node=sel)
+    mirror_t = cmds.getAttr(mirror_ctl + ".t")[0]
+    mirror_r = cmds.getAttr(mirror_ctl + ".r")[0]
+    cmds.setAttr(mirror_ctl + ".t", *t)
+    cmds.setAttr(mirror_ctl + ".r", *r)
+    cmds.setAttr(sel + ".t", *mirror_t)
+    cmds.setAttr(sel + ".r", *mirror_r)"""
+
+matrix_symmetry_controller_command = """"""
+matrix_flip_controller_command = """"""
 
 preroll_command = """from domino.core import Controller
 from maya import cmds 
@@ -387,56 +447,72 @@ def controller_menu(
     parent_menu: str, is_assembly: bool = False, has_fkik_switch: bool = False
 ) -> None:
     cmds.menu(parent_menu, edit=True, deleteAllItems=True)
+    if CONTROLLER_APPLY_CHILDREN_OPTION not in cmds.optionVar(list=True):
+        cmds.optionVar(intValue=(CONTROLLER_APPLY_CHILDREN_OPTION, 0))
+    apply_children_state = cmds.optionVar(query=CONTROLLER_APPLY_CHILDREN_OPTION)
 
     cmds.menuItem(
         parent=parent_menu,
+        label="Apply children",
+        radialPosition="N",
+        command=apply_children_option_commnad,
+        checkBox=apply_children_state,
+    )
+    cmds.menuItem(
+        parent=parent_menu,
         label="Controller Panel",
-        radialPosition="NW",
+        radialPosition="NE",
         command=controller_panel_command,
-        image="refresh.png",
+        image="origin_shape.png",
+        enableCommandRepeat=True,
+    )
+    cmds.menuItem(
+        parent=parent_menu,
+        label="Attach Guide",
+        radialPosition="E",
+        command=attach_guide_command,
+        image="plug-connected.svg",
+        enableCommandRepeat=True,
+    )
+    cmds.menuItem(
+        parent=parent_menu,
+        label="Detach Guide",
+        radialPosition="SE",
+        command=detach_guide_command,
+        image="plug-connected-x.svg",
         enableCommandRepeat=True,
     )
     cmds.menuItem(
         parent=parent_menu,
         label="Reset",
-        radialPosition="NE",
-        command=reset_command,
+        radialPosition="NW",
+        command=reset_child_command if apply_children_state else reset_command,
         image="refresh.png",
         enableCommandRepeat=True,
     )
     cmds.menuItem(
         parent=parent_menu,
-        label="Reset Child",
-        radialPosition="E",
-        command=reset_child_command,
-        image="refresh.png",
-        enableCommandRepeat=True,
-    )
-    cmds.menuItem(
-        parent=parent_menu,
-        label="Symmetry",
+        label="Mirror / Flip (PLANE)",
         radialPosition="W",
         image="symmetryConstraint.svg",
-        command=symmetry_controller_command,
+        command=rt_symmetry_controller_command,
         enableCommandRepeat=True,
     )
     cmds.menuItem(
         parent=parent_menu,
-        label="Symmetry(Set Key)",
         optionBox=True,
         command='print("Mirror Set Key")',
     )
     cmds.menuItem(
         parent=parent_menu,
-        label="Flip",
+        label="Mirror / Flip (SRT)",
         radialPosition="SW",
         image="arrows-exchange.svg",
-        command=flip_controller_command,
+        command=rt_flip_controller_command,
         enableCommandRepeat=True,
     )
     cmds.menuItem(
         parent=parent_menu,
-        label="Flip(Set Key)",
         optionBox=True,
         command='print("Flip Set Key")',
     )
@@ -459,7 +535,6 @@ def controller_menu(
         )
         cmds.menuItem(
             parent=parent_menu,
-            label="FK / IK Switch(Set Key)",
             optionBox=True,
             command='print("fk/ik Set Key")',
         )
