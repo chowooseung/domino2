@@ -8,8 +8,7 @@ def get_look_at_matrix(
     pos: om.MVector,
     look_at: om.MVector,
     up: om.MVector,
-    axis: str = "xy",
-    negate: bool = False,
+    axis: list = ["x", "y"],
 ) -> om.MMatrix:
     """set lookAt(aim) Matrix
 
@@ -22,63 +21,84 @@ def get_look_at_matrix(
 
     Returns:
         om.MMatrix: aim matrix
+
+    Example:
+        >>> all_axis = [
+        >>>     ("x", "y"),
+        >>>     ("x", "-y"),
+        >>>     ("-x", "y"),
+        >>>     ("-x", "-y"),
+        >>>     ("y", "x"),
+        >>>     ("y", "-x"),
+        >>>     ("-y", "x"),
+        >>>     ("-y", "-x"),
+        >>>     ("x", "z"),
+        >>>     ("x", "-z"),
+        >>>     ("-x", "z"),
+        >>>     ("-x", "-z"),
+        >>>     ("z", "x"),
+        >>>     ("z", "-x"),
+        >>>     ("-z", "x"),
+        >>>     ("-z", "-x"),
+        >>>     ("y", "z"),
+        >>>     ("y", "-z"),
+        >>>     ("-y", "z"),
+        >>>     ("-y", "-z"),
+        >>>     ("z", "y"),
+        >>>     ("z", "-y"),
+        >>>     ("-z", "y"),
+        >>>     ("-z", "-y"),
+        >>> ]
+
+        >>> pos = om.MVector((0, 0, 0))
+        >>> look_at = om.MVector((2, 0, 0))
+        >>> up = om.MVector((0, 2, 0))
+
+        >>> for axis in all_axis:
+        >>>    axis_obj = nurbscurve.create("axis", (0, 0, 0))
+        >>>    axis_obj = cmds.rename(axis_obj, (axis[0] + axis[1]).replace("-", "m"))
+
+        >>>    m = matrix.get_look_at_matrix(pos, look_at, up, axis=axis)
+        >>>    cmds.xform(axis_obj, matrix=m)
+
     """
-    if negate:
-        primary = (pos - look_at).normalize()
-    else:
-        primary = (look_at - pos).normalize()
+    primary = (look_at - pos).normalize()
+    temp = (primary ^ up.normalize()).normalize()
+    secondary = (temp ^ primary).normalize()
 
-    third = (primary ^ up.normalize()).normalize()
-    secondary = (third ^ primary).normalize()
+    if "x" in axis[0]:
+        X = primary
+        if "-" in axis[0]:
+            X *= -1
+    if "y" in axis[0]:
+        Y = primary
+        if "-" in axis[0]:
+            Y *= -1
+    if "z" in axis[0]:
+        Z = primary
+        if "-" in axis[0]:
+            Z *= -1
 
-    if axis == "xy":
-        X = primary
-        Y = secondary
-        Z = third
-    elif axis == "xz":
-        X = primary
-        Z = secondary
-        Y = -1 * third
-    elif axis == "x-z":
-        X = primary
-        Z = -1 * secondary
-        Y = third
-    elif axis == "yx":
-        Y = primary
+    if "x" in axis[1]:
         X = secondary
-        Z = -1 * third
-    elif axis == "yz":
-        Y = primary
-        Z = secondary
-        X = third
-    elif axis == "zx":
-        Z = primary
-        X = secondary
-        Y = third
-    elif axis == "z-x":
-        Z = primary
-        X = -1 * secondary
-        Y = -1 * third
-    elif axis == "zy":
-        Z = primary
+        if "-" in axis[1]:
+            X *= -1
+    if "y" in axis[1]:
         Y = secondary
-        X = -1 * third
-    elif axis == "x-y":
-        X = primary
-        Y = -1 * secondary
-        Z = -1 * third
-    elif axis == "-xz":
-        X = -1 * primary
+        if "-" in axis[1]:
+            Y *= -1
+    if "z" in axis[1]:
         Z = secondary
-        Y = third
-    elif axis == "-xy":
-        X = -1 * primary
-        Y = secondary
-        Z = third
-    elif axis == "-yx":
-        Y = -1 * primary
-        X = secondary
-        Z = third
+        if "-" in axis[1]:
+            Z *= -1
+
+    all_axis = axis[0] + axis[1]
+    if "x" in all_axis and "y" in all_axis:
+        Z = (X ^ Y).normalize()
+    if "x" in all_axis and "z" in all_axis:
+        Y = (Z ^ X).normalize()
+    if "y" in all_axis and "z" in all_axis:
+        X = (Y ^ Z).normalize()
 
     m = []
     m.extend([X[0], X[1], X[2], 0.0])
