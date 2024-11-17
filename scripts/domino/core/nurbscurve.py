@@ -13,7 +13,9 @@ def replace_shape(source: str, destination: str) -> None:
     if destination_shapes:
         cmds.delete(destination_shapes)
     shapes = cmds.parent(source_shapes, destination, relative=True, shape=True)
-    [cmds.rename(shape, destination + "Shape") for shape in shapes]
+    for shape in shapes:
+        shape = cmds.rename(shape, destination + "Shape")
+        cmds.setAttr(shape + ".isHistoricallyInteresting", 0)
 
 
 def translate_shape(node: str, t: list) -> None:
@@ -70,7 +72,9 @@ def mirror_shape(node: str, left_str: str = "_L", right_str: str = "_R") -> None
             relative=True,
             shape=True,
         )
-        [cmds.rename(shape, destination + "Shape") for shape in shapes]
+        for shape in shapes:
+            cmds.rename(shape, destination + "Shape")
+            cmds.setAttr(shape + ".isHistoricallyInteresting", 0)
         delete_list.append(dup_curve)
     cmds.delete(delete_list)
 

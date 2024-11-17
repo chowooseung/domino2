@@ -35,6 +35,7 @@ DATA = [
     attribute.String(longName="controller_extension", value=controller_extension),
     attribute.String(longName="joint_extension", value=joint_extension),
     attribute.Matrix(longName="guide_matrix", multi=True, value=[list(ORIGINMATRIX)]),
+    attribute.Matrix(longName="npo_matrix", multi=True, value=[list(ORIGINMATRIX)]),
     attribute.Integer(longName="guide_mirror_type", multi=True),
 ]
 
@@ -58,9 +59,13 @@ class Rig(component.Rig):
     def populate_controller(self):
         if not self["controller"]:
             self._controller = []
-            self.add_controller(description="")
-            self.add_controller(description="sub")
-            self.add_controller(description="COG")
+            self.add_controller(description="", parent_controllers=[])
+            self.add_controller(
+                description="sub", parent_controllers=[(self.identifier, "")]
+            )
+            self.add_controller(
+                description="COG", parent_controllers=[(self.identifier, "sub")]
+            )
 
     def populate_output(self):
         self.add_output(description="", extension="output")
@@ -86,7 +91,6 @@ class Rig(component.Rig):
         # controller
         origin_npo, origin_ctl = self["controller"][0].create(
             parent=self.rig_root,
-            parent_controllers=[],
             shape=(
                 self["controller"][0]["shape"]
                 if "shape" in self["controller"][0]
@@ -97,7 +101,6 @@ class Rig(component.Rig):
 
         sub_npo, sub_ctl = self["controller"][1].create(
             parent=origin_ctl,
-            parent_controllers=[(self.identifier, "")],
             shape=(
                 self["controller"][1]["shape"]
                 if "shape" in self["controller"][1]
@@ -108,7 +111,6 @@ class Rig(component.Rig):
 
         COG_npo, COG_ctl = self["controller"][2].create(
             parent=sub_ctl,
-            parent_controllers=[(self.identifier, "sub")],
             shape=(
                 self["controller"][2]["shape"]
                 if "shape" in self["controller"][2]

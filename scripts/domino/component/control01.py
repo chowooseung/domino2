@@ -18,6 +18,7 @@ DATA = [
     attribute.Enum(longName="side", enumName=Name.side_list, value=0),
     attribute.Integer(longName="index", minValue=0),
     attribute.Matrix(longName="guide_matrix", multi=True, value=[list(ORIGINMATRIX)]),
+    attribute.Matrix(longName="npo_matrix", multi=True, value=[list(ORIGINMATRIX)]),
     attribute.Integer(longName="guide_mirror_type", multi=True),
     # 부모로 사용할 상위 component 의 output index
     attribute.Integer(
@@ -49,7 +50,7 @@ class Rig(component.Rig):
     def populate_controller(self):
         if not self["controller"]:
             for i in range(len(self["guide_matrix"]["value"])):
-                self.add_controller(description=i)
+                self.add_controller(description=i, parent_controllers=[])
 
     def populate_output(self):
         if not self["output"]:
@@ -69,11 +70,6 @@ class Rig(component.Rig):
             # controller
             npo, ctl = self["controller"][i].create(
                 parent=self.rig_root,
-                parent_controllers=(
-                    self["controller"][i]["parent_controllers"]
-                    if "parent_controllers" in self["controller"][i]
-                    else []
-                ),
                 shape=(
                     self["controller"][i]["shape"]
                     if "shape" in self["controller"][i]

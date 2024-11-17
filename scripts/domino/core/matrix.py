@@ -10,14 +10,13 @@ def get_look_at_matrix(
     up: om.MVector,
     axis: list = ["x", "y"],
 ) -> om.MMatrix:
-    """set lookAt(aim) Matrix
+    """get lookAt(aim) Matrix
 
     Args:
         pos (om.MVector): position vector
         lookAt (om.MVector): target vector
         up (om.MVector): up vector
-        axis (str, optional): primary, secondary axis. Defaults to "xy".
-        negate (bool, optional): primary 축 뒤집기. Defaults to False.
+        axis (list, optional): primary, secondary axis. Defaults to ["x", "y"]
 
     Returns:
         om.MMatrix: aim matrix
@@ -60,7 +59,6 @@ def get_look_at_matrix(
 
         >>>    m = matrix.get_look_at_matrix(pos, look_at, up, axis=axis)
         >>>    cmds.xform(axis_obj, matrix=m)
-
     """
     primary = (look_at - pos).normalize()
     temp = (primary ^ up.normalize()).normalize()

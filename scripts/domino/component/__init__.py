@@ -1,6 +1,6 @@
 # domino
 from domino.core import Name, Transform, Joint, Controller, Curve, attribute, nurbscurve
-from domino.core.utils import build_log, logger
+from domino.core.utils import build_log, logger, maya_version, used_plugins
 
 # maya
 from maya import cmds
@@ -73,7 +73,7 @@ class Rig(dict):
     def assembly(self) -> T:
         component = self
         while component.parent is not None:
-            component = self.parent
+            component = component.parent
         return component
 
     @property
@@ -138,9 +138,6 @@ class Rig(dict):
         cmds.addAttr(
             self.guide_root, longName="is_domino_guideRoot", attributeType="bool"
         )
-        cmds.addAttr(
-            self.guide_root, longName="npo_matrix", attributeType="matrix", multi=True
-        )
 
         for long_name, data in self.items():
             if "dataType" not in data and "attributeType" not in data:
@@ -169,9 +166,6 @@ class Rig(dict):
         cmds.addAttr(rig_root, longName="children", attributeType="message")
         cmds.addAttr(
             rig_root, longName="controller", attributeType="message", multi=True
-        )
-        cmds.addAttr(
-            rig_root, longName="npo_matrix", attributeType="matrix", multi=True
         )
         cmds.addAttr(rig_root, longName="output", attributeType="message", multi=True)
         cmds.addAttr(
@@ -320,14 +314,13 @@ class Rig(dict):
         def create(
             self,
             parent: str,
-            parent_controllers: list,
             shape: dict | str,
             color: int | om.MColor,
             npo_matrix_index: int | None = None,
             fkik_command_attr: str = "",
         ) -> tuple:
             parent_controllers_str = []
-            for identifier, description in parent_controllers:
+            for identifier, description in self["parent_controllers"]:
                 parent_controllers_str.append(
                     Name.create(
                         convention=Name.controller_name_convention,
@@ -354,6 +347,21 @@ class Rig(dict):
             )
             npo, ctl = ins.create()
             if npo_matrix_index is not None:
+                # multi index 초과하는 범위를 초기화 없이 연결 할 경우
+                # getAttr 로 npo_matrix[npo_matrix_index]를 query 시
+                # None 값으로 return 됨.
+                # 초기 값 세팅을 해줘야 함.
+                if (
+                    cmds.getAttr(
+                        self.instance.rig_root + f".npo_matrix[{npo_matrix_index}]"
+                    )
+                    is None
+                ):
+                    cmds.setAttr(
+                        self.instance.rig_root + f".npo_matrix[{npo_matrix_index}]",
+                        ORIGINMATRIX,
+                        type="matrix",
+                    )
                 cmds.connectAttr(
                     self.instance.rig_root
                     + ".npo_matrix[{0}]".format(npo_matrix_index),
@@ -378,54 +386,27 @@ class Rig(dict):
             if fkik_command_attr:
                 cmds.addAttr(ctl, longName="fkik_command_attr", dataType="message")
                 cmds.connectAttr(fkik_command_attr, ctl + ".fkik_command_attr")
+            self.node = ctl
             return npo, ctl
 
         def __init__(
             self,
             description: str,
+            parent_controllers: list,
             rig_instance: T,
         ):
             self.instance = rig_instance
             self.instance["controller"].append(self)
             self["description"] = description
+            self["parent_controllers"] = parent_controllers
             self._node = self.name
 
-    def add_controller(self, description: str) -> None:
-        self._Controller(description=description, rig_instance=self)
-
-    @build_log(logging.DEBUG)
-    def add_driver_transform(self, description: str, source_plug: str) -> tuple:
-        name, side, index = self.identifier
-
-        multMatrix = cmds.createNode("multMatrix")
-        cmds.connectAttr(source_plug, multMatrix + ".matrixIn[0]")
-        cmds.connectAttr(
-            self.rig_root + ".worldInverseMatrix[0]", multMatrix + ".matrixIn[1]"
-        )
-
-        ins = Transform(
-            parent=self.rig_root,
-            name=name,
-            side=side,
-            index=index,
+    def add_controller(self, description: str, parent_controllers: list) -> None:
+        self._Controller(
             description=description,
-            extension="driver",
-            m=ORIGINMATRIX,
+            parent_controllers=parent_controllers,
+            rig_instance=self,
         )
-        driver = ins.create()
-        cmds.connectAttr(multMatrix + ".matrixSum", driver + ".offsetParentMatrix")
-        if cmds.objExists(self.rig_graph):
-            next_index = len(
-                cmds.listConnections(
-                    self.rig_graph + ".driver_matrix", source=True, destination=False
-                )
-                or []
-            )
-            cmds.connectAttr(
-                driver + ".dagLocalMatrix",
-                self.rig_graph + f".driver_matrix[{next_index}]",
-            )
-        return driver
 
     @build_log(logging.DEBUG)
     def add_joint(
@@ -562,6 +543,7 @@ class Rig(dict):
             )
             cmds.parentConstraint(output, jnt)
             cmds.scaleConstraint(output, jnt)
+            self._node = jnt
             return jnt
 
         def __init__(
@@ -690,6 +672,18 @@ class Rig(dict):
         for i, m in enumerate(self["guide_matrix"]["value"]):
             cmds.setAttr(self.rig_root + f".guide_matrix[{i}]", m, type="matrix")
 
+    def populate(self):
+
+        def populate_all_component(component: T) -> None:
+            component.populate_controller()
+            component.populate_output()
+            component.populate_output_joint()
+
+            for child in component["children"]:
+                populate_all_component(child)
+
+        populate_all_component(self.assembly)
+
     def attach_guide(self) -> None:
         self.guide()
         for long_name, data in self.items():
@@ -706,8 +700,6 @@ class Rig(dict):
                 cmds.connectAttr(
                     self.guide_root + "." + long_name, self.rig_root + "." + long_name
                 )
-        for attr in cmds.listAttr(self.rig_root + ".npo_matrix", multi=True) or []:
-            cmds.connectAttr(self.guide_root + "." + attr, self.rig_root + "." + attr)
 
         for output in (
             cmds.listConnections(
@@ -729,7 +721,7 @@ class Rig(dict):
         ):
             children = cmds.listRelatives(output, children=True, type="transform") or []
             for child in children:
-                cons.append(cmds.parentConstraint(child, query=True)[0])
+                cons.append(cmds.parentConstraint(child, query=True))
         # constraint 삭제시 마지막 값으로 업데이트 되지 않는 문제. 강제 업데이트.
         for attr in cmds.listAttr(self.rig_root + ".guide_matrix", multi=True):
             cmds.getAttr(self.rig_root + "." + attr)
@@ -740,10 +732,8 @@ class Rig(dict):
         if not cmds.listRelatives(GUIDE):
             cmds.delete(GUIDE)
 
-    def set_output_joint_hierarchy(self) -> None:
-        pass
-
-    def mirror_guide(self) -> None:
+    def mirror_guide_matrices(self) -> list:
+        # TODO
         guides = cmds.listConnections(
             self.guide_root + ".guide_matrix", source=True, destination=False
         )
@@ -754,19 +744,199 @@ class Rig(dict):
             mirror_matrices.append(
                 Transform.get_mirror_matrix(m, mirror_type=mirror_type)
             )
-        for guide, mirror_m in zip(guides, mirror_matrices):
-            cmds.xform(guide, matrix=mirror_m, worldSpace=True)
+        return mirror_matrices
+
+    def rename_component(
+        self, new_name: str, new_side: int, new_index: int, apply_to_output=False
+    ):
+        identifiers = []
+
+        def collect_identifier(component):
+            identifiers.append(component.identifier)
+            for child in component["children"]:
+                collect_identifier(child)
+
+        collect_identifier(self.assembly)
+
+        validation = True
+        for identifier in identifiers:
+            if (
+                identifier[0] == new_name
+                and identifier[1] == Name.side_str_list[new_side]
+                and identifier[2] == new_index
+            ):
+                validation = False
+        if not validation:
+            return
+
+        name, side, index = self.identifier
+
+        self["name"]["value"] = new_name
+        self["side"]["value"] = new_side
+        self["index"]["value"] = new_index
+
+        if not apply_to_output:
+            return
+
+        for convention in [
+            self.assembly["controller_name_convention"]["value"],
+            self.assembly["joint_name_convention"]["value"],
+        ]:
+            name_parts = convention.split("_")
+            for i, parts in enumerate(name_parts):
+                if "name" in parts:
+                    name_index = i
+                if "side" in parts:
+                    side_index = i
+                if "index" in parts:
+                    index_index = i
+
+            for node in cmds.ls(type="transform"):
+                node_parts = node.split("_")
+                if (
+                    name in node_parts[name_index]
+                    and side in node_parts[side_index]
+                    and str(index) in node_parts[index_index]
+                ):
+                    node_parts[name_index] = node_parts[name_index].replace(
+                        name, new_name
+                    )
+                    node_parts[side_index] = node_parts[side_index].replace(
+                        side, Name.side_str_list[new_side]
+                    )
+                    node_parts[index_index] = node_parts[index_index].replace(
+                        str(index), str(new_index)
+                    )
+                    cmds.rename(node, "_".join(node_parts))
+
+        if cmds.objExists(self.guide_root):
+            cmds.setAttr(self.guide_root + ".name", new_name, type="string")
+            cmds.setAttr(self.guide_root + ".side", new_side)
+            cmds.setAttr(self.guide_root + ".index", new_index)
+        else:
+            cmds.setAttr(self.rig_root + ".name", new_name, type="string")
+            cmds.setAttr(self.rig_root + ".side", new_side)
+            cmds.setAttr(self.rig_root + ".index", new_index)
+
+    def duplicate_component(self, apply_to_output: bool = False) -> None:
+        # TODO
+
+        identifiers = []
+
+        def get_all_identifier(component: T):
+            identifiers.append(component.identifier)
+
+            for child in component["children"]:
+                get_all_identifier(child)
+
+        get_all_identifier(self.assembly)
+
+    def mirror_component(self, apply_to_output: bool = False):
+        # TODO
+
+        this_component_side = self["side"]["value"]
+
+        def is_mirrorable_component(component: T) -> bool:
+            side = component["side"]["value"]
+            if side != this_component_side or side == 0:
+                return False
+
+            valid = True
+            for child in component["children"]:
+                valid = is_mirrorable_component(child)
+                if not valid:
+                    return False
+
+            if valid:
+                return True
+
+        if not is_mirrorable_component(component=self):
+            return
+
+        def get_all_identifier(component: T, data: list) -> None:
+            data.append(component.identifier)
+
+            for child in component["children"]:
+                get_all_identifier(child, data)
+
+        all_identifiers = []
+        get_all_identifier(self.assembly, all_identifiers)
+
+        mirror_side = 2 if this_component_side == 1 else 1
+
+        def set_side_and_parent(component: T, parent_component: T) -> None:
+            component["side"]["value"] = mirror_side
+            component.parent = parent_component
+
+            for child in component["children"]:
+                set_side_and_parent(component=child, parent_component=component)
+
+        new_component = copy.deepcopy(self)
+        set_side_and_parent(component=new_component, parent_component=self.parent)
+
+        mirror_identifiers = []
+        get_all_identifier(new_component, mirror_identifiers)
+
+        for identifier in mirror_identifiers:
+            if identifier in all_identifiers:
+                return
+
+        if not apply_to_output:
+            return
+
+    def remove_component(self):
+
+        def pop_component(component, parent_component):
+            if component.identifier == self.identifier:
+                if parent_component is None:
+                    return
+                index = parent_component["children"].index(self)
+                parent_component["children"].pop(index)
+                return
+
+            for child in component["children"]:
+                pop_component(component=child, parent_component=component)
+
+        pop_component(self.assembly, None)
+
+        name_parts = self.assembly["joint_name_convention"]["value"].split("_")
+        for i, parts in enumerate(name_parts):
+            if "name" in parts:
+                name_index = i
+            if "side" in parts:
+                side_index = i
+            if "index" in parts:
+                index_index = i
+
+        name, side, index = self.identifier
+        nodes = []
+        for node in cmds.ls(type="transform"):
+            node_parts = node.split("_")
+            if (
+                name in node_parts[name_index]
+                and side in node_parts[side_index]
+                and str(index) in node_parts[index_index]
+            ):
+                nodes.append(node)
+        if nodes:
+            cmds.delete(nodes)
+        if cmds.objExists(self.rig_root):
+            cmds.delete(self.rig_root)
+        if cmds.objExists(self.guide_root):
+            cmds.delete(self.guide_root)
+        if self.parent == None:
+            if cmds.objExists(RIG):
+                cmds.delete(RIG)
+            if cmds.objExists(GUIDE):
+                cmds.delete(GUIDE)
 
 
 @build_log(logging.INFO)
-def build(context, component) -> dict:
+def build(context: dict, component: T) -> dict:
 
-    def recursive_build_component(component):
-        component.populate_controller()
-        component.populate_output()
-        component.populate_output_joint()
+    def recursive_build_component(component: T) -> None:
         component.rig()
-        identifier = "_".join([str(x) for x in component.identifier if x])
+        identifier = "_".join([str(x) for x in component.identifier if str(x)])
         context[identifier] = {
             "controller": component["controller"],
             "output": component["output"],
@@ -775,14 +945,54 @@ def build(context, component) -> dict:
         for child in component["children"]:
             recursive_build_component(child)
 
+    def populate_rig_info() -> None:
+        info = "mayaVersion : " + maya_version() + "\n"
+        info += "usedPlugins : "
+        plugins = used_plugins()
+        for i in range(int(len(plugins) / 2)):
+            info += "\n\t" + plugins[i * 2] + "\t" + plugins[i * 2 + 1]
+        cmds.addAttr("rig", longName="notes", dataType="string")
+        cmds.setAttr("rig.notes", info, type="string")
+        cmds.setAttr("rig.notes", lock=True)
+
+    def recursive_set_output_joint_hierarchy(component: T) -> None:
+        name, side, index = component.identifier
+        for output_joint in component["output_joint"]:
+            joint_name = Name.create(
+                convention=Name.joint_name_convention,
+                name=name,
+                side=side,
+                index=index,
+                description=output_joint["description"],
+                extension=Name.joint_extension,
+            )
+            if "name" in output_joint:
+                joint_name = cmds.rename(joint_name, output_joint["name"])
+            parent = cmds.listRelatives(joint_name, parent=True)[0]
+            if "parent" in output_joint and parent != output_joint["parent"]:
+                cmds.parent(joint_name, output_joint["parent"])
+
+        for child in component["children"]:
+            recursive_set_output_joint_hierarchy(child)
+
     # 하위 component 가 없는 상태로 attch guide 시 constraint 이 걸리지 않음.
-    def recursive_attach_guide(component):
+    def recursive_attach_guide(component: T) -> None:
         component.attach_guide()
         for child in component["children"]:
             recursive_attach_guide(child)
 
-    recursive_build_component(component=component)
-    recursive_attach_guide(component=component)
+    try:
+        cmds.undoInfo(openChunk=True)
+        # rig build
+        recursive_build_component(component=component)
+        # setup output joint
+        recursive_set_output_joint_hierarchy(component=component)
+        # rig info
+        populate_rig_info()
+        # attach guide
+        recursive_attach_guide(component=component)
+    finally:
+        cmds.undoInfo(closeChunk=True)
 
     @build_log(logging.DEBUG)
     def print_context(*args, **kwargs): ...
@@ -830,8 +1040,30 @@ def serialize() -> T:
             cmds.listConnections(node + ".controller", source=True, destination=False)
             or []
         ):
-            ctl_ins = component._Controller("", component)
+            ctl_ins = component._Controller(
+                description="", parent_controllers=[], rig_instance=component
+            )
             ctl_ins.node = ctl
+
+        # output
+        for output in (
+            cmds.listConnections(node + ".output", source=True, destination=False) or []
+        ):
+            description = cmds.getAttr(output + ".description")
+            extension = cmds.getAttr(output + ".extension")
+            component._Output(
+                description=description, extension=extension, rig_instance=component
+            )
+
+        # output joint
+        for output_joint in (
+            cmds.listConnections(node + ".output_joint", source=True, destination=False)
+            or []
+        ):
+            output_joint_ins = component._OutputJoint(
+                description="", rig_instance=component
+            )
+            output_joint_ins.node = output_joint
 
         if parent:
             component.parent = parent
@@ -857,12 +1089,22 @@ def deserialize(data: dict, create=True) -> T:
 
         for attr in module.DATA:
             component[attr.long_name]["value"] = component_data[attr.long_name]["value"]
-
+        # controller
         for controller_data in component_data["controller"]:
-            ins = component._Controller("", component)
+            ins = component._Controller(
+                description="", parent_controllers=[], rig_instance=component
+            )
             ins.data = controller_data
-        component["output"] = component_data["output"]
-        component["output_joint"] = component_data["output_joint"]
+        # output
+        for output_data in component_data["output"]:
+            ins = component._Output(
+                description="", extension="", rig_instance=component
+            )
+            ins.data = output_data
+        # output joint
+        for output_joint_data in component_data["output_joint"]:
+            ins = component._OutputJoint(description="", rig_instance=component)
+            ins.data = output_joint_data
 
         if parent:
             component.parent = parent

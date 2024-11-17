@@ -164,18 +164,8 @@ def guide_menu(parent_menu: str) -> None:
 
 validation_command = "from domino import validation;validation.show()"
 
-pack_up_rig_command = """from maya import cmds
-from domino.core import utils
-if cmds.objExists("guide"):
-    cmds.delete("guide")
-info = "mayaVersion : " + utils.maya_version() + "\\n"
-info += "usedPlugins : "
-plugins = utils.used_plugins()
-for i in range(int(len(plugins) / 2)):
-    info += "\\n\\t" + plugins[i * 2] + "\\t" + plugins[i * 2 + 1]
-cmds.addAttr("rig", longName="notes", dataType="string")
-cmds.setAttr("rig.notes", info, type="string")
-cmds.setAttr("rig.notes", lock=True)"""
+initialize_output_joint_command = """from maya import cmds
+"""
 
 spacemanager_command = """from maya import cmds
 from domino import spacemanager
@@ -279,22 +269,6 @@ def rig_menu(parent_menu: str) -> None:
         radialPosition="N",
         command=validation_command,
         image="list.svg",
-        enableCommandRepeat=True,
-    )
-    cmds.menuItem(
-        parent=parent_menu,
-        label="Attach Guide",
-        radialPosition="NE",
-        command=attach_guide_command,
-        image="plug-connected.svg",
-        enableCommandRepeat=True,
-    )
-    cmds.menuItem(
-        parent=parent_menu,
-        label="Detach Guide",
-        radialPosition="E",
-        command=detach_guide_command,
-        image="plug-connected-x.svg",
         enableCommandRepeat=True,
     )
 
@@ -538,6 +512,11 @@ def controller_menu(
             optionBox=True,
             command='print("fk/ik Set Key")',
         )
+    cmds.menuItem(
+        parent=parent_menu,
+        label="Select child controllers",
+        enableCommandRepeat=True,
+    )
 
 
 select_skel_command = """from maya import cmds

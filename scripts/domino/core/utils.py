@@ -69,15 +69,20 @@ def build_log(level):
                         call_msg += f"Identifier {kwargs['identifier']}\n\n"
                         call_msg += "\t\tController\n"
                         for ctl in kwargs["controller"]:
-                            call_msg += f"\t\t\tdescription {ctl['description']}\n"
+                            call_msg += f"\t\t\tdescription \"{ctl['description']}\"\n"
                             call_msg += f"\t\t\t\tparent controller\n"
                             for parent_ctl in ctl["parent_controllers"]:
                                 parent_identifier = "_".join(
                                     [str(x) for x in parent_ctl[0] if x]
                                 )
-                                call_msg += (
-                                    f"\t\t\t\t\t{parent_identifier}, {parent_ctl[1]}\n"
-                                )
+                                call_msg += f'\t\t\t\t\tidentifier : {parent_identifier}, description : "{parent_ctl[1]}"\n'
+                            if (
+                                kwargs["identifier"] == "origin"
+                                and ctl["description"] == ""
+                            ):
+                                call_msg += f"\t\t\t\t\tROOT\n"
+                            elif not ctl["parent_controllers"]:
+                                call_msg += f"\t\t\t\t\t**WARNING parent controller 를 설정해주세요**\n"
                         call_msg += "\t\tOutput\n"
                         for output in kwargs["output"]:
                             call_msg += f"\t\t\tdescription {output['description']} extension {output['extension']}\n"

@@ -640,6 +640,7 @@ class Controller(Transform):
                 self._node, longName="child_controllers", attributeType="message"
             )
         cmds.controller(self._node)
+        cmds.setAttr(self._node + "_tag.isHistoricallyInteresting", 0)
         [self.add_parent_controller(c) for c in self._parent_controllers]
         return self._npo, self._node
 
