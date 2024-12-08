@@ -88,8 +88,6 @@ def popup_menu(parent_menu: str, *args, **kwargs) -> None:
         mel.eval("buildObjectMenuItemsNow " + parent_menu)
 
 
-manager_command = """"""
-
 settings_command = """from maya import cmds, mel
 selected = cmds.ls(selection=True)
 if cmds.objExists(selected[0] + ".is_domino_guide_root"):
@@ -99,8 +97,6 @@ if cmds.objExists(selected[0] + ".is_domino_guide"):
     cmds.select(cmds.listConnections(selected[0] + ".worldMatrix[0]", source=False, destination=True, type="transform"))
     cmds.AttributeEditor()
     mel.eval('setLocalView "Rigging" "" 1;')"""
-
-symmetry_guide_command = """"""
 
 matchTR_command = """from maya import cmds
 selected = cmds.ls(selection=True)
@@ -116,38 +112,45 @@ if len(selected) == 3:
     cmds.delete(cmds.aimConstraint(selected[1], selected[0], aimVector=(1, 0, 0), upVector=(0, 1, 0), worldUpType="object", worldUpObject=selected[2]))
     cmds.select(selected)"""
 
+detach_guide_command = """from maya import cmds
+import importlib
+selected = [x for x in cmds.ls(selection=True) if cmds.objExists(x + ".is_domino_guide")]
+roots = []
+for sel in selected:
+    roots.append(cmds.listConnections(sel + ".worldMatrix[0]", type="transform", connections=True)[1])
+for root in set(roots):
+    if not cmds.objExists(root.replace("rigRoot", "guideRoot")):
+        continue   
+    component = cmds.getAttr(root + ".component")
+    module = importlib.import_module("domino.component." + component)
+    rig = module.Rig()
+    attribute_data = module.DATA
+    for attr in attribute_data.copy():
+        if attr[attr.long_name]["multi"]:
+            value = []
+            for a in cmds.listAttr(root + "." + attr.long_name, multi=True) or []:
+                value.append(cmds.getAttr(root + "." + a))
+        else:
+            value = cmds.getAttr(root + "." + attr.long_name)
+        rig[attr.long_name]["value"] = value
+    rig.detach_guide()"""
+
 
 def guide_menu(parent_menu: str) -> None:
     cmds.menu(parent_menu, edit=True, deleteAllItems=True)
 
     cmds.menuItem(
         parent=parent_menu,
-        label="Manager",
-        radialPosition="N",
-        image="swipe.svg",
-        command=manager_command,
-    )
-    cmds.menuItem(
-        parent=parent_menu,
         label="Settings",
-        radialPosition="NE",
+        radialPosition="N",
         command=settings_command,
         image="advancedSettings.png",
     )
 
     cmds.menuItem(
         parent=parent_menu,
-        label="Symmetry",
-        radialPosition="W",
-        image="symmetryConstraint.svg",
-        enableCommandRepeat=True,
-        command=symmetry_guide_command,
-    )
-
-    cmds.menuItem(
-        parent=parent_menu,
         label="Match TR",
-        radialPosition="SE",
+        radialPosition="NE",
         command=matchTR_command,
         image="status-change.svg",
         enableCommandRepeat=True,
@@ -155,10 +158,17 @@ def guide_menu(parent_menu: str) -> None:
     cmds.menuItem(
         parent=parent_menu,
         label="Aim",
-        radialPosition="S",
+        radialPosition="E",
         command=aim_command,
         image="aimConstraint.png",
         enableCommandRepeat=True,
+    )
+    cmds.menuItem(
+        parent=parent_menu,
+        label="Detach Guide",
+        radialPosition="SW",
+        command=detach_guide_command,
+        image="plug-connected-x.svg",
     )
 
 
@@ -210,46 +220,39 @@ if cmds.connectionInfo(selected + ".sdk_manager", sourceFromDestination=True) !=
 cmds.select(selected)"""
 
 add_data_command = """from maya import cmds
-from domino.core import Curve, Polygon
-assembly_node = ""
-for n in cmds.ls(type="transform"):
-    if (
-        cmds.objExists(n + ".is_domino_rig_root")
-        and cmds.getAttr(n + ".component") == "assembly"
-    ):
-        assembly_node = n
-if not cmds.objExists(assembly_node + ".custom_curve_data"):        
-    cmds.addAttr(assembly_node, longName="custom_curve_data", attributeType="message", multi=True)
-if not cmds.objExists(assembly_node + ".custom_polygon_data"):        
-    cmds.addAttr(assembly_node, longName="custom_polygon_data", attributeType="message", multi=True)
-if cmds.objExists("guide"):
-    selected = cmds.ls(selection=True)
+selected = cmds.ls(selection=True)
+if cmds.objExists("rig"):
+    if not cmds.objExists("rig.custom_curve_data"):        
+        cmds.addAttr("rig", longName="custom_curve_data", attributeType="message", multi=True)
+    if not cmds.objExists("rig.custom_polygon_data"):        
+        cmds.addAttr("rig", longName="custom_polygon_data", attributeType="message", multi=True)
     for sel in selected[1:]:
         shapes = cmds.listRelatives(sel, shapes=True)
         if not shapes:
             continue
         if cmds.nodeType(shapes[0]) == "nurbsCurve":
-            cmds.parent(sel, selected[0])
+            cmds.parent(sel, "rig")
             next_index = len(
                 cmds.listConnections(
-                    assembly_node + ".custom_curve_data",
+                    "rig.custom_curve_data",
                     source=True,
                     destination=False,
                 )
                 or []
             )
-            cmds.connectAttr(sel + ".message", f"{assembly_node}.custom_curve_data[{next_index}]")
+            cmds.connectAttr(sel + ".message", f"rig.custom_curve_data[{next_index}]")
         elif cmds.nodeType(shapes[0]) == "mesh":
-            cmds.parent(sel, selected[0])
+            cmds.parent(sel, "rig")
             next_index = len(
                 cmds.listConnections(
-                    assembly_node + ".custom_polygon_data",
+                    "rig.custom_polygon_data",
                     source=True,
                     destination=False,
                 )
                 or []
             )
-            cmds.connectAttr(sel + ".message", f"{assembly_node}.custom_polygon_data[{next_index}]")"""
+            cmds.connectAttr(sel + ".message", f"rig.custom_polygon_data[{next_index}]")
+    cmds.select(selected)"""
 
 save_command = """from domino.component import save
 filePath = cmds.fileDialog2(caption="Save Domino Rig",
@@ -269,7 +272,6 @@ def rig_menu(parent_menu: str) -> None:
         radialPosition="N",
         command=validation_command,
         image="list.svg",
-        enableCommandRepeat=True,
     )
 
     cmds.menuItem(
@@ -315,52 +317,6 @@ cmds.optionVar(intValue=("{CONTROLLER_APPLY_CHILDREN_OPTION}", state))"""
 
 controller_panel_command = """from domino import controllerpanel
 controllerpanel.show()"""
-
-attach_guide_command = """from maya import cmds
-selected = [x for x in cmds.ls(selection=True) if cmds.objExists(x + ".is_domino_controller")]
-roots = []
-for sel in selected:
-    roots.append(cmds.listConnections(sel + ".message", type="transform", connections=True)[1])
-for root in set(roots):
-    if cmds.objExists(root.replace("rigRoot", "guideRoot")):
-        continue   
-    component = cmds.getAttr(root + ".component")
-    module = importlib.import_module("domino.component." + component)
-    rig = module.Rig()
-    attribute_data = module.DATA
-    for attr in attribute_data.copy():
-        if attr[attr.long_name]["multi"]:
-            value = []
-            for a in cmds.listAttr(root + "." + attr.long_name, multi=True) or []:
-                value.append(cmds.getAttr(root + "." + a))
-        else:
-            value = cmds.getAttr(root + "." + attr.long_name)
-        rig[attr.long_name]["value"] = value
-    rig.attach_guide()
-cmds.select(selected)"""
-
-detach_guide_command = """from maya import cmds
-selected = [x for x in cmds.ls(selection=True) if cmds.objExists(x + ".is_domino_controller")]
-roots = []
-for sel in selected:
-    roots.append(cmds.listConnections(sel + ".message", type="transform", connections=True)[1])
-for root in set(roots):
-    if not cmds.objExists(root.replace("rigRoot", "guideRoot")):
-        continue   
-    component = cmds.getAttr(root + ".component")
-    module = importlib.import_module("domino.component." + component)
-    rig = module.Rig()
-    attribute_data = module.DATA
-    for attr in attribute_data.copy():
-        if attr[attr.long_name]["multi"]:
-            value = []
-            for a in cmds.listAttr(root + "." + attr.long_name, multi=True) or []:
-                value.append(cmds.getAttr(root + "." + a))
-        else:
-            value = cmds.getAttr(root + "." + attr.long_name)
-        rig[attr.long_name]["value"] = value
-    rig.detach_guide()
-cmds.select(selected)"""
 
 reset_command = """from domino.core import Controller
 from maya import cmds
@@ -434,32 +390,8 @@ def controller_menu(
     )
     cmds.menuItem(
         parent=parent_menu,
-        label="Controller Panel",
-        radialPosition="NE",
-        command=controller_panel_command,
-        image="origin_shape.png",
-        enableCommandRepeat=True,
-    )
-    cmds.menuItem(
-        parent=parent_menu,
-        label="Attach Guide",
-        radialPosition="E",
-        command=attach_guide_command,
-        image="plug-connected.svg",
-        enableCommandRepeat=True,
-    )
-    cmds.menuItem(
-        parent=parent_menu,
-        label="Detach Guide",
-        radialPosition="SE",
-        command=detach_guide_command,
-        image="plug-connected-x.svg",
-        enableCommandRepeat=True,
-    )
-    cmds.menuItem(
-        parent=parent_menu,
         label="Reset",
-        radialPosition="NW",
+        radialPosition="NE",
         command=reset_child_command if apply_children_state else reset_command,
         image="refresh.png",
         enableCommandRepeat=True,
@@ -467,7 +399,7 @@ def controller_menu(
     cmds.menuItem(
         parent=parent_menu,
         label="Mirror / Flip (PLANE)",
-        radialPosition="W",
+        radialPosition="NW",
         image="symmetryConstraint.svg",
         command=rt_symmetry_controller_command,
         enableCommandRepeat=True,
@@ -480,7 +412,7 @@ def controller_menu(
     cmds.menuItem(
         parent=parent_menu,
         label="Mirror / Flip (SRT)",
-        radialPosition="SW",
+        radialPosition="W",
         image="arrows-exchange.svg",
         command=rt_flip_controller_command,
         enableCommandRepeat=True,
@@ -515,6 +447,7 @@ def controller_menu(
     cmds.menuItem(
         parent=parent_menu,
         label="Select child controllers",
+        image="pointer-down.svg",
         enableCommandRepeat=True,
     )
 
