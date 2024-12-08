@@ -14,26 +14,45 @@
                         <label>Index</label>
                 </attribute>
 
-                <attribute name='output_parent_index' type='maya.long'>
-                        <label>Output Parent Index</label>
+                <attribute name='parent_output_index' type='maya.long'>
+                        <label>Parent_output_index</label>
                 </attribute>
 
                 <attribute name='create_output_joint' type='maya.bool'>
-                        <label>Create Output Joint</label>
+                        <label>Create_output_joint</label>
                 </attribute>
 
-                <attribute name='mirror_axis' type='maya.enum'>
-                        <label>Mirror Axis</label>
+                <attribute name='mirror_type' type='maya.enum'>
+                        <label>Mirror_type</label>
+                </attribute>
+
+                <attribute name='controller_count' type='maya.long'>
+                        <label>Controller_count</label>
                 </attribute>
     </template>
 
     <view name="Rigging" template="AEdControl01">
-                <property name='name'/>
-                <property name='side'/>
-                <property name='index'/>
-                <property name='output_parent_index'/>
-                <property name='create_output_joint'/>
-                <property name='mirror_axis'/>
+                <property name='name'>
+                       <description language="cb">py.dsettingcb.callback_edit_name</description>
+                </property>
+                <property name='side'>
+                       <description language="cb">py.dsettingcb.callback_edit_side</description>
+                </property>
+                <property name='index'>
+                       <description language="cb">py.dsettingcb.callback_edit_index</description>
+                </property>
+                <property name='parent_output_index'>
+                       <description language="cb">py.dsettingcb.callback_edit_parent_output_index</description>
+                </property>
+                <property name='create_output_joint'>
+                       <description language="cb">py.dsettingcb.callback_toggle_create_output_joint</description>
+                </property>
+                <property name='mirror_type'>
+                       <description language="cb">py.dsettingcb.callback_edit_mirror_type</description>
+                </property>
+                <property name='controller_count'>
+                       <description language="cb">py.dsettingcb.callback_edit_controller_count</description>
+                </property>
     </view>
 
 </templates>

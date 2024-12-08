@@ -19,15 +19,21 @@
                 </attribute>
 
                 <attribute name='side_c_str' type='maya.string'>
-                        <label>Side Cstr</label>
+                        <label>Side C Str</label>
                 </attribute>
 
                 <attribute name='side_l_str' type='maya.string'>
-                        <label>Side Lstr</label>
+                        <label>Side L Str</label>
                 </attribute>
 
                 <attribute name='side_r_str' type='maya.string'>
-                        <label>Side Rstr</label>
+                        <label>Side R Str</label>
+                </attribute>
+                <attribute name='pre_custom_scripts' type='maya.string'>
+                        <label>Pre Custom Script</label>
+                </attribute>
+                <attribute name='post_custom_scripts' type='maya.string'>
+                        <label>Post Custom Script</label>
                 </attribute>
     </template>
 
@@ -39,6 +45,12 @@
                 <property name='side_c_str'/>
                 <property name='side_l_str'/>
                 <property name='side_r_str'/>
+                <property name='pre_custom_scripts'>
+                       <description language="cb">py.dsettingcb.callback_pre_custom_scripts</description>
+                </property>
+                <property name='post_custom_scripts'>
+                       <description language="cb">py.dsettingcb.callback_post_custom_scripts</description>
+                </property>
     </view>
 
 </templates>

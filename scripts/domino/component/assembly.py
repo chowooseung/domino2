@@ -36,13 +36,17 @@ DATA = [
     attribute.String(longName="joint_extension", value=joint_extension),
     attribute.Matrix(longName="guide_matrix", multi=True, value=[list(ORIGINMATRIX)]),
     attribute.Matrix(longName="npo_matrix", multi=True, value=[list(ORIGINMATRIX)]),
-    attribute.Integer(longName="guide_mirror_type", multi=True),
+    attribute.Integer(longName="guide_mirror_type", multi=True, value=[1]),
+    attribute.String(longName="pre_custom_scripts", multi=True),
+    attribute.String(longName="pre_custom_scripts_str", multi=True),
+    attribute.String(longName="post_custom_scripts", multi=True),
+    attribute.String(longName="post_custom_scripts_str", multi=True),
 ]
 
 description = """assembly component.
 
 최상위 component 입니다. 
-COG 컨트롤러를 가지고 있습니다. 무게중심점에 위치시켜주세요.
+COG 컨트롤러를 가지고 있습니다. guide를 무게중심점에 위치시켜주세요.
 
 origin_jnt 는 model 의 원점을 나타내는 역할입니다."""
 

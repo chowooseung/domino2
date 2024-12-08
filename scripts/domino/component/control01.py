@@ -19,7 +19,7 @@ DATA = [
     attribute.Integer(longName="index", minValue=0),
     attribute.Matrix(longName="guide_matrix", multi=True, value=[list(ORIGINMATRIX)]),
     attribute.Matrix(longName="npo_matrix", multi=True, value=[list(ORIGINMATRIX)]),
-    attribute.Integer(longName="guide_mirror_type", multi=True),
+    attribute.Integer(longName="guide_mirror_type", multi=True, value=[1]),
     # 부모로 사용할 상위 component 의 output index
     attribute.Integer(
         longName="parent_output_index", minValue=-1, defaultValue=-1, value=-1
@@ -28,7 +28,7 @@ DATA = [
     attribute.Bool(longName="create_output_joint", value=1),
     # mirror option
     attribute.Enum(
-        longName="mirror_axis",
+        longName="mirror_type",
         enumName=["orientation", "behavior", "inverse_scale"],
         defaultValue=1,
         value=1,
