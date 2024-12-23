@@ -52,10 +52,34 @@ print(result_str)"""
 controller_panel_command = """from domino import controllerpanel
 controllerpanel.show()"""
 
+create_face_at_position_command = """from maya import cmds
+from maya.api import OpenMaya as om
+positions = [cmds.xform(x, query=True, translation=True, worldSpace=True) for x in cmds.ls(selection=True)]
+meshes = []
+v1 = om.MVector((0.1, 0, -0.1))
+v2 = om.MVector((0.1, 0, 0.1))
+v3 = om.MVector((-0.1, 0, -0.1))
+v4 = om.MVector((-0.1, 0, 0.1))
+for position in positions:
+    p = om.MVector(position)
+    plane = cmds.polyPlane(constructionHistory=False, subdivisionsHeight=1, subdivisionsWidth=1)[0]
+    for i, v in enumerate([v1, v2, v3, v4]):
+        vtx_position = list(p + v)
+        cmds.move(*vtx_position, plane + f".vtx[{i}]")
+    meshes.append(plane)
+if meshes:    
+    cmds.polyUnite(meshes, name="face_at_position", constructionHistory=False)
+    cmds.polyAutoProjection(constructionHistory=False, percentageSpace=5, layout=2)"""
+
 
 def install_rig_commands_menu(menu_id):
     sub_menu = cmds.menuItem(
         parent=menu_id, subMenu=True, label="Rig Commands", tearOff=True
+    )
+    cmds.menuItem(
+        parent=sub_menu,
+        label="Controller panel",
+        command=controller_panel_command,
     )
     cmds.menuItem(
         parent=sub_menu,
@@ -64,13 +88,13 @@ def install_rig_commands_menu(menu_id):
     )
     cmds.menuItem(
         parent=sub_menu,
-        label="Print channelBox status",
-        command=print_channel_box_status_command,
+        label="Create face at position",
+        command=create_face_at_position_command,
     )
     cmds.menuItem(
         parent=sub_menu,
-        label="Controller panel",
-        command=controller_panel_command,
+        label="Print channelBox status",
+        command=print_channel_box_status_command,
     )
 
 
