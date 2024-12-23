@@ -124,6 +124,11 @@ class Float(Integer):
     attribute_type = "float"
 
 
+class DoubleAngle(Integer):
+
+    attribute_type = "doubleAngle"
+
+
 class Enum(dict):
 
     default_value = 0
@@ -535,4 +540,5 @@ TYPETABLE = {
     "string": String,
     "matrix": Matrix,
     "message": Message,
+    "doubleAngle": DoubleAngle,
 }

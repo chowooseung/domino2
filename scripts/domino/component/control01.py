@@ -35,6 +35,16 @@ DATA = [
     ),
     # controlelr 갯수.
     attribute.Integer(longName="controller_count", minValue=1, value=1),
+    # offset output rotate
+    attribute.DoubleAngle(
+        longName="offset_output_rotate_x", minValue=-360, maxValue=360
+    ),
+    attribute.DoubleAngle(
+        longName="offset_output_rotate_y", minValue=-360, maxValue=360
+    ),
+    attribute.DoubleAngle(
+        longName="offset_output_rotate_z", minValue=-360, maxValue=360
+    ),
 ]
 
 description = """control01 component.
