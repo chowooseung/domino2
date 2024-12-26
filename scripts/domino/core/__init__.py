@@ -672,34 +672,6 @@ class Controller(Transform):
             nurbscurve.replace_shape(crv, self._node)
             cmds.delete(crv)
 
-    def translate_shape(self, t: list) -> None:
-        """move controller shape
-
-        Args:
-            t (list): translate
-        """
-        nurbscurve.translate_shape(self._node, t)
-
-    def rotate_shape(self, r: list) -> None:
-        """rotate controller shape
-
-        Args:
-            r (list): rotate
-        """
-        nurbscurve.rotate_shape(self._node, r)
-
-    def scale_shape(self, s: list) -> None:
-        """scale controller shape
-
-        Args:
-            s (list): scale
-        """
-        nurbscurve.scale_shape(self._node, s)
-
-    def mirror_shape(self) -> None:
-        """mirror controller shape"""
-        nurbscurve.mirror_shape(self._node)
-
     def add_parent_controller(self, parent_controller: str) -> None:
         """dagmenu 에서 사용하기위해 parent controller 를 추가합니다.
 

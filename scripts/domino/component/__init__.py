@@ -1025,7 +1025,9 @@ class Rig(dict):
         ):
             children = cmds.listRelatives(output, children=True, type="transform") or []
             for child in children:
-                cons.append(cmds.parentConstraint(child, query=True))
+                child_cons = cmds.parentConstraint(child, query=True)
+                if child_cons:
+                    cons.append(child_cons)
         self_cons = cmds.parentConstraint(self.rig_root, query=True)
         if self_cons:
             cons.append(self_cons)
