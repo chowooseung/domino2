@@ -1,6 +1,6 @@
 # domino
 from domino import component
-from domino.core import attribute, Name
+from domino.core import attribute, Name, Transform
 from domino.core.utils import build_log
 
 # maya
@@ -19,6 +19,11 @@ DATA = [
     attribute.Integer(longName="index", minValue=0),
     attribute.Matrix(longName="guide_matrix", multi=True, value=[list(ORIGINMATRIX)]),
     attribute.Matrix(longName="npo_matrix", multi=True, value=[list(ORIGINMATRIX)]),
+    attribute.Matrix(
+        longName="initialize_output_matrix",
+        multi=True,
+        value=[list(ORIGINMATRIX)],
+    ),
     attribute.Integer(longName="guide_mirror_type", multi=True, value=[1]),
     # 부모로 사용할 상위 component 의 output index
     attribute.Integer(
@@ -65,7 +70,7 @@ class Rig(component.Rig):
     def populate_output(self):
         if not self["output"]:
             for i in range(len(self["guide_matrix"]["value"])):
-                self.add_output(description=i, extension=Name.controller_extension)
+                self.add_output(description=i, extension=Name.loc_extension)
 
     def populate_output_joint(self):
         if not self["output_joint"]:
@@ -75,6 +80,8 @@ class Rig(component.Rig):
     @build_log(logging.INFO)
     def rig(self):
         super().rig(description=description)
+
+        name, side, index = self.identifier
 
         for i, m in enumerate(self["guide_matrix"]["value"]):
             # controller
@@ -89,12 +96,36 @@ class Rig(component.Rig):
                 npo_matrix_index=i,
             )
 
+            ins = Transform(
+                parent=ctl,
+                name=name,
+                side=side,
+                index=index,
+                description=i,
+                extension=Name.loc_extension,
+                m=cmds.xform(ctl, query=True, matrix=True, worldSpace=True),
+            )
+            loc = ins.create()
+
+            # inverse scale 일 경우 output joint 에 -1 이 적용되지 않도록 loc scaleZ 설정.
+            source = cmds.listConnections(
+                npo + ".offsetParentMatrix", source=True, destination=False, plugs=True
+            )[0]
+            decom_m = cmds.createNode("decomposeMatrix")
+            cmds.connectAttr(source, decom_m + ".inputMatrix")
+
+            condition = cmds.createNode("condition")
+            cmds.setAttr(condition + ".operation", 4)
+            cmds.setAttr(condition + ".colorIfTrueR", -1)
+            cmds.connectAttr(decom_m + ".outputScaleZ", condition + ".firstTerm")
+            cmds.connectAttr(condition + ".outColorR", loc + ".sz")
+
             # output
             self["output"][i].connect()
 
             # output joint
             if self["create_output_joint"]["value"]:
-                self["output_joint"][i].create(parent=None, output=ctl)
+                self["output_joint"][i].create(parent=None, output=loc)
 
     @build_log(logging.INFO)
     def guide(self):
@@ -112,10 +143,12 @@ class Rig(component.Rig):
                 m=m,
                 mirror_type=self["guide_mirror_type"]["value"][i],
             )
-            pick_m = cmds.createNode("pickMatrix")
-            cmds.setAttr(pick_m + ".useScale", 0)
-            cmds.setAttr(pick_m + ".useShear", 0)
-            cmds.connectAttr(guide + ".worldMatrix[0]", pick_m + ".inputMatrix")
+
             cmds.connectAttr(
-                pick_m + ".outputMatrix", self.guide_root + f".npo_matrix[{i}]"
+                self.guide_graph + f".npo_matrix[{i}]",
+                self.guide_root + f".npo_matrix[{i}]",
+            )
+            cmds.connectAttr(
+                self.guide_graph + f".initialize_output_matrix[{i}]",
+                self.guide_root + f".initialize_output_matrix[{i}]",
             )

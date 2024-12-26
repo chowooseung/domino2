@@ -1,6 +1,4 @@
 # Assembly Callback -------------------------------------------------- #
-
-
 def add_script(*args):
     pass
 
@@ -200,6 +198,48 @@ def callback_edit_parent_output_index(plug, label, annotation):
         cmds.setAttr(plug, new_index)
 
     cmds.intSliderGrp(slider, edit=True, changeCommand=edit_parent_output_index)
+    cmds.setParent(upLevel=1)
+
+
+def callback_edit_parent_controller(plug, label, annotation):
+    from maya import cmds
+
+    row_layout = cmds.rowLayout(numberOfColumns=2, adjustableColumn=2)
+    cmds.text("Parent Controller")
+
+    form_layout = cmds.formLayout()
+
+    # component 의 controller 전체 추가.
+    menu = cmds.optionMenu(height=24)
+    cmds.menuItem(label="C")
+    cmds.menuItem(label="L")
+    cmds.menuItem(label="R")
+
+    set_btn = cmds.button(height=24)
+    unset_btn = cmds.button(height=24)
+
+    # parent component 의 전체 추가.
+    li = cmds.textScrollList()
+
+    cmds.formLayout(
+        form_layout,
+        edit=True,
+        attachForm=[
+            (menu, "left", 2),
+            (menu, "top", 2),
+            (set_btn, "top", 2),
+            (unset_btn, "top", 2),
+            (unset_btn, "right", 2),
+            (li, "bottom", 2),
+            (li, "left", 2),
+            (li, "right", 2),
+        ],
+        attachControl=[
+            (menu, "right", 2, set_btn),
+            (set_btn, "right", 2, unset_btn),
+            (li, "top", 2, unset_btn),
+        ],
+    )
     cmds.setParent(upLevel=1)
 
 

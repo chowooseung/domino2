@@ -3,10 +3,20 @@ from PySide6 import QtWidgets, QtCore, QtGui
 
 # maya
 from maya import cmds, mel
+from maya.api import OpenMaya as om  # type: ignore
 from maya.app.general.mayaMixin import MayaQWidgetDockableMixin  # type: ignore
 
 # domino
-from domino.component import __all__ as component_list, build, serialize, T, save, load
+from domino.component import (
+    __all__ as component_list,
+    build,
+    serialize,
+    T,
+    save,
+    load,
+    Name,
+)
+from domino.core.utils import logger
 
 # built-ins
 from functools import partial
@@ -18,6 +28,89 @@ import re
 
 icon_dir = Path(__file__).parent.parent.parent / "icons"
 component_list.remove("assembly")
+
+
+def cb_setup_output_joint(child, parent, client_data) -> None:
+    if not cmds.objExists(child.fullPathName() + ".is_domino_skel"):
+        return
+
+    try:
+        output_joint = child.fullPathName()
+        parent = parent.fullPathName()
+
+        output_attr = cmds.connectionInfo(
+            output_joint + ".output", sourceFromDestination=True
+        )
+        output = output_attr.split(".")[0]
+
+        skel_graph_attr = [
+            x
+            for x in cmds.connectionInfo(
+                output + ".worldMatrix[0]", destinationFromSource=True
+            )
+            if cmds.nodeType(x) == "bifrostGraphShape"
+        ]
+        if not skel_graph_attr:
+            return
+        index = int(skel_graph_attr[0].split("[")[1].split("]")[0])
+        if parent.split("|")[-1] == "skel":
+            cmds.connectAttr(
+                "skel.worldMatrix[0]",
+                f"skel_bifGraph.initialize_parent_output_matrix[{index}]",
+                force=True,
+            )
+            cmds.connectAttr(
+                "skel.worldMatrix[0]",
+                f"skel_bifGraph.parent_output_matrix[{index}]",
+                force=True,
+            )
+            logger.info(
+                f"Connect skel.worldMatrix[0] -> skel_bifGraph.initialize_parent_output_matrix[{index}]"
+            )
+            logger.info(
+                f"Connect skel.worldMatrix[0] -> skel_bifGraph.parent_output_matrix[{index}]"
+            )
+            return
+        if cmds.objExists(parent + ".is_domino_skel"):
+            parent_output_attr = cmds.connectionInfo(
+                parent + ".output", sourceFromDestination=True
+            )
+            parent_output = parent_output_attr.split(".")[0]
+            parent_root_attr = [
+                x
+                for x in cmds.connectionInfo(
+                    parent_output + ".message", destinationFromSource=True
+                )
+                if cmds.nodeType(x) == "transform" and ".output" in x
+            ]
+            if not parent_root_attr:
+                return
+            output_index = int(parent_root_attr[0].split("[")[1].split("]")[0])
+            parent_root = parent_root_attr[0].split(".")[0]
+
+            parent_output_matrix = parent_output + ".worldMatrix[0]"
+            initialize_parent_output_matrix = (
+                parent_root + f".initialize_output_matrix[{output_index}]"
+            )
+
+            cmds.connectAttr(
+                parent_output_matrix,
+                f"skel_bifGraph.parent_output_matrix[{index}]",
+                force=True,
+            )
+            cmds.connectAttr(
+                initialize_parent_output_matrix,
+                f"skel_bifGraph.initialize_parent_output_matrix[{index}]",
+                force=True,
+            )
+            logger.info(
+                f"Connect {initialize_parent_output_matrix} -> skel_bifGraph.initialize_parent_output_matrix[{index}]"
+            )
+            logger.info(
+                f"Connect {parent_output_matrix} -> skel_bifGraph.parent_output_matrix[{index}]"
+            )
+    except Exception as e:
+        logger.error(e, exc_info=True)
 
 
 class ComponentItem(QtGui.QStandardItem):
@@ -151,6 +244,9 @@ command = "from domino.dominomanager import Manager;ui=Manager.get_instance();ui
 cmds.evalDeferred(command)"""
     control_name = ui_name + "WorkspaceControl"
 
+    # callback
+    callback_id = None
+
     def __init__(self, parent=None) -> None:
         if cmds.workspaceControl(self.control_name, query=True, exists=True):
             cmds.workspaceControl(self.control_name, edit=True, restore=True)
@@ -173,8 +269,11 @@ cmds.evalDeferred(command)"""
         self.refresh_ui_action.triggered.connect(self.refresh)
         self.build_new_scene_action = QtGui.QAction("Build in new scene")
         self.build_new_scene_action.triggered.connect(partial(self.build, True))
+        self.print_component_action = QtGui.QAction("Print component")
+        self.print_component_action.triggered.connect(self.print_component)
         self.command_menu.addAction(self.refresh_ui_action)
         self.command_menu.addAction(self.build_new_scene_action)
+        self.command_menu.addAction(self.print_component_action)
 
         self.template_menu = self.menu_bar.addMenu("Templates")
 
@@ -453,6 +552,21 @@ QTreeView::branch:open:has-children  {{
                 rig.rig()
                 rig.attach_guide()
                 self.rig_tree_model.rig = rig
+                output_joints = []
+                for data in rig["output_joint"]:
+                    name, side, index = rig.identifier
+                    output_joints.append(
+                        Name.create(
+                            convention=Name.joint_name_convention,
+                            name=name,
+                            side=side,
+                            index=index,
+                            description=data["description"],
+                            extension=Name.joint_extension,
+                        )
+                    )
+                # # setup output joint
+                rig.setup_skel_graph(output_joints)
             rig.sync_from_scene()
 
             # get parent component
@@ -473,6 +587,21 @@ QTreeView::branch:open:has-children  {{
             component.rig()
             # attach guide
             component.attach_guide()
+            output_joints = []
+            name, side, index = component.identifier
+            for data in component["output_joint"]:
+                output_joints.append(
+                    Name.create(
+                        convention=Name.joint_name_convention,
+                        name=name,
+                        side=side,
+                        index=index,
+                        description=data["description"],
+                        extension=Name.joint_extension,
+                    )
+                )
+            # # setup output joint
+            component.setup_skel_graph(output_joints)
 
             # refresh model
             self.rig_tree_model.populate_model()
@@ -521,7 +650,7 @@ QTreeView::branch:open:has-children  {{
             rig.sync_from_scene()
             for index in indexes:
                 item = self.rig_tree_model.itemFromIndex(index)
-                item.component.remove_compoent()
+                item.component.remove_component()
             self.rig_tree_model.populate_model()
         finally:
             cmds.undoInfo(closeChunk=True)
@@ -628,10 +757,33 @@ QTreeView::branch:open:has-children  {{
     def showEvent(self, e) -> None:
         cmds.workspaceControl(self.control_name, edit=True, uiScript=self.ui_script)
         self.refresh()
+        if self.callback_id is None:
+            self.callback_id = om.MDagMessage.addParentAddedCallback(
+                cb_setup_output_joint
+            )
+            logger.info(f"Add output joint Dag callback id: {self.callback_id}")
         super(Manager, self).showEvent(e)
+
+    def hideEvent(self, e) -> None:
+        if self.callback_id:
+            logger.info(f"Remove output joint Dag callback id: {self.callback_id}")
+            om.MMessage.removeCallback(self.callback_id)
+            self.callback_id = None
+        super(Manager, self).hideEvent(e)
 
     @classmethod
     def get_instance(cls):
         if cls._instance is None:
             cls._instance = cls()
         return cls._instance
+
+    def print_component(self):
+        indexes = self.rig_tree_view.selectedIndexes()
+        if not indexes:
+            return
+        item = self.rig_tree_model.itemFromIndex(indexes[0])
+        for k, v in item.component.items():
+            if k == "children":
+                continue
+            logger.info(k)
+            logger.info("\t", v)

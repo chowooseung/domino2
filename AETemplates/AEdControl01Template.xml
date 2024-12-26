@@ -29,6 +29,10 @@
                 <attribute name='controller_count' type='maya.long'>
                         <label>Controller_count</label>
                 </attribute>
+
+                <attribute name='_parent_controller' type='maya.bool'>
+                        <label>Parent Controller</label>
+                </attribute>
     </template>
 
     <view name="Rigging" template="AEdControl01">
@@ -52,6 +56,9 @@
                 </property>
                 <property name='controller_count'>
                        <description language="cb">py.dsettingcb.callback_edit_controller_count</description>
+                </property>
+                <property name='_parent_controller'>
+                       <description language="cb">py.dsettingcb.callback_edit_parent_controller</description>
                 </property>
     </view>
 

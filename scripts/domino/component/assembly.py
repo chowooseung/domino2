@@ -36,6 +36,11 @@ DATA = [
     attribute.String(longName="joint_extension", value=joint_extension),
     attribute.Matrix(longName="guide_matrix", multi=True, value=[list(ORIGINMATRIX)]),
     attribute.Matrix(longName="npo_matrix", multi=True, value=[list(ORIGINMATRIX)]),
+    attribute.Matrix(
+        longName="initialize_output_matrix",
+        multi=True,
+        value=[list(ORIGINMATRIX)],
+    ),
     attribute.Integer(longName="guide_mirror_type", multi=True, value=[1]),
     attribute.String(longName="pre_custom_scripts", multi=True),
     attribute.String(longName="pre_custom_scripts_str", multi=True),
@@ -72,10 +77,13 @@ class Rig(component.Rig):
             )
 
     def populate_output(self):
-        self.add_output(description="", extension="output")
+        if not self["output"]:
+            self.add_output(description="sub", extension=Name.controller_extension)
+            self.add_output(description="", extension="output")
 
     def populate_output_joint(self):
-        self.add_output_joint(description="")
+        if not self["output_joint"]:
+            self.add_output_joint(description="")
 
     @build_log(logging.INFO)
     def rig(self):
@@ -112,6 +120,7 @@ class Rig(component.Rig):
             ),
             color=21,
         )
+        self["output"][0].connect()
 
         COG_npo, COG_ctl = self["controller"][2].create(
             parent=sub_ctl,
@@ -134,7 +143,7 @@ class Rig(component.Rig):
             m=ORIGINMATRIX,
         )
         output = ins.create()
-        self["output"][0].connect()
+        self["output"][1].connect()
 
         # output joint
         self["output_joint"][0].create(parent=None, output=sub_ctl)

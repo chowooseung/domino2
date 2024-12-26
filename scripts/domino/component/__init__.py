@@ -56,7 +56,7 @@ class Rig(dict):
     def identifier(self) -> tuple:
         return (
             self["name"]["value"],
-            Name.side_str_list[self["side"]["value"]],
+            Name.side_list[self["side"]["value"]],
             self["index"]["value"],
         )
 
@@ -103,6 +103,10 @@ class Rig(dict):
             index=index,
             extension="bifRigGraph",
         )
+
+    @property
+    def skel_graph(self) -> str:
+        return SKEL + "_bifGraph"
 
     def get_parent(self) -> T:
         return self._parent
@@ -154,6 +158,10 @@ class Rig(dict):
         cmds.createNode(f"d{component}", name=self.guide_root, parent=GUIDE)
         cmds.addAttr(
             self.guide_root, longName="is_domino_guideRoot", attributeType="bool"
+        )
+        # attribute settings 에서 사용하기 위해 dummy attribute 생성.
+        cmds.addAttr(
+            self.guide_root, longName="_parent_controller", attributeType="bool"
         )
 
         for long_name, data in self.items():
@@ -484,6 +492,19 @@ class Rig(dict):
                 self.name + ".message",
                 self.instance.rig_root + f".output[{next_index}]",
             )
+            if "offset_output_rotate_x" in self.instance:
+                cmds.connectAttr(
+                    self.instance.rig_root + ".offset_output_rotate_x",
+                    self.name + ".rx",
+                )
+                cmds.connectAttr(
+                    self.instance.rig_root + ".offset_output_rotate_y",
+                    self.name + ".ry",
+                )
+                cmds.connectAttr(
+                    self.instance.rig_root + ".offset_output_rotate_z",
+                    self.name + ".rz",
+                )
 
         def __init__(
             self,
@@ -562,8 +583,11 @@ class Rig(dict):
                 jnt + ".message",
                 self.instance.rig_root + f".output_joint[{next_index}]",
             )
-            cmds.parentConstraint(output, jnt)
-            cmds.scaleConstraint(output, jnt)
+            at_ins = attribute.Message(longName="output")
+            at_ins.node = jnt
+            attr = at_ins.create()
+            cmds.connectAttr(output + ".message", attr)
+
             self._node = jnt
             return jnt
 
@@ -598,23 +622,70 @@ class Rig(dict):
             "/input",
             createOutputPort=("guide_matrix", "array<Math::float4x4>"),
         )
+        cmds.vnnNode(
+            graph, "/input", createOutputPort=("offset_output_rotate_x", "float")
+        )
+        cmds.vnnNode(
+            graph, "/input", createOutputPort=("offset_output_rotate_y", "float")
+        )
+        cmds.vnnNode(
+            graph, "/input", createOutputPort=("offset_output_rotate_z", "float")
+        )
 
         guide_compound = cmds.vnnCompound(
             graph,
             "/",
-            addNode="BifrostGraph,Domino::components," + component + "_guide",
+            addNode="BifrostGraph,Domino::Components," + component + "_guide",
         )[0]
-        cmds.vnnConnect(graph, "/input.guide_matrix", f"/{guide_compound}.guide_matrix")
-        cmds.connectAttr(self.rig_root + ".guide_matrix", graph + ".guide_matrix")
-        cmds.vnnNode(
+
+        cmds.vnnConnect(
             graph,
-            "/output",
-            createInputPort=("initialize_transform", "array<Math::float4x4>"),
+            "/input.offset_output_rotate_x",
+            f"/{guide_compound}.offset_output_rotate_x",
         )
         cmds.vnnConnect(
             graph,
-            f"/{guide_compound}.initialize_transform",
-            "/output.initialize_transform",
+            "/input.offset_output_rotate_y",
+            f"/{guide_compound}.offset_output_rotate_y",
+        )
+        cmds.vnnConnect(
+            graph,
+            "/input.offset_output_rotate_z",
+            f"/{guide_compound}.offset_output_rotate_z",
+        )
+        cmds.vnnConnect(graph, "/input.guide_matrix", f"/{guide_compound}.guide_matrix")
+        cmds.connectAttr(self.guide_root + ".guide_matrix", graph + ".guide_matrix")
+        cmds.connectAttr(
+            self.guide_root + ".offset_output_rotate_x",
+            graph + ".offset_output_rotate_x",
+        )
+        cmds.connectAttr(
+            self.guide_root + ".offset_output_rotate_y",
+            graph + ".offset_output_rotate_y",
+        )
+        cmds.connectAttr(
+            self.guide_root + ".offset_output_rotate_z",
+            graph + ".offset_output_rotate_z",
+        )
+        cmds.vnnNode(
+            graph,
+            "/output",
+            createInputPort=("npo_matrix", "array<Math::float4x4>"),
+        )
+        cmds.vnnConnect(
+            graph,
+            f"/{guide_compound}.npo_matrix",
+            "/output.npo_matrix",
+        )
+        cmds.vnnNode(
+            graph,
+            "/output",
+            createInputPort=("initialize_output_matrix", "array<Math::double4x4>"),
+        )
+        cmds.vnnConnect(
+            graph,
+            "/control01_guide.initialize_output_matrix",
+            ".initialize_output_matrix",
         )
         return graph
 
@@ -634,7 +705,7 @@ class Rig(dict):
         rig_compound = cmds.vnnCompound(
             graph,
             "/",
-            addNode="BifrostGraph,Domino::components," + component + "_rig",
+            addNode="BifrostGraph,Domino::Components," + component + "_rig",
         )[0]
         cmds.vnnConnect(graph, "/input.driver_matrix", f"/{rig_compound}.driver_matrix")
         cmds.vnnNode(
@@ -642,6 +713,89 @@ class Rig(dict):
         )
         cmds.vnnConnect(graph, f"/{rig_compound}.output", "/output.output")
         return graph
+
+    def setup_skel_graph(self, joints: list) -> None:
+        # output joint matrix
+        count = 0
+        for output_joint in joints:
+            while cmds.connectionInfo(
+                f"{self.skel_graph}.output_matrix[{count}]", getExactDestination=True
+            ):
+                count += 1
+            parent = cmds.listRelatives(output_joint, parent=True)[0]
+            # parent_output_matrix, initialize_parent_output_matrix
+            if parent != "skel":
+                parent_output = cmds.listConnections(
+                    parent + ".output", destination=False, source=True
+                )[0]
+                parent_output_matrix = parent_output + ".worldMatrix[0]"
+                plug = cmds.listConnections(
+                    parent_output + ".message",
+                    destination=True,
+                    source=False,
+                    plugs=True,
+                )[0]
+                parent_root = plug.split(".")[0]
+                index = int(plug.split("[")[1].split("]")[0])
+                initialize_parent_output_matrix = (
+                    parent_root + f".initialize_output_matrix[{index}]"
+                )
+            else:
+                initialize_parent_output_matrix = parent_output_matrix = (
+                    "skel.worldMatrix[0]"
+                )
+            # output_matrix, initialize_output_matrix
+            loc = cmds.listConnections(
+                output_joint + ".output", destination=False, source=True
+            )[0]
+            output_matrix = loc + ".worldMatrix[0]"
+            plugs = cmds.listConnections(
+                loc + ".message",
+                destination=True,
+                source=False,
+            )
+            root = [
+                plug for plug in plugs if cmds.objExists(plug + ".is_domino_rig_root")
+            ][0]
+            list_attr = cmds.listAttr(root + ".output", multi=True)
+            for attr in list_attr:
+                plug = cmds.listConnections(
+                    root + "." + attr, source=True, destination=False
+                )[0]
+                if plug == loc:
+                    break
+            index = int(attr.split("[")[1].split("]")[0])
+            initialize_output_matrix = root + f".initialize_output_matrix[{index}]"
+
+            # connect bifrost graph
+            cmds.connectAttr(output_matrix, f"{self.skel_graph}.output_matrix[{count}]")
+            cmds.connectAttr(
+                initialize_output_matrix,
+                f"{self.skel_graph}.initialize_output_matrix[{count}]",
+            )
+            cmds.connectAttr(
+                parent_output_matrix, f"{self.skel_graph}.parent_output_matrix[{count}]"
+            )
+            cmds.connectAttr(
+                initialize_parent_output_matrix,
+                f"{self.skel_graph}.initialize_parent_output_matrix[{count}]",
+            )
+            cmds.connectAttr(
+                f"{self.skel_graph}.output_translate[{count}]", output_joint + ".t"
+            )
+            cmds.connectAttr(
+                f"{self.skel_graph}.output_rotate[{count}]", output_joint + ".r"
+            )
+            cmds.connectAttr(
+                f"{self.skel_graph}.output_scale[{count}]", output_joint + ".s"
+            )
+            cmds.connectAttr(
+                f"{self.skel_graph}.output_shear[{count}]", output_joint + ".shear"
+            )
+            cmds.connectAttr(
+                f"{self.skel_graph}.output_joint_orient[{count}]",
+                output_joint + ".jointOrient",
+            )
 
     def __init__(self, data: list = []) -> None:
         """initialize 시 component 의 데이터를 instance 에 업데이트 합니다."""
@@ -684,6 +838,126 @@ class Rig(dict):
             ins.create()
             for attr in attrs:
                 cmds.setAttr(SKEL + attr, lock=True, keyable=False)
+        if not cmds.objExists(SKEL + "_bif"):
+            parent = cmds.createNode(
+                "transform",
+                name=SKEL + "_bif",
+                parent=SKEL,
+            )
+            graph = cmds.createNode(
+                "bifrostGraphShape", name=self.skel_graph, parent=parent
+            )
+            cmds.vnnCompound(
+                graph,
+                "/",
+                addNode="BifrostGraph,Domino::Compounds,connect_output_to_output_joint",
+            )
+            cmds.vnnCompound(
+                graph, "/connect_output_to_output_joint", setIsReferenced=False
+            )
+            cmds.vnnNode(
+                graph,
+                "/output",
+                createInputPort=("output_translate", "array<Math::float3>"),
+            )
+            cmds.vnnNode(
+                graph,
+                "/output",
+                createInputPort=("output_rotate", "array<Math::float3>"),
+            )
+            cmds.vnnNode(
+                graph,
+                "/output",
+                createInputPort=("output_scale", "array<Math::float3>"),
+            )
+            cmds.vnnNode(
+                graph,
+                "/output",
+                createInputPort=("output_shear", "array<Math::float3>"),
+            )
+            cmds.vnnNode(
+                graph,
+                "/output",
+                createInputPort=("output_joint_orient", "array<Math::float3>"),
+            )
+
+            cmds.vnnConnect(
+                graph,
+                "/connect_output_to_output_joint.output_translate",
+                ".output_translate",
+            )
+            cmds.vnnConnect(
+                graph, "/connect_output_to_output_joint.output_rotate", ".output_rotate"
+            )
+            cmds.vnnConnect(
+                graph, "/connect_output_to_output_joint.output_scale", ".output_scale"
+            )
+            cmds.vnnConnect(
+                graph, "/connect_output_to_output_joint.output_shear", ".output_shear"
+            )
+            cmds.vnnConnect(
+                graph,
+                "/connect_output_to_output_joint.output_joint_orient",
+                ".output_joint_orient",
+            )
+            cmds.vnnNode(
+                graph,
+                "/input",
+                createOutputPort=("initialize_output_matrix", "array<Math::float4x4>"),
+            )
+            cmds.vnnNode(
+                graph,
+                "/input",
+                createOutputPort=("output_matrix", "array<Math::float4x4>"),
+            )
+            cmds.vnnNode(
+                graph,
+                "/input",
+                createOutputPort=(
+                    "initialize_parent_output_matrix",
+                    "array<Math::float4x4>",
+                ),
+            )
+            cmds.vnnNode(
+                graph,
+                "/input",
+                createOutputPort=("parent_output_matrix", "array<Math::float4x4>"),
+            )
+            cmds.vnnConnect(
+                graph,
+                ".initialize_output_matrix",
+                "/connect_output_to_output_joint.initialize_output_matrix",
+                copyMetaData=True,
+            )
+            cmds.vnnConnect(
+                graph,
+                ".output_matrix",
+                "/connect_output_to_output_joint.output_matrix",
+                copyMetaData=True,
+            )
+            cmds.vnnConnect(
+                graph,
+                ".initialize_parent_output_matrix",
+                "/connect_output_to_output_joint.initialize_parent_output_matrix",
+                copyMetaData=True,
+            )
+            cmds.vnnConnect(
+                graph,
+                ".parent_output_matrix",
+                "/connect_output_to_output_joint.parent_output_matrix",
+                copyMetaData=True,
+            )
+            cmds.vnnCompound(
+                graph,
+                "/",
+                addNode="BifrostGraph,Core::Array,array_size",
+            )
+            cmds.vnnConnect(graph, ".initialize_output_matrix", "/array_size.array")
+            cmds.vnnConnect(
+                graph,
+                "/array_size.size",
+                "/connect_output_to_output_joint.max_iterations",
+            )
 
         self.add_rig_root()
         cmds.addAttr(self.rig_root, longName="notes", dataType="string")
@@ -755,9 +1029,14 @@ class Rig(dict):
         self_cons = cmds.parentConstraint(self.rig_root, query=True)
         if self_cons:
             cons.append(self_cons)
-        # constraint 삭제시 마지막 값으로 업데이트 되지 않는 문제. 강제 업데이트.
-        for attr in cmds.listAttr(self.rig_root + ".guide_matrix", multi=True):
-            cmds.getAttr(self.rig_root + "." + attr)
+        # constraint 삭제시 마지막 값으로 남지않는 문제.
+        attrs = cmds.listAttr(self.rig_root + ".guide_matrix", multi=True) or []
+        attrs += cmds.listAttr(self.rig_root + ".npo_matrix", multi=True) or []
+        for attr in attrs:
+            source_plug = cmds.listConnections(
+                self.rig_root + "." + attr, source=True, destination=False, plugs=True
+            )[0]
+            cmds.disconnectAttr(source_plug, self.rig_root + "." + attr)
         # output 아래 rigRoot 가 offset 되는 문제. constaint 먼저 삭제.
         if cons:
             cmds.delete(cons)
@@ -828,13 +1107,34 @@ class Rig(dict):
                     node_parts[name_index] = node_parts[name_index].replace(
                         name, new_name
                     )
+                    old_side = Name.side_list.index(side)
                     node_parts[side_index] = node_parts[side_index].replace(
-                        side, Name.side_str_list[new_side]
+                        Name.side_str_list[old_side], Name.side_str_list[new_side]
                     )
                     node_parts[index_index] = node_parts[index_index].replace(
                         str(index), str(new_index)
                     )
                     cmds.rename(node, "_".join(node_parts))
+        # edit joint label
+        for data in self["output_joint"]:
+            joint_name = Name.create(
+                convention=Name.joint_name_convention,
+                name=new_name,
+                side=Name.side_str_list[new_side],
+                index=new_index,
+                description=data["description"],
+                extension=Name.joint_extension,
+            )
+            jnt_ins = Joint(node=joint_name)
+            jnt_ins.set_label(
+                new_side,
+                Name.create_joint_label(
+                    new_name,
+                    Name.side_str_list[new_side],
+                    new_index,
+                    data["description"],
+                ),
+            )
 
         if cmds.objExists(self.guide_root):
             cmds.setAttr(self.guide_root + ".name", new_name, type="string")
@@ -859,6 +1159,21 @@ class Rig(dict):
             duplicate_component.set_parent(parent_component)
             if apply_to_output:
                 duplicate_component.rig()
+                output_joints = []
+                name, side, index = duplicate_component.identifier
+                for data in duplicate_component["output_joint"]:
+                    output_joints.append(
+                        Name.create(
+                            convention=Name.joint_name_convention,
+                            name=name,
+                            side=side,
+                            index=index,
+                            description=data["description"],
+                            extension=Name.joint_extension,
+                        )
+                    )
+                # # setup output joint
+                duplicate_component.setup_skel_graph(output_joints)
 
             stack.extend([(c, duplicate_component) for c in component["children"]])
 
@@ -881,7 +1196,7 @@ class Rig(dict):
         if reuse_exists:
             # already exists case
 
-            # collect target data
+            ## collect target data
             target_data = []
             stack = [self]
             while stack:
@@ -891,18 +1206,25 @@ class Rig(dict):
                     (
                         (name, Name.side_str_list[target_side], index),
                         component.mirror_guide_matrices(),
+                        (
+                            component["guide_mirror_type"]["value"]
+                            if "guide_mirror_type" in component
+                            else None
+                        ),
                     )
                 )
                 stack.extend(component["children"])
 
-            # mirror
+            ## mirror
             stack = [self.assembly]
             while stack:
                 component = stack.pop(0)
                 for d in target_data:
-                    identifier, matrices = d
+                    identifier, matrices, mirror_type = d
                     if component.identifier == identifier:
                         component["guide_matrix"]["value"] = matrices
+                        if mirror_type:
+                            component["guide_mirror_type"]["value"] = mirror_type
                         if apply_to_output:
                             component.attach_guide()
                 stack.extend(component["children"])
@@ -926,6 +1248,21 @@ class Rig(dict):
                 if apply_to_output:
                     duplicate_component.rig()
                     duplicate_component.attach_guide()
+                    output_joints = []
+                    name, side, index = duplicate_component.identifier
+                    for data in duplicate_component["output_joint"]:
+                        output_joints.append(
+                            Name.create(
+                                convention=Name.joint_name_convention,
+                                name=name,
+                                side=side,
+                                index=index,
+                                description=data["description"],
+                                extension=Name.joint_extension,
+                            )
+                        )
+                    # # setup output joint
+                    duplicate_component.setup_skel_graph(output_joints)
 
                 stack.extend([(c, duplicate_component) for c in component["children"]])
 
@@ -948,16 +1285,20 @@ class Rig(dict):
             if "index" in parts:
                 index_index = i
 
-        name, side, index = self.identifier
         nodes = []
-        for node in cmds.ls(type="transform"):
-            node_parts = node.split("_")
-            if (
-                name in node_parts[name_index]
-                and side in node_parts[side_index]
-                and str(index) in node_parts[index_index]
-            ):
-                nodes.append(node)
+        stack = [self]
+        while stack:
+            component = stack.pop(0)
+            name, side, index = component.identifier
+            for node in cmds.ls(type="transform"):
+                node_parts = node.split("_")
+                if (
+                    name in node_parts[name_index]
+                    and side in node_parts[side_index]
+                    and str(index) in node_parts[index_index]
+                ):
+                    nodes.append(node)
+            stack.extend(component["children"])
         if nodes:
             cmds.delete(nodes)
         if cmds.objExists(self.rig_root):
@@ -997,6 +1338,7 @@ class Rig(dict):
                 component[attr.long_name]["value"] = value
 
             # controller data.
+            component["controller"] = []
             for ctl in (
                 cmds.listConnections(
                     component.rig_root + ".controller", source=True, destination=False
@@ -1009,6 +1351,7 @@ class Rig(dict):
                 ctl_ins.node = ctl
 
             # output
+            component["output"] = []
             for output in (
                 cmds.listConnections(
                     component.rig_root + ".output", source=True, destination=False
@@ -1022,6 +1365,7 @@ class Rig(dict):
                 )
 
             # output joint
+            component["output_joint"] = []
             for output_joint in (
                 cmds.listConnections(
                     component.rig_root + ".output_joint", source=True, destination=False
@@ -1047,6 +1391,20 @@ def build(context: dict, component: T, attach_guide: bool = False) -> dict:
 
     Name.controller_name_convention = component["controller_name_convention"]["value"]
     Name.joint_name_convention = component["joint_name_convention"]["value"]
+    Name.controller_extension = component["controller_extension"]["value"]
+    Name.joint_extension = component["joint_extension"]["value"]
+    Name.side_str_list = (
+        component["side_c_str"]["value"],
+        component["side_l_str"]["value"],
+        component["side_r_str"]["value"],
+    )
+
+    for script in component["pre_custom_scripts"]["value"]:
+        try:
+            cmds.undoInfo(openChunk=True)
+
+        finally:
+            cmds.undoInfo(closeChunk=True)
 
     try:
         cmds.undoInfo(openChunk=True)
@@ -1070,6 +1428,7 @@ def build(context: dict, component: T, attach_guide: bool = False) -> dict:
         # TODO : custom polygon data
 
         # setup output joint
+        output_joints = []
         color_index_list = [12, 14, 17, 18, 19, 21]
         color_index = 0
         stack = [component]
@@ -1087,7 +1446,7 @@ def build(context: dict, component: T, attach_guide: bool = False) -> dict:
                     description=output_joint["description"],
                     extension=Name.joint_extension,
                 )
-                if "name" in output_joint:
+                if "name" in output_joint and cmds.objExists(joint_name):
                     joint_name = cmds.rename(joint_name, output_joint["name"])
                 parent = cmds.listRelatives(joint_name, parent=True)[0]
                 if "parent" in output_joint and parent != output_joint["parent"]:
@@ -1095,27 +1454,36 @@ def build(context: dict, component: T, attach_guide: bool = False) -> dict:
                 cmds.setAttr(joint_name + ".overrideEnabled", 1)
                 cmds.setAttr(joint_name + ".overrideEnabled", 1)
                 cmds.color(joint_name, userDefined=color_index_list[color_index])
+                output_joints.append(joint_name)
             color_index += 1
             stack.extend(c["children"])
+        component.setup_skel_graph(output_joints)
 
         # TODO : pose manager
         # TODO : space manager
         # TODO : sdk manager
-        # TODO : custom script
-
-        # rig info
-        info = "mayaVersion : " + maya_version() + "\n"
-        info += "usedPlugins : "
-        plugins = used_plugins()
-        for i in range(int(len(plugins) / 2)):
-            info += "\n\t" + plugins[i * 2] + "\t" + plugins[i * 2 + 1]
-        cmds.addAttr("rig", longName="notes", dataType="string")
-        cmds.setAttr("rig.notes", info, type="string")
-        cmds.setAttr("rig.notes", lock=True)
         cmds.select("rig")
     finally:
         cmds.undoInfo(closeChunk=True)
 
+    for script in component["post_custom_scripts"]["value"]:
+        try:
+            cmds.undoInfo(openChunk=True)
+
+        finally:
+            cmds.undoInfo(closeChunk=True)
+
+    # rig build info
+    info = "mayaVersion : " + maya_version() + "\n"
+    info += "usedPlugins : "
+    plugins = used_plugins()
+    for i in range(int(len(plugins) / 2)):
+        info += "\n\t" + plugins[i * 2] + "\t" + plugins[i * 2 + 1]
+    cmds.addAttr("rig", longName="notes", dataType="string")
+    cmds.setAttr("rig.notes", info, type="string")
+    cmds.setAttr("rig.notes", lock=True)
+
+    # rig result logging
     @build_log(logging.DEBUG)
     def print_context(*args, **kwargs): ...
 
