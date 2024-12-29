@@ -31,13 +31,6 @@ DATA = [
     ),
     # output joint 생성 option
     attribute.Bool(longName="create_output_joint", value=1),
-    # mirror option
-    attribute.Enum(
-        longName="mirror_type",
-        enumName=["orientation", "behavior", "inverse_scale"],
-        defaultValue=1,
-        value=1,
-    ),
     # controlelr 갯수.
     attribute.Integer(longName="controller_count", minValue=1, value=1),
     # offset output rotate
@@ -94,6 +87,9 @@ class Rig(component.Rig):
                 ),
                 color=12,
                 npo_matrix_index=i,
+            )
+            cmds.connectAttr(
+                self.rig_root + f".guide_mirror_type[{i}]", ctl + ".mirror_type"
             )
 
             ins = Transform(

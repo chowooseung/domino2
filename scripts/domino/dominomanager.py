@@ -23,6 +23,7 @@ from functools import partial
 from pathlib import Path
 import importlib
 import pickle
+import shutil
 import os
 import re
 
@@ -677,7 +678,7 @@ QTreeView::branch:open:has-children  {{
     def save(self) -> None:
         def ensure_version_in_file_path(file_path: str) -> str:
             path = Path(file_path)
-            directory = path.get_parent()
+            directory = path.parent
             name, ext = path.name.split(".")
             return (directory / ".".join([name + "_v001", ext])).as_posix()
 
@@ -685,6 +686,17 @@ QTreeView::branch:open:has-children  {{
             fill_count = len(version) - 1
             new_version = int(version[1:]) + 1
             return file_path.replace(version, "v" + str(new_version).zfill(fill_count))
+
+        def copy_file(source_path, destination_path):
+            try:
+                shutil.copy2(source_path, destination_path)
+                logger.info(f"File copied from {source_path} to {destination_path}")
+            except FileNotFoundError:
+                logger.info(f"Source file not found: {source_path}")
+            except PermissionError:
+                logger.info(f"Permission denied to copy file to: {destination_path}")
+            except Exception as e:
+                logger.info(f"An error occurred: {e}")
 
         data = self.rig_tree_model.rig
         if not data:
@@ -712,6 +724,58 @@ QTreeView::branch:open:has-children  {{
             match = re.search(pattern, file_path)
             if not match:
                 file_path = ensure_version_in_file_path(file_path)
+
+        # scripts version up
+        path = Path(file_path)
+        scripts_dir = path.parent / (path.name.split(".")[0] + ".metadata")
+        if not scripts_dir.exists():
+            scripts_dir.mkdir()
+        replace_scripts = []
+        for script_path in data["pre_custom_scripts"]["value"]:
+            if not script_path:
+                continue
+            disable = False
+            if script_path.startswith("*"):
+                script_path = script_path[1:]
+                disable = True
+            source_file = Path(script_path)
+            name = source_file.name
+            destination_file = scripts_dir / name
+            copy_file(source_file.as_posix(), destination_file.as_posix())
+            replace_script = "*" if disable else ""
+            replace_script += destination_file.as_posix()
+            replace_scripts.append(replace_script)
+        data["pre_custom_scripts"]["value"] = replace_scripts
+        replace_scripts = []
+        for script_path in data["post_custom_scripts"]["value"]:
+            if not script_path:
+                continue
+            disable = False
+            if script_path.startswith("*"):
+                script_path = script_path[1:]
+                disable = True
+            source_file = Path(script_path)
+            name = source_file.name
+            destination_file = scripts_dir / name
+            copy_file(source_file.as_posix(), destination_file.as_posix())
+            replace_script = "*" if disable else ""
+            replace_script += destination_file.as_posix()
+            replace_scripts.append(replace_script)
+        data["post_custom_scripts"]["value"] = replace_scripts
+
+        root = data.rig_root
+        if cmds.objExists(data.guide_root):
+            root = data.guide_root
+
+        for i, path in enumerate(data["pre_custom_scripts"]["value"]):
+            cmds.setAttr(root + f".pre_custom_scripts[{i}]", path, type="string")
+        for i, path in enumerate(data["post_custom_scripts"]["value"]):
+            cmds.setAttr(root + f".post_custom_scripts[{i}]", path, type="string")
+
+        selected = cmds.ls(selection=True)
+        if selected and cmds.objExists(selected[0] + ".is_domino_guide_root"):
+            mel.eval('setLocalView "Rigging" "" 1;')
+
         save(file_path, data)
         self.file_path_line_edit.setText(file_path)
 

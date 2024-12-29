@@ -13,6 +13,7 @@ import copy
 import json
 import importlib
 import logging
+import sys
 
 
 __all__ = [
@@ -157,7 +158,7 @@ class Rig(dict):
         component = self["component"]["value"].capitalize()
         cmds.createNode(f"d{component}", name=self.guide_root, parent=GUIDE)
         cmds.addAttr(
-            self.guide_root, longName="is_domino_guideRoot", attributeType="bool"
+            self.guide_root, longName="is_domino_guide_root", attributeType="bool"
         )
         # attribute settings 에서 사용하기 위해 dummy attribute 생성.
         cmds.addAttr(
@@ -729,12 +730,16 @@ class Rig(dict):
                     parent + ".output", destination=False, source=True
                 )[0]
                 parent_output_matrix = parent_output + ".worldMatrix[0]"
-                plug = cmds.listConnections(
-                    parent_output + ".message",
-                    destination=True,
-                    source=False,
-                    plugs=True,
-                )[0]
+                plug = [
+                    x
+                    for x in cmds.listConnections(
+                        parent_output + ".message",
+                        destination=True,
+                        source=False,
+                        plugs=True,
+                    )
+                    if "[" in x
+                ][0]
                 parent_root = plug.split(".")[0]
                 index = int(plug.split("[")[1].split("]")[0])
                 initialize_parent_output_matrix = (
@@ -1401,10 +1406,21 @@ def build(context: dict, component: T, attach_guide: bool = False) -> dict:
         component["side_r_str"]["value"],
     )
 
-    for script in component["pre_custom_scripts"]["value"]:
+    for script_path in component["pre_custom_scripts"]["value"]:
+        if not script_path:
+            continue
         try:
             cmds.undoInfo(openChunk=True)
+            name = Path(script_path).name.split(".")[0]
+            spec = importlib.util.spec_from_file_location(name, script_path)
+            module = importlib.util.module_from_spec(spec)
+            spec.loader.exec_module(module)
+            sys.modules[name] = module
 
+            logger.info(f"Run {name} {script_path}")
+            module.run(context=context)
+        except Exception as e:
+            logger.error(e, exc_info=True)
         finally:
             cmds.undoInfo(closeChunk=True)
 
@@ -1468,14 +1484,26 @@ def build(context: dict, component: T, attach_guide: bool = False) -> dict:
     finally:
         cmds.undoInfo(closeChunk=True)
 
-    for script in component["post_custom_scripts"]["value"]:
+    for script_path in component["post_custom_scripts"]["value"]:
+        if not script_path:
+            continue
         try:
             cmds.undoInfo(openChunk=True)
+            name = Path(script_path).name.split(".")[0]
+            spec = importlib.util.spec_from_file_location(name, script_path)
+            module = importlib.util.module_from_spec(spec)
+            spec.loader.exec_module(module)
+            sys.modules[name] = module
 
+            logger.info(f"Run {name} {script_path}")
+            module.run(context=context)
+        except Exception as e:
+            logger.error(e, exc_info=True)
         finally:
             cmds.undoInfo(closeChunk=True)
 
     # rig build info
+    cmds.undoInfo(openChunk=True)
     info = "mayaVersion : " + maya_version() + "\n"
     info += "usedPlugins : "
     plugins = used_plugins()
@@ -1484,6 +1512,7 @@ def build(context: dict, component: T, attach_guide: bool = False) -> dict:
     cmds.addAttr("rig", longName="notes", dataType="string")
     cmds.setAttr("rig.notes", info, type="string")
     cmds.setAttr("rig.notes", lock=True)
+    cmds.undoInfo(closeChunk=True)
 
     # rig result logging
     @build_log(logging.DEBUG)
@@ -1573,12 +1602,29 @@ def serialize() -> T:
         if module_name == "assembly":
             rig = component
 
+    rig["pre_custom_scripts_str"]["value"] = []
+    for script in rig["pre_custom_scripts"]["value"]:
+        if not script:
+            continue
+        content = ""
+        with open(script, "r") as f:
+            content += f.read()
+        rig["pre_custom_scripts_str"]["value"].append(content)
+
+    rig["post_custom_scripts_str"]["value"] = []
+    for script in rig["post_custom_scripts"]["value"]:
+        if not script:
+            continue
+        content = ""
+        with open(script, "r") as f:
+            content += f.read()
+        rig["post_custom_scripts_str"]["value"].append(content)
+
     # TODO : pose manager
     # TODO : space manager
     # TODO : sdk manager
     # TODO : custom curve data
     # TODO : custom polygon data
-    # TODO : custom script
     return rig
 
 
