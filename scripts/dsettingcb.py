@@ -1,4 +1,4 @@
-# Assembly Callback -------------------------------------------------- #
+# region assembly
 def add_script(plug, scroll_list, *args) -> None:
     from maya import cmds
     from pathlib import Path
@@ -513,10 +513,10 @@ def cb_post_custom_scripts(plug, label, annotation) -> None:
         cmds.textScrollList(li, edit=True, append=text)
 
 
-# -------------------------------------------------------------------- #
+# endregion
 
 
-# Common Callback ---------------------------------------------------- #
+# region Common Callback
 def cb_edit_name(plug, label, annotation):
     from maya import cmds
 
@@ -526,9 +526,36 @@ def cb_edit_name(plug, label, annotation):
     field = cmds.textField(text=name)
 
     def edit_name(*args):
+        from domino import dominomanager
+
         new_name = args[0]
-        cmds.setAttr(plug, new_name, type="string")
-        # TODO
+
+        ins = dominomanager.Manager.get_instance()
+        rig = ins.rig_tree_model.rig
+        rig.sync_from_scene()
+
+        root = plug.split(".")[0]
+        name = cmds.getAttr(root + ".name")
+        side = cmds.getAttr(root + ".side")
+        index = cmds.getAttr(root + ".index")
+
+        stack = [rig]
+        while stack:
+            component = stack.pop(0)
+            component_name, component_side, component_index = component.identifier
+            if (
+                component_name == name
+                and component_side == side
+                and component_index == index
+            ):
+                break
+            stack.extend(component["children"])
+        index = rig.get_valid_component_index(new_name, side)
+        component.rename_component(new_name, side, index, True)
+
+        cmds.setAttr(component.guide_root, new_name, type="string")
+        cmds.setAttr(component.guide_root + ".index", index)
+        ins.refresh()
 
     cmds.textField(field, edit=True, changeCommand=edit_name)
     cmds.setParent(upLevel=1)
@@ -661,10 +688,10 @@ def cb_edit_parent_controller(plug, label, annotation):
     cmds.setParent(upLevel=1)
 
 
-# -------------------------------------------------------------------- #
+# endregion
 
 
-# Control01 Callback ------------------------------------------------- #
+# region Control01 Callback
 def cb_edit_controller_count(plug, label, annotation):
     from maya import cmds
 
@@ -689,4 +716,4 @@ def cb_edit_controller_count(plug, label, annotation):
     cmds.setParent(upLevel=1)
 
 
-# -------------------------------------------------------------------- #
+# endregion

@@ -261,7 +261,7 @@ cmds.evalDeferred(command)"""
 
         layout = QtWidgets.QVBoxLayout(self)
 
-        # menubar
+        # region menubar
         self.menu_bar = QtWidgets.QMenuBar()
         layout.setMenuBar(self.menu_bar)
 
@@ -277,8 +277,9 @@ cmds.evalDeferred(command)"""
         self.command_menu.addAction(self.print_component_action)
 
         self.template_menu = self.menu_bar.addMenu("Templates")
+        # endregion
 
-        # modeling path
+        # region modeling path
         modeling_path_layout = QtWidgets.QHBoxLayout()
         self.modeling_path_line_edit = QtWidgets.QLineEdit()
         self.modeling_path_line_edit.setReadOnly(True)
@@ -291,8 +292,9 @@ cmds.evalDeferred(command)"""
         modeling_path_layout.addWidget(self.modeling_path_load_btn)
         modeling_path_layout.setSpacing(4)
         layout.addLayout(modeling_path_layout)
+        # endregion
 
-        # file line
+        # region file line
         file_layout = QtWidgets.QHBoxLayout()
         self.file_path_line_edit = QtWidgets.QLineEdit()
         self.file_path_line_edit.setReadOnly(True)
@@ -318,8 +320,9 @@ cmds.evalDeferred(command)"""
         file_layout.addWidget(self.file_path_version_up_btn)
         file_layout.setSpacing(4)
         layout.addLayout(file_layout)
+        # endregion
 
-        # tree
+        # region tree
         self.rig_tree_view = QtWidgets.QTreeView()
         self.rig_tree_view.header().hide()
         self.rig_tree_view.setContextMenuPolicy(
@@ -354,8 +357,11 @@ QTreeView::branch:open:has-children  {{
         layout.addWidget(self.rig_tree_view)
         self.rig_tree_view.setModel(self.rig_tree_model)
         self.rig_tree_view.clicked.connect(self.set_settings)
+        self.rig_tree_model.layoutAboutToBeChanged.connect(self.store_expand_state)
+        self.rig_tree_model.layoutChanged.connect(self.restore_expand_state)
+        # endregion
 
-        # tree context menu
+        # region tree context menu
         self.context_menu = QtWidgets.QMenu(self)
 
         self.expand_child_item_action = QtGui.QAction("Expand child Items")
@@ -398,14 +404,12 @@ QTreeView::branch:open:has-children  {{
                 self.rig_tree_view.viewport().mapToGlobal(Point)
             )
         )
+        # endregion
 
         # component list
         self.component_list_widget = QtWidgets.QListWidget()
         self.component_list_widget.setMaximumHeight(250)
         layout.addWidget(self.component_list_widget)
-
-        self.rig_tree_model.layoutAboutToBeChanged.connect(self.store_expand_state)
-        self.rig_tree_model.layoutChanged.connect(self.restore_expand_state)
         self.component_list_widget.doubleClicked.connect(self.add_component)
 
     def refresh(self) -> None:
@@ -533,7 +537,7 @@ QTreeView::branch:open:has-children  {{
 
             selected = cmds.ls(selection=True)
 
-            # import component
+            # region import component
             items = self.component_list_widget.selectedItems()
             if not items:
                 return
@@ -543,8 +547,9 @@ QTreeView::branch:open:has-children  {{
             except ModuleNotFoundError:
                 return
             component = module.Rig()
+            # endregion
 
-            # 이미 존재하는 리그가 없다면 assembly 생성.
+            # region 이미 존재하는 리그가 없다면 assembly 생성.
             rig = self.rig_tree_model.rig
             if rig is None:
                 assembly_module = importlib.import_module("domino.component.assembly")
@@ -566,28 +571,32 @@ QTreeView::branch:open:has-children  {{
                             extension=Name.joint_extension,
                         )
                     )
-                # # setup output joint
+                # setup output joint
                 rig.setup_skel_graph(output_joints)
             rig.sync_from_scene()
+            # endregion
 
-            # get parent component
+            # region setup component
             parent = rig
             parent_item_index = self.rig_tree_view.selectedIndexes()
             if parent_item_index:
                 item = self.rig_tree_model.itemFromIndex(parent_item_index[0])
                 parent = item.component
 
-            # set component index
             index = rig.get_valid_component_index(
                 component["name"]["value"], component["side"]["value"]
             )
             component["index"]["value"] = index
             component.set_parent(parent)
             component.populate()
+            # endregion
+
             # create rig
             component.rig()
             # attach guide
             component.attach_guide()
+
+            # region setup skel
             output_joints = []
             name, side, index = component.identifier
             for data in component["output_joint"]:
@@ -601,8 +610,8 @@ QTreeView::branch:open:has-children  {{
                         extension=Name.joint_extension,
                     )
                 )
-            # # setup output joint
             component.setup_skel_graph(output_joints)
+            # endregion
 
             # refresh model
             self.rig_tree_model.populate_model()
@@ -672,10 +681,17 @@ QTreeView::branch:open:has-children  {{
                     component["name"]["value"], side, index, True
                 )
             self.rig_tree_model.populate_model()
+            mel.eval('setLocalView "Rigging" "" 1;')
         finally:
             cmds.undoInfo(closeChunk=True)
 
     def save(self) -> None:
+        data = self.rig_tree_model.rig
+        if not data:
+            return
+        data.sync_from_scene()
+
+        # region get file path
         def ensure_version_in_file_path(file_path: str) -> str:
             path = Path(file_path)
             directory = path.parent
@@ -687,21 +703,6 @@ QTreeView::branch:open:has-children  {{
             new_version = int(version[1:]) + 1
             return file_path.replace(version, "v" + str(new_version).zfill(fill_count))
 
-        def copy_file(source_path, destination_path):
-            try:
-                shutil.copy2(source_path, destination_path)
-                logger.info(f"File copied from {source_path} to {destination_path}")
-            except FileNotFoundError:
-                logger.info(f"Source file not found: {source_path}")
-            except PermissionError:
-                logger.info(f"Permission denied to copy file to: {destination_path}")
-            except Exception as e:
-                logger.info(f"An error occurred: {e}")
-
-        data = self.rig_tree_model.rig
-        if not data:
-            return
-        data.sync_from_scene()
         file_path = self.file_path_line_edit.text()
         pattern = r"v\d+"
         if file_path:
@@ -724,8 +725,20 @@ QTreeView::branch:open:has-children  {{
             match = re.search(pattern, file_path)
             if not match:
                 file_path = ensure_version_in_file_path(file_path)
+        # endregion
 
-        # scripts version up
+        # region scripts version up
+        def copy_file(source_path, destination_path):
+            try:
+                shutil.copy2(source_path, destination_path)
+                logger.info(f"File copied from {source_path} to {destination_path}")
+            except FileNotFoundError:
+                logger.info(f"Source file not found: {source_path}")
+            except PermissionError:
+                logger.info(f"Permission denied to copy file to: {destination_path}")
+            except Exception as e:
+                logger.info(f"An error occurred: {e}")
+
         path = Path(file_path)
         scripts_dir = path.parent / (path.name.split(".")[0] + ".metadata")
         if not scripts_dir.exists():
@@ -771,6 +784,7 @@ QTreeView::branch:open:has-children  {{
             cmds.setAttr(root + f".pre_custom_scripts[{i}]", path, type="string")
         for i, path in enumerate(data["post_custom_scripts"]["value"]):
             cmds.setAttr(root + f".post_custom_scripts[{i}]", path, type="string")
+        # endregion
 
         selected = cmds.ls(selection=True)
         if selected and cmds.objExists(selected[0] + ".is_domino_guide_root"):
@@ -850,4 +864,4 @@ QTreeView::branch:open:has-children  {{
             if k == "children":
                 continue
             logger.info(k)
-            logger.info("\t", v)
+            logger.info("\t" + str(v))
