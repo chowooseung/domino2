@@ -17,6 +17,7 @@ from domino.component import (
     Name,
 )
 from domino.core.utils import logger
+from domino.dominosettings import Settings
 
 # built-ins
 from functools import partial
@@ -479,8 +480,9 @@ QTreeView::branch:open:has-children  {{
                 stack.extend(c["children"])
 
             cmds.select(component.guide_root)
-            cmds.AttributeEditor()
-            mel.eval('setLocalView "Rigging" "" 1;')
+            ui = Settings.get_instance()
+            ui.refresh()
+            ui.show(dockable=True)
         finally:
             cmds.undoInfo(closeChunk=True)
 
@@ -490,8 +492,6 @@ QTreeView::branch:open:has-children  {{
             guide_root = item.component.guide_root
             if cmds.objExists(guide_root):
                 cmds.select(guide_root)
-                cmds.AttributeEditor()
-                mel.eval('setLocalView "Rigging" "" 1;')
 
     def clear_rig_view(self) -> None:
         self.rig_tree_model.rig = None
@@ -681,7 +681,6 @@ QTreeView::branch:open:has-children  {{
                     component["name"]["value"], side, index, True
                 )
             self.rig_tree_model.populate_model()
-            mel.eval('setLocalView "Rigging" "" 1;')
         finally:
             cmds.undoInfo(closeChunk=True)
 
@@ -785,10 +784,6 @@ QTreeView::branch:open:has-children  {{
         for i, path in enumerate(data["post_custom_scripts"]["value"]):
             cmds.setAttr(root + f".post_custom_scripts[{i}]", path, type="string")
         # endregion
-
-        selected = cmds.ls(selection=True)
-        if selected and cmds.objExists(selected[0] + ".is_domino_guide_root"):
-            mel.eval('setLocalView "Rigging" "" 1;')
 
         save(file_path, data)
         self.file_path_line_edit.setText(file_path)

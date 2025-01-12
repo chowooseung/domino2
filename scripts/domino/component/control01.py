@@ -11,6 +11,7 @@ from maya import cmds
 import logging
 
 
+# region Initialize Settings
 ORIGINMATRIX = om.MMatrix()
 DATA = [
     attribute.String(longName="component", value="control01"),
@@ -45,9 +46,15 @@ DATA = [
     ),
 ]
 
-description = """control01 component.
+description = """## control01
+---
 
-개별 컨트롤러를 생성합니다."""
+개별 컨트롤러를 생성합니다.   
+
+#### Settings
+- Controller count : Controller 의 갯수."""
+
+# endregion
 
 
 class Rig(component.Rig):
@@ -70,6 +77,7 @@ class Rig(component.Rig):
             for i in range(len(self["guide_matrix"]["value"])):
                 self.add_output_joint(description=i)
 
+    # region RIG
     @build_log(logging.INFO)
     def rig(self):
         super().rig(description=description)
@@ -123,6 +131,9 @@ class Rig(component.Rig):
             if self["create_output_joint"]["value"]:
                 self["output_joint"][i].create(parent=None, output=loc)
 
+    # endregion
+
+    # region GUIDE
     @build_log(logging.INFO)
     def guide(self):
         super().guide(description=description)
@@ -148,3 +159,5 @@ class Rig(component.Rig):
                 self.guide_graph + f".initialize_output_matrix[{i}]",
                 self.guide_root + f".initialize_output_matrix[{i}]",
             )
+
+    # endregion

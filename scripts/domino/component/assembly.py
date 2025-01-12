@@ -4,8 +4,6 @@ from domino.core import (
     attribute,
     Name,
     Transform,
-    controller_name_convention,
-    joint_name_convention,
     controller_extension,
     joint_extension,
     center,
@@ -22,13 +20,10 @@ from maya import cmds
 import logging
 
 
+# region Initialize Settings
 ORIGINMATRIX = om.MMatrix()
 DATA = [
     attribute.String(longName="component", value="assembly"),
-    attribute.String(
-        longName="controller_name_convention", value=controller_name_convention
-    ),
-    attribute.String(longName="joint_name_convention", value=joint_name_convention),
     attribute.String(longName="side_c_str", value=center),
     attribute.String(longName="side_l_str", value=left),
     attribute.String(longName="side_r_str", value=right),
@@ -48,12 +43,23 @@ DATA = [
     attribute.String(longName="post_custom_scripts_str", multi=True),
 ]
 
-description = """assembly component.
+description = """## assembly
+---
 
-최상위 component 입니다. 
-COG 컨트롤러를 가지고 있습니다. guide를 무게중심점에 위치시켜주세요.
+최상위 component.   
 
-origin_jnt 는 model 의 원점을 나타내는 역할입니다."""
+#### Guide
+- COG 는 무게중심점입니다.
+
+#### Settings
+- side c str : 가운데를 나타내는 문자열
+- side l str : 왼쪽을 나타내는 문자열
+- side r str : 오른쪽을 나타내는 문자열
+- joint extension : joint 를 나타내는 문자열
+- controller extension : controller 를 나타내는 문자
+- custom scripts  
+> rig build 시 같이 실행되는 pre, post script 를 관리합니다."""
+# endregion
 
 
 class Rig(component.Rig):
@@ -85,6 +91,7 @@ class Rig(component.Rig):
         if not self["output_joint"]:
             self.add_output_joint(description="")
 
+    # region RIG
     @build_log(logging.INFO)
     def rig(self):
         super().rig(description=description)
@@ -95,8 +102,6 @@ class Rig(component.Rig):
             self["side_l_str"]["value"],
             self["side_r_str"]["value"],
         )
-        Name.controller_name_convention = self["controller_name_convention"]["value"]
-        Name.joint_name_convention = self["joint_name_convention"]["value"]
         Name.controller_extension = self["controller_extension"]["value"]
         Name.joint_extension = self["joint_extension"]["value"]
 
@@ -148,6 +153,9 @@ class Rig(component.Rig):
         # output joint
         self["output_joint"][0].create(parent=None, output=sub_ctl)
 
+    # endregion
+
+    # region GUIDE
     @build_log(logging.INFO)
     def guide(self):
         super().guide(description=description)
@@ -163,3 +171,5 @@ class Rig(component.Rig):
         cmds.setAttr(pick_m + ".useShear", 0)
         cmds.connectAttr(guide + ".worldMatrix[0]", pick_m + ".inputMatrix")
         cmds.connectAttr(pick_m + ".outputMatrix", self.guide_root + ".npo_matrix[0]")
+
+    # endregion

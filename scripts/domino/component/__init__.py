@@ -19,11 +19,6 @@ import sys
 __all__ = [
     "assembly",
     "control01",
-    "humanspine01",
-    "humanneck01",
-    "humanarm01",
-    "humanleg01",
-    "humanfinger01",
 ]
 
 GUIDE = "guide"
@@ -152,17 +147,12 @@ class Rig(dict):
 
     @build_log(logging.DEBUG)
     def add_guide_root(self) -> None:
-        if not cmds.pluginInfo("dominoNodes.py", loaded=True, query=True):
-            cmds.loadPlugin("dominoNodes.py")
-
-        component = self["component"]["value"].capitalize()
-        cmds.createNode(f"d{component}", name=self.guide_root, parent=GUIDE)
+        cmds.createNode("transform", name=self.guide_root, parent=GUIDE)
         cmds.addAttr(
             self.guide_root, longName="is_domino_guide_root", attributeType="bool"
         )
-        # attribute settings 에서 사용하기 위해 dummy attribute 생성.
         cmds.addAttr(
-            self.guide_root, longName="_parent_controller", attributeType="bool"
+            self.guide_root, longName="_guides", attributeType="message", multi=True
         )
 
         for long_name, data in self.items():
@@ -262,6 +252,9 @@ class Rig(dict):
         )
         cmds.connectAttr(
             guide + ".worldMatrix[0]", self.guide_root + f".guide_matrix[{next_index}]"
+        )
+        cmds.connectAttr(
+            guide + ".message", self.guide_root + f"._guides[{next_index}]"
         )
         at = attribute.Enum(
             longName="mirror_type",
@@ -1091,57 +1084,43 @@ class Rig(dict):
         if not apply_to_output:
             return
 
-        for convention in [
-            self.assembly["controller_name_convention"]["value"],
-            self.assembly["joint_name_convention"]["value"],
-        ]:
-            name_parts = convention.split("_")
-            for i, parts in enumerate(name_parts):
-                if "name" in parts:
-                    name_index = i
-                if "side" in parts:
-                    side_index = i
-                if "index" in parts:
-                    index_index = i
+        # rename
+        for node in cmds.ls(type="transform"):
+            name_list = node.split("_")
+            if len(name_list) < 2:
+                continue
+            node_name = name_list[0]
+            node_side_index = name_list[1]
+            if (
+                name == node_name
+                and node_side_index.startswith(side)
+                and node_side_index.endswith(str(index))
+            ):
+                etc = "_".join(name_list[2:])
+                new_side_str = Name.side_str_list[new_side]
+                replace_name = f"{new_name}_{new_side_str}{new_index}_{etc}"
+                cmds.rename(node, replace_name)
 
-            for node in cmds.ls(type="transform"):
-                node_parts = node.split("_")
-                if (
-                    name in node_parts[name_index]
-                    and side in node_parts[side_index]
-                    and str(index) in node_parts[index_index]
-                ):
-                    node_parts[name_index] = node_parts[name_index].replace(
-                        name, new_name
-                    )
-                    old_side = Name.side_list.index(side)
-                    node_parts[side_index] = node_parts[side_index].replace(
-                        Name.side_str_list[old_side], Name.side_str_list[new_side]
-                    )
-                    node_parts[index_index] = node_parts[index_index].replace(
-                        str(index), str(new_index)
-                    )
-                    cmds.rename(node, "_".join(node_parts))
         # edit joint label
-        for data in self["output_joint"]:
-            joint_name = Name.create(
-                convention=Name.joint_name_convention,
-                name=new_name,
-                side=Name.side_str_list[new_side],
-                index=new_index,
-                description=data["description"],
-                extension=Name.joint_extension,
+        if cmds.objExists(self.rig_root):
+            output_joints = (
+                cmds.listConnections(
+                    self.rig_root + ".output_joint", source=True, destination=False
+                )
+                or []
             )
-            jnt_ins = Joint(node=joint_name)
-            jnt_ins.set_label(
-                new_side,
-                Name.create_joint_label(
-                    new_name,
-                    Name.side_str_list[new_side],
-                    new_index,
-                    data["description"],
-                ),
-            )
+            for output_joint in output_joints:
+                description = cmds.getAttr(output_joint + ".description")
+                jnt_ins = Joint(node=output_joint)
+                jnt_ins.set_label(
+                    new_side,
+                    Name.create_joint_label(
+                        new_name,
+                        Name.side_str_list[new_side],
+                        new_index,
+                        description,
+                    ),
+                )
 
         if cmds.objExists(self.guide_root):
             cmds.setAttr(self.guide_root + ".name", new_name, type="string")
@@ -1283,7 +1262,7 @@ class Rig(dict):
                 break
             stack.extend([(child, component) for child in component["children"]])
 
-        name_parts = self.assembly["joint_name_convention"]["value"].split("_")
+        name_parts = Name.joint_name_convention.split("_")
         for i, parts in enumerate(name_parts):
             if "name" in parts:
                 name_index = i
@@ -1395,16 +1374,6 @@ def build(context: dict, component: T, attach_guide: bool = False) -> dict:
         if Path(component["modeling"]).exists():
             cmds.file(newFile=True, force=True)
             cmds.file(component["modeling"], i=True, namespace=":")
-
-    Name.controller_name_convention = component["controller_name_convention"]["value"]
-    Name.joint_name_convention = component["joint_name_convention"]["value"]
-    Name.controller_extension = component["controller_extension"]["value"]
-    Name.joint_extension = component["joint_extension"]["value"]
-    Name.side_str_list = (
-        component["side_c_str"]["value"],
-        component["side_l_str"]["value"],
-        component["side_r_str"]["value"],
-    )
 
     for script_path in component["pre_custom_scripts"]["value"]:
         if not script_path:
