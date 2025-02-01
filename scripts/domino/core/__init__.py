@@ -8,7 +8,7 @@ from domino.core import nurbscurve, matrix
 ## matrix
 ORIGINMATRIX = om.MMatrix()
 
-## name
+# region CONST
 joint_name_convention = "{name}_{side}{index}_{description}_{extension}"
 controller_name_convention = "{name}_{side}{index}_{description}_{extension}"
 
@@ -25,8 +25,10 @@ output_extension = "out"
 curve_extension = "crv"
 polygon_extension = "poly"
 ikh_extension = "ikh"
+# endregion
 
 
+# region Name
 class Name:
     """rig 에 필요한 이름 생성.
 
@@ -141,6 +143,10 @@ class Name:
         return "_".join([x for x in name.split("_") if x])
 
 
+# endregion
+
+
+# region Transform
 class Transform:
     """
     name convention 을 입력받아 새로운 transform 을 생성하거나,
@@ -311,6 +317,10 @@ class Transform:
         )
 
 
+# endregion
+
+
+# region Joint
 class Joint(Transform):
     """
     Joint 를 생성합니다.
@@ -429,6 +439,10 @@ class Joint(Transform):
         cmds.setAttr(self._node + ".otherType", label, type="string")
 
 
+# endregion
+
+
+# region Controller
 class Controller(Transform):
     """
     Controller 를 생성합니다.
@@ -716,7 +730,7 @@ class Controller(Transform):
         Returns:
             list: child controller list
         """
-        children = []
+        controllers = []
 
         def get_child(_node):
             children_node = (
@@ -726,12 +740,35 @@ class Controller(Transform):
                 or []
             )
 
-            [children.append(c) for c in children_node]
+            [controllers.append(c) for c in children_node]
             for child in children_node:
                 get_child(child)
 
         get_child(node)
-        return children
+
+        controller_root = [
+            x
+            for x in cmds.listConnections(
+                node + ".message", source=False, destination=True
+            )
+            if cmds.objExists(x + ".is_domino_rig_root")
+        ][0]
+        stack = [controller_root]
+        while stack:
+            root = stack.pop(0)
+
+            controllers.extend(
+                cmds.listConnections(
+                    root + ".controller", source=True, destination=False
+                )
+                or []
+            )
+
+            stack.extend(
+                cmds.listConnections(root + ".children", source=False, destination=True)
+                or []
+            )
+        return controllers
 
     @staticmethod
     def reset(node: str) -> None:
@@ -753,6 +790,10 @@ class Controller(Transform):
             cmds.setAttr(node + attr, default_value)
 
 
+# endregion
+
+
+# region Curve
 class Curve:
     """nurbscurve data
 
@@ -914,6 +955,10 @@ class Curve:
         return curve
 
 
+# endregion
+
+
+# region Polygon
 class Polygon:
 
     def __init__(self, node: str = None, data: dict = None) -> None:
@@ -941,6 +986,10 @@ class Polygon:
         self._node = n
 
 
+# endregion
+
+
+# region FCurve
 class FCurve:
     """anim curve data
 
@@ -1064,3 +1113,6 @@ class FCurve:
             )
             keyframes.append(keyframe)
         return keyframes
+
+
+# endregion
