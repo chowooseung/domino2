@@ -30,6 +30,7 @@ ORIGINMATRIX = om.MMatrix()
 T = TypeVar("T", bound="Rig")
 
 
+# region RIG
 class Rig(dict):
     """
     Guide Matrix -> Bifrost -> initial Matrix(controller, output_joint) -> outputJoint
@@ -41,6 +42,7 @@ class Rig(dict):
         _type_: _description_
     """
 
+    # region -    RIG / PROPERTY
     @property
     def assembly(self) -> T:
         component = self
@@ -104,6 +106,9 @@ class Rig(dict):
     def skel_graph(self) -> str:
         return SKEL + "_bifGraph"
 
+    # endregion
+
+    # region -    RIG / componnet parent
     def get_parent(self) -> T:
         return self._parent
 
@@ -145,6 +150,9 @@ class Rig(dict):
                     )
                 cmds.parent(self.rig_root, output_name)
 
+    # endregion
+
+    # region -    RIG / Add root
     @build_log(logging.DEBUG)
     def add_guide_root(self) -> None:
         cmds.createNode("transform", name=self.guide_root, parent=GUIDE)
@@ -275,6 +283,9 @@ class Rig(dict):
         cmds.setAttr(guide + ".v", lock=True, keyable=False)
         return guide
 
+    # endregion
+
+    # region -    RIG / _Controller
     class _Controller(dict):
 
         @property
@@ -424,6 +435,8 @@ class Rig(dict):
             self["parent_controllers"] = parent_controllers
             self._node = self.name
 
+    # endregion
+
     def add_controller(self, description: str, parent_controllers: list) -> None:
         self._Controller(
             description=description,
@@ -451,6 +464,7 @@ class Rig(dict):
         )
         return ins.create()
 
+    # region -    RIG / _Output
     class _Output(dict):
 
         @property
@@ -511,9 +525,12 @@ class Rig(dict):
             self["description"] = description
             self["extension"] = extension
 
+    # endregion
+
     def add_output(self, description: str, extension: str) -> None:
         self._Output(description=description, extension=extension, rig_instance=self)
 
+    # region -    RIG / _OutputJoint
     class _OutputJoint(dict):
 
         @property
@@ -595,9 +612,12 @@ class Rig(dict):
             self["description"] = description
             self._node = self.name
 
+    # endregion
+
     def add_output_joint(self, description: str) -> None:
         self._OutputJoint(description=description, rig_instance=self)
 
+    # region -    RIG / Add Bifrost Graph
     @build_log(logging.DEBUG)
     def add_guide_graph(self) -> str:
         component = self["component"]["value"]
@@ -723,7 +743,7 @@ class Rig(dict):
                     parent + ".output", destination=False, source=True
                 )[0]
                 parent_output_matrix = parent_output + ".worldMatrix[0]"
-                plug = [
+                plugs = [
                     x
                     for x in cmds.listConnections(
                         parent_output + ".message",
@@ -732,7 +752,8 @@ class Rig(dict):
                         plugs=True,
                     )
                     if "[" in x
-                ][0]
+                ]
+                plug = [x for x in plugs if "output[" in x][0]
                 parent_root = plug.split(".")[0]
                 index = int(plug.split("[")[1].split("]")[0])
                 initialize_parent_output_matrix = (
@@ -795,6 +816,9 @@ class Rig(dict):
                 output_joint + ".jointOrient",
             )
 
+    # endregion
+
+    # region -    RIG / Super method
     def __init__(self, data: list = []) -> None:
         """initialize 시 component 의 데이터를 instance 에 업데이트 합니다."""
         self._parent = None
@@ -831,6 +855,14 @@ class Rig(dict):
             cmds.addAttr(rig, longName="is_domino_rig", attributeType="bool")
             for attr in attrs:
                 cmds.setAttr(RIG + attr, lock=True, keyable=False)
+            cmds.addAttr(rig, longName="domino_path", dataType="string")
+            cmds.addAttr(rig, longName="run_blendshape_path", attributeType="bool")
+            cmds.addAttr(rig, longName="blendshape_path", dataType="string")
+            cmds.addAttr(
+                rig, longName="run_deformer_weights_path", attributeType="bool"
+            )
+            cmds.addAttr(rig, longName="deformer_weights_path", dataType="string")
+            cmds.addAttr(rig, longName="modeling_path", dataType="string")
         if not cmds.objExists(SKEL):
             ins = Transform(parent=RIG, name="", side="", index="", extension=SKEL)
             ins.create()
@@ -964,6 +996,8 @@ class Rig(dict):
         for i, m in enumerate(self["guide_matrix"]["value"]):
             cmds.setAttr(self.rig_root + f".guide_matrix[{i}]", m, type="matrix")
 
+    # endregion
+
     def populate(self) -> None:
         stack = [self]
         while stack:
@@ -990,6 +1024,7 @@ class Rig(dict):
             index += 1
         return index
 
+    # region -    RIG / Editing component
     def attach_guide(self) -> None:
         if cmds.objExists(self.guide_root):
             self.detach_guide()
@@ -1297,7 +1332,9 @@ class Rig(dict):
             if cmds.objExists(GUIDE):
                 cmds.delete(GUIDE)
 
-    def sync_from_scene(self):
+    # endregion
+
+    def sync_from_scene(self) -> None:
         stack = [self.assembly]
         while stack:
             component = stack.pop(0)
@@ -1366,6 +1403,10 @@ class Rig(dict):
             stack.extend(component["children"])
 
 
+# endregion
+
+
+# region BUILD
 @build_log(logging.INFO)
 def build(context: dict, component: T, attach_guide: bool = False) -> dict:
     context["_attach_guide"] = True if attach_guide else False
@@ -1499,6 +1540,10 @@ def build(context: dict, component: T, attach_guide: bool = False) -> dict:
     return context
 
 
+# endregion
+
+
+# region EXPORT / IMPORT
 def serialize() -> T:
     """마야 노드에서 json 으로 저장 할 수 있는 데이터로 직렬화합니다."""
     assembly_node = ""
@@ -1670,3 +1715,6 @@ def load(file_path: str, create=True) -> T:
     logger.info(f"Load filePath: {file_path}")
 
     return deserialize(data, create)
+
+
+# endregion

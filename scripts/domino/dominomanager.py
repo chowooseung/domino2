@@ -2,7 +2,7 @@
 from PySide6 import QtWidgets, QtCore, QtGui
 
 # maya
-from maya import cmds, mel
+from maya import cmds
 from maya.api import OpenMaya as om  # type: ignore
 from maya.app.general.mayaMixin import MayaQWidgetDockableMixin  # type: ignore
 
@@ -28,10 +28,14 @@ import shutil
 import os
 import re
 
+# icon
 icon_dir = Path(__file__).parent.parent.parent / "icons"
+
+# comopnent list
 component_list.remove("assembly")
 
 
+# region maya cb
 def cb_setup_output_joint(child, parent, client_data) -> None:
     if not cmds.objExists(child.fullPathName() + ".is_domino_skel"):
         return
@@ -115,6 +119,10 @@ def cb_setup_output_joint(child, parent, client_data) -> None:
         logger.error(e, exc_info=True)
 
 
+# endregion
+
+
+# region Item
 class ComponentItem(QtGui.QStandardItem):
 
     @property
@@ -130,6 +138,10 @@ class ComponentItem(QtGui.QStandardItem):
         self._component = None
 
 
+# endregion
+
+
+# region Model
 class RigModel(QtGui.QStandardItemModel):
 
     def __init__(self):
@@ -213,27 +225,15 @@ class RigModel(QtGui.QStandardItemModel):
             item.component = component
             if parent_item:
                 parent_item.appendRow(item)
-
-            tooltip_str = []
-
-            # empty parent controller data
-            for data in component["controller"]:
-                if (
-                    component.get_parent() is not None
-                    and not data["parent_controllers"]
-                ):
-                    tooltip_str.append(
-                        f"`description {data['description']}` 의 parent controller 가 설정되지 않았습니다."
-                    )
-
-            if tooltip_str:
-                item.setForeground(QtGui.QBrush(QtGui.QColor("yellow")))
-                item.setToolTip("\n".join(tooltip_str))
             stack.extend([(c, item) for c in component["children"]])
 
         self.layoutChanged.emit()
 
 
+# endregion
+
+
+# region Manager
 class Manager(MayaQWidgetDockableMixin, QtWidgets.QDialog):
 
     # 싱글톤 패턴
@@ -262,7 +262,7 @@ cmds.evalDeferred(command)"""
 
         layout = QtWidgets.QVBoxLayout(self)
 
-        # region menubar
+        # region -    Manager / menubar
         self.menu_bar = QtWidgets.QMenuBar()
         layout.setMenuBar(self.menu_bar)
 
@@ -280,22 +280,7 @@ cmds.evalDeferred(command)"""
         self.template_menu = self.menu_bar.addMenu("Templates")
         # endregion
 
-        # region modeling path
-        modeling_path_layout = QtWidgets.QHBoxLayout()
-        self.modeling_path_line_edit = QtWidgets.QLineEdit()
-        self.modeling_path_line_edit.setReadOnly(True)
-        self.modeling_path_line_edit.setPlaceholderText("Modeling Path")
-        self.modeling_path_load_btn = QtWidgets.QPushButton()
-        self.modeling_path_load_btn.setFixedWidth(24)
-        self.modeling_path_load_btn.setFixedHeight(18)
-        self.modeling_path_load_btn.clicked.connect(self.set_modeling_path)
-        modeling_path_layout.addWidget(self.modeling_path_line_edit)
-        modeling_path_layout.addWidget(self.modeling_path_load_btn)
-        modeling_path_layout.setSpacing(4)
-        layout.addLayout(modeling_path_layout)
-        # endregion
-
-        # region file line
+        # region -    Manager / file line
         file_layout = QtWidgets.QHBoxLayout()
         self.file_path_line_edit = QtWidgets.QLineEdit()
         self.file_path_line_edit.setReadOnly(True)
@@ -323,7 +308,57 @@ cmds.evalDeferred(command)"""
         layout.addLayout(file_layout)
         # endregion
 
-        # region tree
+        # region -    Manager / blendShape
+        blendshape_path_layout = QtWidgets.QHBoxLayout()
+        self.blendshape_path_check_box = QtWidgets.QCheckBox()
+        self.blendshape_path_line_edit = QtWidgets.QLineEdit()
+        self.blendshape_path_line_edit.setReadOnly(True)
+        self.blendshape_path_line_edit.setPlaceholderText("BlendShape Path")
+        self.blendshape_path_load_btn = QtWidgets.QPushButton()
+        self.blendshape_path_load_btn.setFixedWidth(24)
+        self.blendshape_path_load_btn.setFixedHeight(18)
+        blendshape_path_layout.addWidget(self.blendshape_path_check_box)
+        blendshape_path_layout.addWidget(self.blendshape_path_line_edit)
+        blendshape_path_layout.addWidget(self.blendshape_path_load_btn)
+        layout.addLayout(blendshape_path_layout)
+        # endregion
+
+        # region -    Manager / deformerWeight
+        deformer_weight_path_layout = QtWidgets.QHBoxLayout()
+        self.deformer_Weight_path_check_box = QtWidgets.QCheckBox()
+        self.deformer_weight_path_line_edit = QtWidgets.QLineEdit()
+        self.deformer_weight_path_line_edit.setReadOnly(True)
+        self.deformer_weight_path_line_edit.setPlaceholderText("DeformerWeights Path")
+        self.deformer_weight_path_load_btn = QtWidgets.QPushButton()
+        self.deformer_weight_path_load_btn.setFixedWidth(24)
+        self.deformer_weight_path_load_btn.setFixedHeight(18)
+        deformer_weight_path_layout.addWidget(self.deformer_Weight_path_check_box)
+        deformer_weight_path_layout.addWidget(self.deformer_weight_path_line_edit)
+        deformer_weight_path_layout.addWidget(self.deformer_weight_path_load_btn)
+        layout.addLayout(deformer_weight_path_layout)
+        # endregion
+
+        line = QtWidgets.QFrame()
+        line.setFrameShape(QtWidgets.QFrame.Shape.HLine)
+        line.setFrameShadow(QtWidgets.QFrame.Shadow.Sunken)
+        layout.addWidget(line)
+
+        # region -    Manager / modeling path
+        modeling_path_layout = QtWidgets.QHBoxLayout()
+        self.modeling_path_line_edit = QtWidgets.QLineEdit()
+        self.modeling_path_line_edit.setReadOnly(True)
+        self.modeling_path_line_edit.setPlaceholderText("Modeling Path")
+        self.modeling_path_load_btn = QtWidgets.QPushButton()
+        self.modeling_path_load_btn.setFixedWidth(24)
+        self.modeling_path_load_btn.setFixedHeight(18)
+        self.modeling_path_load_btn.clicked.connect(self.set_modeling_path)
+        modeling_path_layout.addWidget(self.modeling_path_line_edit)
+        modeling_path_layout.addWidget(self.modeling_path_load_btn)
+        modeling_path_layout.setSpacing(4)
+        layout.addLayout(modeling_path_layout)
+        # endregion
+
+        # region -    Manager / tree
         self.rig_tree_view = QtWidgets.QTreeView()
         self.rig_tree_view.header().hide()
         self.rig_tree_view.setContextMenuPolicy(
@@ -362,7 +397,7 @@ QTreeView::branch:open:has-children  {{
         self.rig_tree_model.layoutChanged.connect(self.restore_expand_state)
         # endregion
 
-        # region tree context menu
+        # region -    Manager / tree context menu
         self.context_menu = QtWidgets.QMenu(self)
 
         self.expand_child_item_action = QtGui.QAction("Expand child Items")
@@ -447,6 +482,8 @@ QTreeView::branch:open:has-children  {{
         )
         if file_path:
             self.modeling_path_line_edit.setText(file_path[0])
+        else:
+            self.modeling_path_line_edit.setText("")
 
     def expand_items(self):
         indexes = self.rig_tree_view.selectedIndexes()
@@ -684,6 +721,7 @@ QTreeView::branch:open:has-children  {{
         finally:
             cmds.undoInfo(closeChunk=True)
 
+    # region -    Manager / Import, Export
     def save(self) -> None:
         data = self.rig_tree_model.rig
         if not data:
@@ -818,6 +856,7 @@ QTreeView::branch:open:has-children  {{
         self.rig_tree_model.rig = rig
         self.rig_tree_model.populate_model()
 
+    # endregion
     def build(self, new_scene: bool = False) -> None:
         if new_scene:
             cmds.file(newFile=True, force=True)
@@ -860,3 +899,6 @@ QTreeView::branch:open:has-children  {{
                 continue
             logger.info(k)
             logger.info("\t" + str(v))
+
+
+# endregion
