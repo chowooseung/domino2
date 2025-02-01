@@ -10,6 +10,7 @@ CONTROLLER_APPLY_CHILDREN_OPTION = "domino_controller_apply_children"
 GUIDE_APPLY_CHILDREN_OPTION = "domino_guide_apply_children"
 
 
+# region INSTALL Menu
 def install(menu_id: str) -> None:
     if STATEOPTION not in cmds.optionVar(list=True):
         cmds.optionVar(intValue=(STATEOPTION, 0))
@@ -88,6 +89,9 @@ def popup_menu(parent_menu: str, *args, **kwargs) -> None:
         mel.eval("buildObjectMenuItemsNow " + parent_menu)
 
 
+# endregion
+
+# region GUIDE Commands
 settings_command = """from maya import cmds, mel
 selected = cmds.ls(selection=True)
 if cmds.objExists(selected[0] + ".is_domino_guide_root"):
@@ -134,8 +138,10 @@ for root in set(roots):
             value = cmds.getAttr(root + "." + attr.long_name)
         rig[attr.long_name]["value"] = value
     rig.detach_guide()"""
+# endregion
 
 
+# region GUIDE Menu
 def guide_menu(parent_menu: str) -> None:
     cmds.menu(parent_menu, edit=True, deleteAllItems=True)
 
@@ -172,6 +178,9 @@ def guide_menu(parent_menu: str) -> None:
     )
 
 
+# endregion
+
+# region RIG Commands
 validation_command = "from domino import validation;validation.show()"
 
 initialize_output_joint_command = """from maya import cmds
@@ -261,8 +270,10 @@ filePath = cmds.fileDialog2(caption="Save Domino Rig",
                             fileMode=0)
 if filePath:
     save(filePath[0])"""
+# endregion
 
 
+# region RIG Menu
 def rig_menu(parent_menu: str) -> None:
     cmds.menu(parent_menu, edit=True, deleteAllItems=True)
 
@@ -310,6 +321,9 @@ def rig_menu(parent_menu: str) -> None:
     )
 
 
+# endregion
+
+# region Controller Commands
 apply_children_option_commnad = f"""from maya import cmds
 apply_children_state = cmds.optionVar(query="{CONTROLLER_APPLY_CHILDREN_OPTION}")
 state = False if apply_children_state else True
@@ -370,9 +384,21 @@ from maya import cmds
 cogCtl = "origin_COG_ctl"
 """
 
+select_child_controller_command = """from domino.core import Controller
+from maya import cmds
+controllers = []
+for sel in cmds.ls(selection=True):
+    if not cmds.objExists(sel + ".is_domino_controller"):
+        continue
+    controllers.append(sel)
+    controllers.extend(Controller.get_child_controller(node=sel))
+cmds.select(controllers)"""
+
 fkik_switch_command = """"""
+# endregion
 
 
+# region Controller Menu
 def controller_menu(
     parent_menu: str, is_assembly: bool = False, has_fkik_switch: bool = False
 ) -> None:
@@ -448,10 +474,14 @@ def controller_menu(
         parent=parent_menu,
         label="Select child controllers",
         image="pointer-down.svg",
+        command=select_child_controller_command,
         enableCommandRepeat=True,
     )
 
 
+# endregion
+
+# region Skeleton Commands
 select_skel_command = """from maya import cmds
 selected = cmds.ls(selection=True)[0]
 namespace = selected.split(":")[0] if ":" in selected else ""
@@ -507,8 +537,10 @@ cmds.bakeResults(
     minimizeRotation=True, 
     controlPoints=False, 
     shape=True)"""
+# endregion
 
 
+# region Skeleton Menu
 def skel_menu(parent_menu: str) -> None:
     cmds.menu(parent_menu, edit=True, deleteAllItems=True)
     cmds.menuItem(
@@ -539,3 +571,6 @@ def skel_menu(parent_menu: str) -> None:
         command=bake_command,
         image="resetSettings.svg",
     )
+
+
+# endregion
