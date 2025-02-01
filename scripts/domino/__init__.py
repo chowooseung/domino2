@@ -67,7 +67,9 @@ for position in positions:
         vtx_position = list(p + v)
         cmds.move(*vtx_position, plane + f".vtx[{i}]")
     meshes.append(plane)
-if meshes:    
+if len(meshes) == 1:
+    cmds.rename(meshes[0], "face_at_position")
+if len(meshes) > 1:    
     cmds.polyUnite(meshes, name="face_at_position", constructionHistory=False)
     cmds.polyAutoProjection(constructionHistory=False, percentageSpace=5, layout=2)"""
 
