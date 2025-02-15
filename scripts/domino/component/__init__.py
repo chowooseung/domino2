@@ -1,5 +1,14 @@
 # domino
-from domino.core import Name, Transform, Joint, Controller, Curve, attribute, nurbscurve
+from domino.core import (
+    Name,
+    Transform,
+    Joint,
+    Controller,
+    Curve,
+    attribute,
+    nurbscurve,
+    rigkit,
+)
 from domino.core.utils import build_log, logger, maya_version, used_plugins
 
 # maya
@@ -11,6 +20,7 @@ from typing import TypeVar
 from pathlib import Path
 import copy
 import json
+import shutil
 import importlib
 import logging
 import sys
@@ -25,6 +35,9 @@ GUIDE = "guide"
 RIG = "rig"
 SKEL = "skel"
 ORIGINMATRIX = om.MMatrix()
+DUMMY_SETS = "dummy_sets"
+BLENDSHAPE_SETS = "blendShape_sets"
+DEFORMER_WEIGHTS_SETS = "deformerWeights_sets"
 
 
 T = TypeVar("T", bound="Rig")
@@ -855,14 +868,12 @@ class Rig(dict):
             cmds.addAttr(rig, longName="is_domino_rig", attributeType="bool")
             for attr in attrs:
                 cmds.setAttr(RIG + attr, lock=True, keyable=False)
-            cmds.addAttr(rig, longName="domino_path", dataType="string")
-            cmds.addAttr(rig, longName="run_blendshape_path", attributeType="bool")
-            cmds.addAttr(rig, longName="blendshape_path", dataType="string")
-            cmds.addAttr(
-                rig, longName="run_deformer_weights_path", attributeType="bool"
+            cmds.sets(name=DUMMY_SETS, empty=True)
+            cmds.sets(name=BLENDSHAPE_SETS, empty=True)
+            cmds.sets(name=DEFORMER_WEIGHTS_SETS, empty=True)
+            cmds.sets(
+                [DUMMY_SETS, BLENDSHAPE_SETS, DEFORMER_WEIGHTS_SETS], name="rig_sets"
             )
-            cmds.addAttr(rig, longName="deformer_weights_path", dataType="string")
-            cmds.addAttr(rig, longName="modeling_path", dataType="string")
         if not cmds.objExists(SKEL):
             ins = Transform(parent=RIG, name="", side="", index="", extension=SKEL)
             ins.create()
@@ -1416,6 +1427,16 @@ def build(context: dict, component: T, attach_guide: bool = False) -> dict:
             cmds.file(newFile=True, force=True)
             cmds.file(component["modeling"], i=True, namespace=":")
 
+    if component["run_import_dummy"]:
+        dummy_path = Path(component["dummy_path"]["value"])
+        for path in [
+            p
+            for p in dummy_path.iterdir()
+            if str(p).endswith(".mb") or str(p).endswith(".ma")
+        ]:
+            cmds.file(path, i=True, namespace=":")
+            logger.info(f"Imported Dummy {path}")
+
     for script_path in component["pre_custom_scripts"]["value"]:
         if not script_path:
             continue
@@ -1486,6 +1507,38 @@ def build(context: dict, component: T, attach_guide: bool = False) -> dict:
             color_index += 1
             stack.extend(c["children"])
         component.setup_skel_graph(output_joints)
+
+        if component["run_import_dummy"]["value"]:
+            cmds.select(component["dummy_sets"])
+            if cmds.ls(selection=True):
+                cmds.sets(component["dummy_sets"], edit=True, addElement=DUMMY_SETS)
+        if component["run_import_blendshape"]["value"]:
+            rigkit.import_blendshape(component["blendshape_path"]["value"])
+            cmds.select(component["blendshape_sets"])
+            if cmds.ls(selection=True):
+                cmds.sets(
+                    component["blendshape_sets"], edit=True, addElement=BLENDSHAPE_SETS
+                )
+        if component["run_import_deformer_weights"]["value"]:
+            for sc, nodes in component["binding"].items():
+                if not cmds.objExists(sc):
+                    cmds.skinCluster(
+                        nodes,
+                        name=sc,
+                        maximumInfluences=1,
+                        normalizeWeights=True,
+                        obeyMaxInfluences=False,
+                        weightDistribution=1,
+                        multi=True,
+                    )
+            rigkit.import_weights(component["deformer_weights_path"]["value"])
+            cmds.select(component["deformer_weights_sets"])
+            if cmds.ls(selection=True):
+                cmds.sets(
+                    component["deformer_weights_sets"],
+                    edit=True,
+                    addElement=DEFORMER_WEIGHTS_SETS,
+                )
 
         # TODO : pose manager
         # TODO : space manager
@@ -1634,6 +1687,28 @@ def serialize() -> T:
             content += f.read()
         rig["post_custom_scripts_str"]["value"].append(content)
 
+    rig["dummy_sets"] = cmds.sets(DUMMY_SETS, query=True) or []
+    rig["blendshape_sets"] = cmds.sets(BLENDSHAPE_SETS, query=True) or []
+    geometries = cmds.sets(DEFORMER_WEIGHTS_SETS, query=True) or []
+    deformer_stack = {}
+    for geo in geometries:
+        chain = rigkit.get_deformer_chain(geo)
+        deformer_stack[geo] = chain
+
+    skincluster = []
+    for geo in geometries:
+        skincluster.extend(
+            [x for x in cmds.findDeformers(geo) if cmds.nodeType(x) == "skinCluster"]
+        )
+    rig["binding"] = {}
+    for sc in skincluster:
+        rig["binding"][sc] = [
+            cmds.skinCluster(sc, query=True, geometry=True)
+            + cmds.skinCluster(sc, query=True, influence=True),
+        ]
+    rig["deformer_weights_sets"] = geometries
+    rig["deformer_stack"] = deformer_stack
+
     # TODO : pose manager
     # TODO : space manager
     # TODO : sdk manager
@@ -1677,8 +1752,6 @@ def deserialize(data: dict, create=True) -> T:
         stack.extend([child, component] for child in component_data["children"])
         if module_name == "assembly":
             rig = component
-    if "modeling" in data:
-        rig["modeling"] = data["modeling"]
 
     if create:
         build({}, component=rig)
@@ -1697,6 +1770,111 @@ def save(file_path: str, data: dict | None = None) -> None:
     if not data:
         return
 
+    # scripts, dummy, blendshape, deformerWeights 를 버전 업 된 path 로 수정합니다.
+    # 수동으로 모든 파일을 버전업 하지 않게 하기 위함입니다.
+    path = Path(file_path)
+    metadata_dir = path.parent / (path.name.split(".")[0] + ".metadata")
+    if not metadata_dir.exists():
+        metadata_dir.mkdir()
+
+    # scripts version up
+    def copy_file(source_path, destination_path):
+        try:
+            shutil.copy2(source_path, destination_path)
+            logger.info(f"File copied from {source_path} to {destination_path}")
+        except FileNotFoundError:
+            logger.info(f"Source file not found: {source_path}")
+        except PermissionError:
+            logger.info(f"Permission denied to copy file to: {destination_path}")
+        except Exception as e:
+            logger.info(f"An error occurred: {e}")
+
+    scripts_dir = metadata_dir / "scripts"
+    if not scripts_dir.exists():
+        scripts_dir.mkdir()
+    replace_scripts = []
+    for script_path in data["pre_custom_scripts"]["value"]:
+        if not script_path:
+            continue
+        disable = False
+        if script_path.startswith("*"):
+            script_path = script_path[1:]
+            disable = True
+        source_file = Path(script_path)
+        name = source_file.name
+        destination_file = scripts_dir / name
+        copy_file(source_file.as_posix(), destination_file.as_posix())
+        replace_script = "*" if disable else ""
+        replace_script += destination_file.as_posix()
+        replace_scripts.append(replace_script)
+    data["pre_custom_scripts"]["value"] = replace_scripts
+    replace_scripts = []
+    for script_path in data["post_custom_scripts"]["value"]:
+        if not script_path:
+            continue
+        disable = False
+        if script_path.startswith("*"):
+            script_path = script_path[1:]
+            disable = True
+        source_file = Path(script_path)
+        name = source_file.name
+        destination_file = scripts_dir / name
+        copy_file(source_file.as_posix(), destination_file.as_posix())
+        replace_script = "*" if disable else ""
+        replace_script += destination_file.as_posix()
+        replace_scripts.append(replace_script)
+    data["post_custom_scripts"]["value"] = replace_scripts
+
+    root = data.rig_root
+    if cmds.objExists(data.guide_root):
+        root = data.guide_root
+
+    for i, path in enumerate(data["pre_custom_scripts"]["value"]):
+        cmds.setAttr(root + f".pre_custom_scripts[{i}]", path, type="string")
+    for i, path in enumerate(data["post_custom_scripts"]["value"]):
+        cmds.setAttr(root + f".post_custom_scripts[{i}]", path, type="string")
+
+    # dummy path
+    dummy_dir = metadata_dir / "dummy"
+    if not dummy_dir.exists():
+        dummy_dir.mkdir()
+    if cmds.objExists(DUMMY_SETS):
+        dummy = cmds.sets(DUMMY_SETS, query=True) or []
+        for d in dummy:
+            cmds.select(d)
+            cmds.file(
+                dummy_dir / f"{d}.mb",
+                exportSelected=True,
+                typ="mayaBinary",
+                preserveReferences=True,
+                options="v=0;",
+            )
+        data["dummy_path"]["value"] = dummy_dir.as_posix()
+
+    # blendshape path
+    blendshape_dir = metadata_dir / "blendShape"
+    if not blendshape_dir.exists():
+        blendshape_dir.mkdir()
+    if cmds.objExists(BLENDSHAPE_SETS):
+        geometries = cmds.sets(BLENDSHAPE_SETS, query=True) or []
+        blendshapes = []
+        for geo in geometries:
+            blendshapes.extend(
+                [x for x in cmds.findDeformers(geo) if cmds.nodeType(x) == "blendShape"]
+            )
+        for blendshape in blendshapes:
+            rigkit.export_blendshape(blendshape_dir.as_posix(), blendshape)
+        data["blendshape_path"]["value"] = blendshape_dir.as_posix()
+
+    # deformerWeights path
+    deformer_weights_dir = metadata_dir / "deformerWeights"
+    if not deformer_weights_dir.exists():
+        deformer_weights_dir.mkdir()
+    if cmds.objExists(DEFORMER_WEIGHTS_SETS):
+        geometries = cmds.sets(DEFORMER_WEIGHTS_SETS, query=True) or []
+        rigkit.export_weights(deformer_weights_dir.as_posix(), geometries)
+        data["deformer_weights_path"]["value"] = deformer_weights_dir.as_posix()
+
     with open(file_path, "w") as f:
         json.dump(data, f, indent=2, ensure_ascii=False)
 
@@ -1714,6 +1892,7 @@ def load(file_path: str, create=True) -> T:
 
     logger.info(f"Load filePath: {file_path}")
 
+    data["domino_path"] = file_path
     return deserialize(data, create)
 
 

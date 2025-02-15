@@ -1,5 +1,5 @@
 # Qt
-from PySide6 import QtWidgets, QtCore
+from PySide6 import QtWidgets, QtCore, QtGui
 
 # maya
 from maya import cmds
@@ -17,6 +17,9 @@ import importlib.util
 # domino
 from domino.core.utils import logger
 
+# icon
+icon_dir = Path(__file__).parent.parent.parent / "icons"
+
 
 # region UIGenerator
 class UIGenerator:
@@ -26,6 +29,22 @@ class UIGenerator:
     def add_common_component_settings(
         cls, parent: QtWidgets.QWidget, root: str
     ) -> None:
+
+        def rename_name(_name, _side, _index):
+            pass
+
+        def rename_side(_name, _side, _index):
+            pass
+
+        def rename_index(_name, _side, _index):
+            pass
+
+        def set_parent_output_index(_index):
+            pass
+
+        def create_output_joint():
+            pass
+
         old_name = cmds.getAttr(root + ".name")
         old_side = cmds.getAttr(root + ".side")
         old_index = cmds.getAttr(root + ".index")
@@ -69,12 +88,13 @@ class UIGenerator:
 
     # endregion
 
+    # region -    UIGenerator / ui
     @classmethod
     def add_line_edit(
         cls, parent: QtWidgets.QWidget, label: str, attribute: str
     ) -> QtWidgets.QLineEdit:
 
-        def change_attribute():
+        def change_attribute() -> None:
             text = line_edit.text()
             cmds.setAttr(attribute, text, type="string")
 
@@ -111,16 +131,33 @@ class UIGenerator:
             QtWidgets.QSizePolicy.Policy.Expanding,
             QtWidgets.QSizePolicy.Policy.Fixed,
         )
-        spin_box.editingFinished.connect(change_attribute)
 
+        child = spin_box
         if slider:
-            pass
+            _slider = QtWidgets.QSlider()
+            _slider.setOrientation(QtCore.Qt.Orientation.Horizontal)
+            _slider.setMinimum(min_value)
+            _slider.setMaximum(max_value)
+            _slider.setValue(old_value)
+            spin_box.valueChanged.connect(_slider.setValue)
+            _slider.valueChanged.connect(spin_box.setValue)
+            h_layout = QtWidgets.QHBoxLayout()
+            h_layout.addWidget(spin_box)
+            h_layout.addWidget(_slider)
+            child = h_layout
+            spin_box.setSizePolicy(
+                QtWidgets.QSizePolicy.Policy.Fixed,
+                QtWidgets.QSizePolicy.Policy.Fixed,
+            )
+        spin_box.valueChanged.connect(change_attribute)
 
         parent_layout = parent.layout()
-        parent_layout.addRow(label, spin_box)
+        parent_layout.addRow(label, child)
+
+        return spin_box
 
     @classmethod
-    def add_notes(cls, parent: QtWidgets.QWidget, attribute: str):
+    def add_notes(cls, parent: QtWidgets.QWidget, attribute: str) -> None:
         notes = cmds.getAttr(attribute)
         text_edit = QtWidgets.QTextEdit()
         text_edit.setMarkdown(notes)
@@ -136,6 +173,8 @@ class UIGenerator:
             )
         )
         parent_layout.addRow(text_edit)
+
+    # endregion
 
 
 # endregion
@@ -204,9 +243,37 @@ class ScriptListWidget(QtWidgets.QListWidget):
 
 class Assembly(DynamicWidget):
 
-    def __init__(self, parent=None, root: str = None) -> None:
+    def add_check_box_line_edit_btn(
+        self, parent: QtWidgets.QWidget, label: str, attributes: list, icon: str
+    ) -> None:
+        def change_check_box_attribute() -> None:
+            v = check_box.isChecked()
+            cmds.setAttr(check_box_attribute, v)
 
-        # region -    Assembly / cb
+        check_box_attribute, line_edit_attribute = attributes
+        check_box_value = cmds.getAttr(check_box_attribute)
+        line_edit_value = cmds.getAttr(line_edit_attribute)
+
+        check_box = QtWidgets.QCheckBox()
+        check_box.setChecked(check_box_value)
+        check_box.toggled.connect(change_check_box_attribute)
+        line_edit = QtWidgets.QLineEdit()
+        line_edit.setText(line_edit_value)
+        line_edit.setReadOnly(True)
+        btn = QtWidgets.QPushButton()
+        btn.setFixedSize(QtCore.QSize(36, 18))
+        btn.setIcon(QtGui.QIcon(icon))
+
+        layout = QtWidgets.QHBoxLayout()
+        layout.addWidget(line_edit)
+        layout.addWidget(check_box)
+        layout.addWidget(btn)
+
+        parent_layout = parent.layout()
+        parent_layout.addRow(label, layout)
+
+    def __init__(self, parent=None, root: str = None) -> None:
+        # region -    Assembly / callback
         def get_script_path(_attrs: list) -> list:
             _script_paths = []
             for _attr in _attrs:
@@ -431,7 +498,9 @@ class Assembly(DynamicWidget):
             # add
             set_script_path(rig_root, _attribute, _script_paths, _list_widget)
 
-        def disable_script(_list_widget, _attribute):
+        def disable_script(
+            _list_widget: QtWidgets.QListWidget, _attribute: str
+        ) -> None:
             _select_items = [i for i in _list_widget.selectedItems()]
 
             if not _select_items:
@@ -468,26 +537,64 @@ class Assembly(DynamicWidget):
             set_script_path(rig_root, _attribute, _script_paths, _list_widget)
 
         # endregion
-
         super(Assembly, self).__init__(parent=parent, root=root)
-        self.side_c_str_line_edit = UIGenerator.add_line_edit(
-            self.parent_widget, "Side C Str", root + ".side_c_str"
+
+        up_icon = (icon_dir / "arrow-big-up-lines.svg").as_posix()
+        down_icon = (icon_dir / "arrow-big-down-lines.svg").as_posix()
+
+        self.add_check_box_line_edit_btn(
+            self.parent_widget,
+            "Modeling",
+            [root + ".run_import_modeling", root + ".modeling_path"],
+            down_icon,
         )
-        self.side_l_str_line_edit = UIGenerator.add_line_edit(
-            self.parent_widget, "Side L Str", root + ".side_l_str"
+        self.add_check_box_line_edit_btn(
+            self.parent_widget,
+            "Dummy",
+            [root + ".run_import_dummy", root + ".dummy_path"],
+            down_icon,
         )
-        self.side_r_str_line_edit = UIGenerator.add_line_edit(
-            self.parent_widget, "Side R Str", root + ".side_r_str"
+        self.add_check_box_line_edit_btn(
+            self.parent_widget,
+            "BlendShape Manager",
+            [
+                root + ".run_import_blendshape_manager",
+                root + ".blendshape_manager_path",
+            ],
+            up_icon,
         )
-        self.joint_extension_line_edit = UIGenerator.add_line_edit(
-            self.parent_widget, "Joint Extension", root + ".joint_extension"
+        self.add_check_box_line_edit_btn(
+            self.parent_widget,
+            "Pose Manager",
+            [root + ".run_import_pose_manager", root + ".pose_manager_path"],
+            up_icon,
         )
-        self.controller_extension_line_edit = UIGenerator.add_line_edit(
-            self.parent_widget, "Controller Extension", root + ".controller_extension"
+        self.add_check_box_line_edit_btn(
+            self.parent_widget,
+            "SDK Manager",
+            [root + ".run_import_sdk_manager", root + ".sdk_path"],
+            up_icon,
+        )
+        self.add_check_box_line_edit_btn(
+            self.parent_widget,
+            "Space Manager",
+            [root + ".run_import_space_manager", root + ".space_manager_path"],
+            up_icon,
+        )
+        self.add_check_box_line_edit_btn(
+            self.parent_widget,
+            "DeformerWeights Manager",
+            [
+                root + ".run_import_deformer_weights_manager",
+                root + ".deformer_weights_manager_path",
+            ],
+            up_icon,
         )
 
         # region -    Assembly / context menu
-        def show_context_menu(pos, _list_widget, _attribute):
+        def show_context_menu(
+            pos, _list_widget: QtWidgets.QListWidget, _attribute: str
+        ) -> None:
             menu = QtWidgets.QMenu(self)
 
             enable_action = menu.addAction("Enable")
@@ -509,7 +616,7 @@ class Assembly(DynamicWidget):
             )
             menu.exec(_list_widget.mapToGlobal(pos))
 
-        def reveal_in_explorer(_text):
+        def reveal_in_explorer(_text: str) -> None:
             _, _parent = _text.split(" ")
 
             _path = Path(_parent)
@@ -529,7 +636,7 @@ class Assembly(DynamicWidget):
             list_widget.clear()
 
             # populate
-            attrs = cmds.listAttr(root + "." + attribute, multi=True)
+            attrs = cmds.listAttr(root + "." + attribute, multi=True) or []
             script_paths = get_script_path(attrs)
             for path in script_paths:
                 text = ""
@@ -616,6 +723,9 @@ class Control01(DynamicWidget):
         super(Control01, self).__init__(parent=parent, root=root)
         UIGenerator.add_common_component_settings(self.parent_widget, root)
 
+        def change_controller_count():
+            pass
+
         controller_count_spin_box = UIGenerator.add_spin_box(
             self.parent_widget,
             label="Controller Count",
@@ -634,7 +744,7 @@ class Control01(DynamicWidget):
 UITABLE = {"assembly": Assembly, "control01": Control01}
 
 
-def cb_auto_settings(*args):
+def cb_auto_settings(*args) -> None:
     selected = cmds.ls(selection=True)
     if not selected:
         return
@@ -654,7 +764,7 @@ class Settings(MayaQWidgetDockableMixin, QtWidgets.QDialog):
     # maya ui script
     ui_name = "domino_settings_ui"
     ui_script = """from maya import cmds
-command = "from domino import dominosettings;ui=domino.settings.Settings.get_instance();ui.show(dockable=True)"
+command = "from domino.dominosettings import Settings;ui=Settings.get_instance();ui.show(dockable=True)"
 cmds.evalDeferred(command)"""
     control_name = ui_name + "WorkspaceControl"
 
@@ -677,10 +787,9 @@ cmds.evalDeferred(command)"""
         self.setWindowTitle("Domino Settings")
 
         self.layout = QtWidgets.QVBoxLayout(self)
-        self.refresh()
 
-    def refresh(self):
-        selected = cmds.ls(selection=True)
+    def refresh(self) -> None:
+        selected = cmds.ls(selection=True, objectsOnly=True)
         if not selected:
             return
 

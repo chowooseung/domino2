@@ -356,10 +356,12 @@ def export_blendshape(directory: str, bs: str) -> None:
         exportSelected=True,
         options="groups=0;ptgroups=0;materials=0;smoothing=0;normals=0",
     )
+    logger.indo(f"Exported original mesh to `{original_obj_path}`")
     cmds.delete(new_transform)
 
     shp_path = directory_path / f"{bs}.shp"
     cmds.blendShape(bs, edit=True, export=shp_path)
+    logger.indo(f"Exported blendShape(.shp) to `{shp_path}`")
 
 
 def import_blendshape(directory: str) -> None:

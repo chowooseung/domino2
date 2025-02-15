@@ -24,7 +24,6 @@ from functools import partial
 from pathlib import Path
 import importlib
 import pickle
-import shutil
 import os
 import re
 
@@ -280,82 +279,32 @@ cmds.evalDeferred(command)"""
         self.template_menu = self.menu_bar.addMenu("Templates")
         # endregion
 
-        # region -    Manager / file line
-        file_layout = QtWidgets.QHBoxLayout()
-        self.file_path_line_edit = QtWidgets.QLineEdit()
-        self.file_path_line_edit.setReadOnly(True)
-        self.file_path_line_edit.setPlaceholderText("Domino Path")
-        self.file_path_load_btn = QtWidgets.QPushButton()
-        self.file_path_load_btn.setIcon(
+        # region -    Manager / domino path
+        domino_layout = QtWidgets.QHBoxLayout()
+        self.domino_path_line_edit = QtWidgets.QLineEdit()
+        self.domino_path_line_edit.setReadOnly(True)
+        self.domino_path_line_edit.setPlaceholderText("Domino Path")
+        self.domino_path_load_btn = QtWidgets.QPushButton()
+        self.domino_path_load_btn.setIcon(
             QtGui.QIcon((icon_dir / "arrow-big-down-lines.svg").as_posix())
         )
-        self.file_path_load_btn.setFixedWidth(24)
-        self.file_path_load_btn.setFixedHeight(18)
-        self.file_path_load_btn.clicked.connect(self.load)
-        self.file_path_load_btn.setToolTip("Load file")
-        self.file_path_version_up_btn = QtWidgets.QPushButton()
-        self.file_path_version_up_btn.setIcon(
+        self.domino_path_load_btn.setFixedWidth(24)
+        self.domino_path_load_btn.setFixedHeight(18)
+        self.domino_path_load_btn.clicked.connect(self.load)
+        self.domino_path_load_btn.setToolTip("Load file")
+        self.domino_path_version_up_btn = QtWidgets.QPushButton()
+        self.domino_path_version_up_btn.setIcon(
             QtGui.QIcon((icon_dir / "arrow-big-up-lines.svg").as_posix())
         )
-        self.file_path_version_up_btn.setFixedWidth(24)
-        self.file_path_version_up_btn.setFixedHeight(18)
-        self.file_path_version_up_btn.clicked.connect(self.save)
-        self.file_path_version_up_btn.setToolTip("Version up file")
-        file_layout.addWidget(self.file_path_line_edit)
-        file_layout.addWidget(self.file_path_load_btn)
-        file_layout.addWidget(self.file_path_version_up_btn)
-        file_layout.setSpacing(4)
-        layout.addLayout(file_layout)
-        # endregion
-
-        # region -    Manager / blendShape
-        blendshape_path_layout = QtWidgets.QHBoxLayout()
-        self.blendshape_path_check_box = QtWidgets.QCheckBox()
-        self.blendshape_path_line_edit = QtWidgets.QLineEdit()
-        self.blendshape_path_line_edit.setReadOnly(True)
-        self.blendshape_path_line_edit.setPlaceholderText("BlendShape Path")
-        self.blendshape_path_load_btn = QtWidgets.QPushButton()
-        self.blendshape_path_load_btn.setFixedWidth(24)
-        self.blendshape_path_load_btn.setFixedHeight(18)
-        blendshape_path_layout.addWidget(self.blendshape_path_check_box)
-        blendshape_path_layout.addWidget(self.blendshape_path_line_edit)
-        blendshape_path_layout.addWidget(self.blendshape_path_load_btn)
-        layout.addLayout(blendshape_path_layout)
-        # endregion
-
-        # region -    Manager / deformerWeight
-        deformer_weight_path_layout = QtWidgets.QHBoxLayout()
-        self.deformer_Weight_path_check_box = QtWidgets.QCheckBox()
-        self.deformer_weight_path_line_edit = QtWidgets.QLineEdit()
-        self.deformer_weight_path_line_edit.setReadOnly(True)
-        self.deformer_weight_path_line_edit.setPlaceholderText("DeformerWeights Path")
-        self.deformer_weight_path_load_btn = QtWidgets.QPushButton()
-        self.deformer_weight_path_load_btn.setFixedWidth(24)
-        self.deformer_weight_path_load_btn.setFixedHeight(18)
-        deformer_weight_path_layout.addWidget(self.deformer_Weight_path_check_box)
-        deformer_weight_path_layout.addWidget(self.deformer_weight_path_line_edit)
-        deformer_weight_path_layout.addWidget(self.deformer_weight_path_load_btn)
-        layout.addLayout(deformer_weight_path_layout)
-        # endregion
-
-        line = QtWidgets.QFrame()
-        line.setFrameShape(QtWidgets.QFrame.Shape.HLine)
-        line.setFrameShadow(QtWidgets.QFrame.Shadow.Sunken)
-        layout.addWidget(line)
-
-        # region -    Manager / modeling path
-        modeling_path_layout = QtWidgets.QHBoxLayout()
-        self.modeling_path_line_edit = QtWidgets.QLineEdit()
-        self.modeling_path_line_edit.setReadOnly(True)
-        self.modeling_path_line_edit.setPlaceholderText("Modeling Path")
-        self.modeling_path_load_btn = QtWidgets.QPushButton()
-        self.modeling_path_load_btn.setFixedWidth(24)
-        self.modeling_path_load_btn.setFixedHeight(18)
-        self.modeling_path_load_btn.clicked.connect(self.set_modeling_path)
-        modeling_path_layout.addWidget(self.modeling_path_line_edit)
-        modeling_path_layout.addWidget(self.modeling_path_load_btn)
-        modeling_path_layout.setSpacing(4)
-        layout.addLayout(modeling_path_layout)
+        self.domino_path_version_up_btn.setFixedWidth(24)
+        self.domino_path_version_up_btn.setFixedHeight(18)
+        self.domino_path_version_up_btn.clicked.connect(self.save)
+        self.domino_path_version_up_btn.setToolTip("Version up file")
+        domino_layout.addWidget(self.domino_path_line_edit)
+        domino_layout.addWidget(self.domino_path_load_btn)
+        domino_layout.addWidget(self.domino_path_version_up_btn)
+        domino_layout.setSpacing(4)
+        layout.addLayout(domino_layout)
         # endregion
 
         # region -    Manager / tree
@@ -449,8 +398,7 @@ QTreeView::branch:open:has-children  {{
         self.component_list_widget.doubleClicked.connect(self.add_component)
 
     def refresh(self) -> None:
-        self.modeling_path_line_edit.clear()
-        self.file_path_line_edit.clear()
+        self.domino_path_line_edit.clear()
         self.rig_tree_model.serialize()
         self.rig_tree_model.populate_model()
         self.component_list_widget.clear()
@@ -481,8 +429,10 @@ QTreeView::branch:open:has-children  {{
             fileMode=1,
         )
         if file_path:
+            cmds.setAttr("rig.modeling_path", file_path[0], type="string")
             self.modeling_path_line_edit.setText(file_path[0])
         else:
+            cmds.setAttr("rig.modeling_path", "", type="string")
             self.modeling_path_line_edit.setText("")
 
     def expand_items(self):
@@ -651,7 +601,7 @@ QTreeView::branch:open:has-children  {{
             # endregion
 
             # refresh model
-            self.rig_tree_model.populate_model()
+            self.refresh()
 
             cmds.select(selected) if selected else cmds.select(clear=True)
         finally:
@@ -740,7 +690,7 @@ QTreeView::branch:open:has-children  {{
             new_version = int(version[1:]) + 1
             return file_path.replace(version, "v" + str(new_version).zfill(fill_count))
 
-        file_path = self.file_path_line_edit.text()
+        file_path = self.domino_path_line_edit.text()
         pattern = r"v\d+"
         if file_path:
             match = re.search(pattern, file_path)
@@ -764,67 +714,9 @@ QTreeView::branch:open:has-children  {{
                 file_path = ensure_version_in_file_path(file_path)
         # endregion
 
-        # region scripts version up
-        def copy_file(source_path, destination_path):
-            try:
-                shutil.copy2(source_path, destination_path)
-                logger.info(f"File copied from {source_path} to {destination_path}")
-            except FileNotFoundError:
-                logger.info(f"Source file not found: {source_path}")
-            except PermissionError:
-                logger.info(f"Permission denied to copy file to: {destination_path}")
-            except Exception as e:
-                logger.info(f"An error occurred: {e}")
-
-        path = Path(file_path)
-        scripts_dir = path.parent / (path.name.split(".")[0] + ".metadata")
-        if not scripts_dir.exists():
-            scripts_dir.mkdir()
-        replace_scripts = []
-        for script_path in data["pre_custom_scripts"]["value"]:
-            if not script_path:
-                continue
-            disable = False
-            if script_path.startswith("*"):
-                script_path = script_path[1:]
-                disable = True
-            source_file = Path(script_path)
-            name = source_file.name
-            destination_file = scripts_dir / name
-            copy_file(source_file.as_posix(), destination_file.as_posix())
-            replace_script = "*" if disable else ""
-            replace_script += destination_file.as_posix()
-            replace_scripts.append(replace_script)
-        data["pre_custom_scripts"]["value"] = replace_scripts
-        replace_scripts = []
-        for script_path in data["post_custom_scripts"]["value"]:
-            if not script_path:
-                continue
-            disable = False
-            if script_path.startswith("*"):
-                script_path = script_path[1:]
-                disable = True
-            source_file = Path(script_path)
-            name = source_file.name
-            destination_file = scripts_dir / name
-            copy_file(source_file.as_posix(), destination_file.as_posix())
-            replace_script = "*" if disable else ""
-            replace_script += destination_file.as_posix()
-            replace_scripts.append(replace_script)
-        data["post_custom_scripts"]["value"] = replace_scripts
-
-        root = data.rig_root
-        if cmds.objExists(data.guide_root):
-            root = data.guide_root
-
-        for i, path in enumerate(data["pre_custom_scripts"]["value"]):
-            cmds.setAttr(root + f".pre_custom_scripts[{i}]", path, type="string")
-        for i, path in enumerate(data["post_custom_scripts"]["value"]):
-            cmds.setAttr(root + f".post_custom_scripts[{i}]", path, type="string")
-        # endregion
-
         save(file_path, data)
-        self.file_path_line_edit.setText(file_path)
+
+        self.domino_path_line_edit.setText(file_path)
 
     def load(self):
         file_path = cmds.fileDialog2(
@@ -842,16 +734,11 @@ QTreeView::branch:open:has-children  {{
             rig = load(file_path[0], create=False)
             self.rig_tree_model.rig = rig
             self.rig_tree_model.populate_model()
-            self.file_path_line_edit.setText(file_path[0])
-            if "modeling" in rig:
-                self.modeling_path_line_edit.setText(rig["modeling"])
-            else:
-                self.modeling_path_line_edit.clear()
+            self.domino_path_line_edit.setText(file_path[0])
             build({}, rig)
 
     def load_template(self, file_path: str, create: bool) -> None:
         """file_line_edit 에 path 를 기록하지 않고 load 합니다."""
-        self.modeling_path_line_edit.clear()
         rig = load(file_path, create)
         self.rig_tree_model.rig = rig
         self.rig_tree_model.populate_model()
@@ -861,9 +748,6 @@ QTreeView::branch:open:has-children  {{
         if new_scene:
             cmds.file(newFile=True, force=True)
         rig = self.rig_tree_model.rig
-        modeling_file = self.modeling_path_line_edit.text()
-        if modeling_file:
-            rig["modeling"] = modeling_file
         build({}, rig)
 
     def showEvent(self, e) -> None:
