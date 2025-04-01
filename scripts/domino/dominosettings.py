@@ -1,10 +1,11 @@
 # Qt
 from PySide6 import QtWidgets, QtCore, QtGui
+from shiboken6 import wrapInstance
 
 # maya
 from maya import cmds
-from maya.api import OpenMaya as om  # type: ignore
-from maya.app.general.mayaMixin import MayaQWidgetDockableMixin  # type: ignore
+from maya.api import OpenMaya as om
+from maya.app.general.mayaMixin import MayaQWidgetDockableMixin
 
 # built-ins
 from functools import partial
@@ -724,33 +725,66 @@ class Control01(DynamicWidget):
         UIGenerator.add_common_component_settings(self.parent_widget, root)
 
         def change_controller_count():
+            manager_ui = get_manager_ui()
+            rig = manager_ui.rig_tree_model.rig
+
+            current_component = UIGenerator.get_component(rig, name, side_str, index)
+
+        controller_count_spin_box = UIGenerator.add_spin_box(
+            self.parent_widget,
+            label="Controller Count",
+            attribute=f"{root}.controller_count",
+            slider=False,
+            min_value=1,
+            max_value=999,
+        )
+        name = cmds.getAttr(f"{root}.name")
+        side = cmds.getAttr(f"{root}.side")
+        side_str = ["C", "L", "R"][side]
+        index = cmds.getAttr(f"{root}.index")
+        controller_count_spin_box.editingFinished.connect(change_controller_count)
+        UIGenerator.add_notes(self.parent_widget, f"{root}.notes")
+
+
+# endregion
+
+
+# region Fk01
+class Fk01(DynamicWidget):
+
+    def __init__(self, parent=None, root: str = None) -> None:
+        super(Control01, self).__init__(parent=parent, root=root)
+        UIGenerator.add_common_component_settings(self.parent_widget, root)
+
+        def change_controller_count():
             pass
 
         controller_count_spin_box = UIGenerator.add_spin_box(
             self.parent_widget,
             label="Controller Count",
-            attribute=root + ".controller_count",
+            attribute=f"{root}.controller_count",
             slider=False,
             min_value=1,
-            max_value=99,
+            max_value=999,
         )
-        UIGenerator.add_notes(self.parent_widget, root + ".notes")
+        controller_count_spin_box.editingFinished.connect(change_controller_count)
+        UIGenerator.add_notes(self.parent_widget, f"{root}.notes")
 
 
 # endregion
 
 
 # region Settings
-UITABLE = {"assembly": Assembly, "control01": Control01}
+UITABLE = {"assembly": Assembly, "control01": Control01, "fk01": Fk01}
 
 
 def cb_auto_settings(*args) -> None:
     selected = cmds.ls(selection=True)
     if not selected:
-        return
+        return None
 
-    if cmds.objExists(selected[0] + ".is_domino_guide_root") or cmds.objExists(
-        selected[0] + ".is_domino_guide"
+    if cmds.objExists(f"{selected[0]}.is_domino_guide_root") or cmds.objExists(
+        f"{selected[0]}.is_domino_guide"
     ):
         ui = Settings.get_instance()
         ui.refresh()
@@ -786,29 +820,13 @@ cmds.evalDeferred(command)"""
         self.setObjectName(self.ui_name)
         self.setWindowTitle("Domino Settings")
 
-        self.layout = QtWidgets.QVBoxLayout(self)
+        self.layout_ = QtWidgets.QVBoxLayout(self)
 
     def refresh(self) -> None:
-        selected = cmds.ls(selection=True, objectsOnly=True)
-        if not selected:
-            return
-
-        try:
-            if cmds.objExists(selected[0] + ".is_domino_guide"):
-                plug = cmds.connectionInfo(
-                    selected[0] + ".message", destinationFromSource=True
-                )[0]
-                guide_root = plug.split(".")[0]
-            elif cmds.objExists(selected[0] + ".is_domino_guide_root"):
-                guide_root = selected[0]
-            component = cmds.getAttr(guide_root + ".component")
-            ui_ins = UITABLE[component](root=guide_root)
-        except Exception as e:
-            logger.error(e, exc_info=True)
-            return
-
         # region -    Settings / clear layout
-        stack = [self.layout]
+        self.empty_label = QtWidgets.QLabel("Guide 를 선택해주세요.")
+
+        stack = [self.layout_]
         while stack:
             layout = stack.pop(0)
             while layout.count():
@@ -821,8 +839,28 @@ cmds.evalDeferred(command)"""
                     stack.append(sub_layout)
         # endregion
 
+        selected = cmds.ls(selection=True, objectsOnly=True)
+        if not selected:
+            self.layout_.addWidget(self.empty_label)
+            return None
+
+        try:
+            if cmds.objExists(f"{selected[0]}.is_domino_guide"):
+                plug = cmds.connectionInfo(
+                    f"{selected[0]}.message", destinationFromSource=True
+                )[0]
+                guide_root = plug.split(".")[0]
+            elif cmds.objExists(f"{selected[0]}.is_domino_guide_root"):
+                guide_root = selected[0]
+            component = cmds.getAttr(f"{guide_root}.component")
+            ui_ins = UITABLE[component](root=guide_root)
+        except Exception as e:
+            logger.error(e, exc_info=True)
+            self.layout_.addWidget(self.empty_label)
+            return None
+
         # add settings widget
-        self.layout.addWidget(ui_ins)
+        self.layout_.addWidget(ui_ins)
 
     def showEvent(self, e) -> None:
         cmds.workspaceControl(self.control_name, edit=True, uiScript=self.ui_script)
