@@ -390,6 +390,15 @@ QTreeView::branch:open:has-children  {{
         self.component_list_widget.clear()
         self.component_list_widget.addItems(component_list)
 
+        if self.rig_tree_model.rig and cmds.objExists(
+            self.rig_tree_model.rig.guide_root
+        ):
+            domino_path = cmds.getAttr(
+                f"{self.rig_tree_model.rig.guide_root}.domino_path"
+            )
+            if domino_path:
+                self.domino_path_line_edit.setText(domino_path)
+
         template_dir = os.getenv("DOMINO_RIG_TEMPLATE_DIR", None)
         # 메모리에서 제거되는거 방지.
         self.actions = []
@@ -674,7 +683,7 @@ QTreeView::branch:open:has-children  {{
         def increase_version_in_file_path(file_path: str, version: str) -> str:
             fill_count = len(version) - 1
             new_version = int(version[1:]) + 1
-            return file_path.replace(version, "v" + str(new_version).zfill(fill_count))
+            return file_path.replace(version, f"v{str(new_version).zfill(fill_count)}")
 
         file_path = self.domino_path_line_edit.text()
         pattern = r"v\d+"
@@ -701,8 +710,11 @@ QTreeView::branch:open:has-children  {{
         # endregion
 
         save(file_path, data)
-
+        if cmds.objExists(data.guide_root):
+            cmds.setAttr(f"{data.guide_root}.domino_path", file_path, type="string")
         self.domino_path_line_edit.setText(file_path)
+        ui = Settings.get_instance()
+        ui.refresh()
 
     def load(self):
         file_path = cmds.fileDialog2(

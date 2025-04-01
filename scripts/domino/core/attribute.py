@@ -2,6 +2,9 @@
 from maya import cmds
 from maya.api import OpenMaya as om  # type: ignore
 
+# built-ins
+from typing import Union, Any
+
 ORIGINMATRIX = om.MMatrix()
 
 
@@ -44,7 +47,7 @@ class Integer(dict):
     def attribute(self) -> str:
         return self.node + "." + self.long_name
 
-    def __init__(self, longName: str, **kwargs: dict) -> None:
+    def __init__(self, longName: str, **kwargs) -> None:
         self.long_name = longName
         self.data = {
             "minValue": (
@@ -93,7 +96,7 @@ class Integer(dict):
                 multi=data["multi"],
             )
         except:
-            None
+            ...
 
         cmds.setAttr(self.attribute, keyable=data["keyable"])
         cmds.setAttr(self.attribute, lock=data["lock"])
@@ -165,7 +168,7 @@ class Enum(dict):
     def attribute(self) -> str:
         return self.node + "." + self.long_name
 
-    def __init__(self, longName: str, enumName: list, **kwargs: dict) -> None:
+    def __init__(self, longName: str, enumName: list, **kwargs) -> None:
         self.long_name = longName
         self.data = {
             "enumName": enumName,
@@ -198,7 +201,7 @@ class Enum(dict):
                 enumName="TEMP:TEMP",  # 넣어주지 않으면 enumName을 수정할 때 작동하지 않음.
             )
         except:
-            None
+            ...
 
         cmds.addAttr(
             self.attribute,
@@ -250,7 +253,7 @@ class Bool(dict):
     def attribute(self) -> str:
         return self.node + "." + self.long_name
 
-    def __init__(self, longName: str, **kwargs: dict) -> None:
+    def __init__(self, longName: str, **kwargs) -> None:
         self.long_name = longName
         self.data = {
             "keyable": (
@@ -293,7 +296,7 @@ class Bool(dict):
                 multi=data["multi"],
             )
         except:
-            None
+            ...
 
         cmds.setAttr(self.attribute, lock=data["lock"])
         cmds.setAttr(self.attribute, keyable=data["keyable"])
@@ -342,7 +345,7 @@ class String(dict):
     def attribute(self) -> str:
         return self.node + "." + self.long_name
 
-    def __init__(self, longName: str, **kwargs: dict) -> None:
+    def __init__(self, longName: str, **kwargs) -> None:
         self.long_name = longName
         self.data = {
             "lock": kwargs["lock"] if "lock" in kwargs else self.default_lock,
@@ -377,7 +380,7 @@ class String(dict):
                 multi=data["multi"],
             )
         except:
-            None
+            ...
 
         cmds.setAttr(self.attribute, lock=data["lock"])
         if data["multi"]:
@@ -395,7 +398,7 @@ class Matrix(dict):
     default_multi = False
 
     @property
-    def data(self) -> dict:
+    def data(self) -> dict[str, Any]:
         return self[self._long_name]
 
     @data.setter
@@ -422,7 +425,7 @@ class Matrix(dict):
     def attribute(self) -> str:
         return self.node + "." + self.long_name
 
-    def __init__(self, longName: str, **kwargs: dict) -> None:
+    def __init__(self, longName: str, **kwargs) -> None:
         self.long_name = longName
         self.data = {
             "multi": kwargs["multi"] if "multi" in kwargs else self.default_multi,
@@ -434,24 +437,16 @@ class Matrix(dict):
                 value.append([float(_v) for _v in v])
             self.data.update({"value": value})
         else:
-            self.data.update(
-                {
-                    "value": [
-                        float(v)
-                        for v in (
-                            kwargs["value"]
-                            if "value" in kwargs
-                            else [self.default_value]
-                        )
-                    ]
-                }
-            )
+            value = kwargs.get("value", self.default_value)
+            if not isinstance(value, list):
+                value = [value]
+            self.data.update({"value": [float(v) for v in value]})
 
     def create(self) -> str:
         data = self.data
 
         if "node" not in data:
-            return
+            return ""
 
         try:
             cmds.addAttr(
@@ -462,7 +457,7 @@ class Matrix(dict):
                 multi=data["multi"],
             )
         except:
-            None
+            ...
 
         if data["multi"]:
             for i, v in enumerate(data["value"]):
@@ -505,7 +500,7 @@ class Message(dict):
     def attribute(self) -> str:
         return self.node + "." + self.long_name
 
-    def __init__(self, longName: str, **kwargs: dict) -> None:
+    def __init__(self, longName: str, **kwargs) -> None:
         self.long_name = longName
         self.data = {
             "multi": kwargs.pop("multi", self.default_multi),
@@ -516,7 +511,7 @@ class Message(dict):
         data = self.data
 
         if "node" not in data:
-            return
+            return ""
 
         try:
             cmds.addAttr(
@@ -527,7 +522,7 @@ class Message(dict):
                 multi=data["multi"],
             )
         except:
-            None
+            ...
 
         return self.attribute
 

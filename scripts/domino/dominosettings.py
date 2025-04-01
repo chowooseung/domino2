@@ -22,6 +22,34 @@ from domino.core.utils import logger
 icon_dir = Path(__file__).parent.parent.parent / "icons"
 
 
+def get_manager_ui():
+    """Manager ui를 refresh 하거나 manager 에서 rig 데이터를 가져오기 위해 사용됨.
+    dominomanager 모듈을 직접 import 할수없음"""
+    from maya import OpenMayaUI as omui  # type: ignore
+
+    def get_maya_main_window():
+        main_window_ptr = omui.MQtUtil.mainWindow()
+        return wrapInstance(int(main_window_ptr), QtWidgets.QWidget)
+
+    def find_docked_widget(object_name: str):
+        main_window = get_maya_main_window()
+        return main_window.findChild(QtWidgets.QWidget, object_name)
+
+    return find_docked_widget("domino_manager_ui")
+
+
+def get_component(rig, name, side, index):
+    stack = [rig]
+    destination_component = None
+    while stack:
+        component = stack.pop()
+        if component.identifier == (name, side, index):
+            destination_component = component
+            break
+        stack.extend(component["children"])
+    return destination_component
+
+
 # region UIGenerator
 class UIGenerator:
 
@@ -31,25 +59,195 @@ class UIGenerator:
         cls, parent: QtWidgets.QWidget, root: str
     ) -> None:
 
-        def rename_name(_name, _side, _index):
-            pass
+        def rename_name():
+            new_name = name_line_edit.text()
+            if old_name == new_name:
+                logger.warning(f"이전과 같습니다.")
+                Settings.get_instance().refresh()
+                return
+            if not new_name:
+                logger.warning(f"빈 문자열을 이름으로 사용 할 수 없습니다.")
+                Settings.get_instance().refresh()
+                return
+            if not new_name[0].isalpha():
+                logger.warning(f"문자열의 시작은 알파벳 이어야합니다.")
+                Settings.get_instance().refresh()
+                return
+            if not (new_name[-1].isalnum() or new_name[-1].isalpha()):
+                logger.warning(f"문자열의 끝은 숫자 혹은 알파벳 이어야합니다.")
+                Settings.get_instance().refresh()
+                return
 
-        def rename_side(_name, _side, _index):
-            pass
+            manager_ui = get_manager_ui()
+            rig = manager_ui.rig_tree_model.rig
 
-        def rename_index(_name, _side, _index):
-            pass
+            current_component = get_component(rig, old_name, old_side_str, old_index)
+            destination_component = get_component(
+                rig, new_name, old_side_str, old_index
+            )
 
-        def set_parent_output_index(_index):
-            pass
+            if destination_component:
+                logger.warning(
+                    f"{new_name}_{old_side_str}{old_index} Component 는 이미 존재합니다."
+                )
+                Settings.get_instance().refresh()
+                return
 
-        def create_output_joint():
-            pass
+            try:
+                cmds.undoInfo(openChunk=True)
+                current_component.rename_component(new_name, old_side, old_index, True)
+            finally:
+                cmds.undoInfo(closeChunk=True)
+            logger.info(
+                f"Rename Component {old_name}_{old_side_str}{old_index} -> {new_name}_{old_side_str}{old_index}"
+            )
+            # manager ui refresh
+            manager_ui.rig_tree_model.populate_model()
+            # settings ui refresh
+            Settings.get_instance().refresh()
 
-        old_name = cmds.getAttr(root + ".name")
-        old_side = cmds.getAttr(root + ".side")
-        old_index = cmds.getAttr(root + ".index")
+        def rename_side(new_side):
+            new_side_str = ["C", "L", "R"][new_side]
+            if old_side == new_side:
+                logger.warning(f"이전과 같습니다.")
+                Settings.get_instance().refresh()
+                return
+            manager_ui = get_manager_ui()
+            rig = manager_ui.rig_tree_model.rig
+
+            current_component = get_component(rig, old_name, old_side_str, old_index)
+            destination_component = get_component(
+                rig, old_name, new_side_str, old_index
+            )
+
+            if destination_component:
+                logger.warning(
+                    f"{old_name}_{new_side_str}{old_index} Component 는 이미 존재합니다."
+                )
+                Settings.get_instance().refresh()
+                return
+
+            try:
+                cmds.undoInfo(openChunk=True)
+                current_component.rename_component(old_name, new_side, old_index, True)
+            finally:
+                cmds.undoInfo(closeChunk=True)
+            logger.info(
+                f"Rename Component {old_name}_{old_side_str}{old_index} -> {old_name}_{new_side_str}{old_index}"
+            )
+            # manager ui refresh
+            manager_ui.rig_tree_model.populate_model()
+            # settings ui refresh
+            Settings.get_instance().refresh()
+
+        def rename_index():
+            index = index_spin_box.value()
+            manager_ui = get_manager_ui()
+            rig = manager_ui.rig_tree_model.rig
+
+            current_component = get_component(rig, old_name, old_side_str, old_index)
+            destination_component = get_component(rig, old_name, old_side_str, index)
+
+            if destination_component:
+                logger.warning(
+                    f"{old_name}_{old_side_str}{index} Component 는 이미 존재합니다."
+                )
+                Settings.get_instance().refresh()
+                return
+
+            try:
+                cmds.undoInfo(openChunk=True)
+                current_component.rename_component(old_name, old_side, index, True)
+            finally:
+                cmds.undoInfo(closeChunk=True)
+            logger.info(
+                f"Rename Component {old_name}_{old_side_str}{old_index} -> {old_name}_{old_side_str}{index}"
+            )
+            # manager ui refresh
+            manager_ui.rig_tree_model.populate_model()
+            # settings ui refresh
+            Settings.get_instance().refresh()
+
+        def set_parent_output_index():
+            manager_ui = get_manager_ui()
+            rig = manager_ui.rig_tree_model.rig
+
+            current_component = get_component(rig, old_name, old_side_str, old_index)
+
+            parent_component = current_component.get_parent()
+            parent_rig_root = parent_component.rig_root
+
+            outputs = cmds.listConnections(
+                f"{parent_rig_root}.output", source=True, destination=False
+            )
+            if not outputs:
+                Settings.get_instance().refresh()
+                return
+
+            output_index = parent_output_index_spin_box.value()
+            if output_index >= len(outputs):
+                output_index = -1
+            old_parent = cmds.listRelatives(current_component.rig_root, parent=True)[0]
+            if old_parent == outputs[output_index]:
+                Settings.get_instance().refresh()
+                return
+
+            try:
+                cmds.undoInfo(openChunk=True)
+                cmds.parent(current_component.rig_root, outputs[output_index])
+                cmds.setAttr(
+                    f"{current_component.guide_root}.parent_output_index", output_index
+                )
+                cmds.select(current_component.guide_root)
+            finally:
+                cmds.undoInfo(closeChunk=True)
+            logger.info(f"Reparent rig root {old_parent} -> {outputs[output_index]}")
+            Settings.get_instance().refresh()
+
+        def create_output_joint(state):
+            manager_ui = get_manager_ui()
+            rig = manager_ui.rig_tree_model.rig
+
+            current_component = get_component(rig, old_name, old_side_str, old_index)
+            output_joints = (
+                cmds.listConnections(
+                    f"{current_component.rig_root}.output_joint", source=True
+                )
+                or []
+            )
+            children = []
+            for j in output_joints:
+                c = cmds.listRelatives(j, children=True) or []
+                children.extend(list(set(c) - set(output_joints)))
+
+            try:
+                cmds.undoInfo(openChunk=True)
+                if output_joints and not state:
+                    if children:
+                        cmds.parent(children, "skel")
+                    cmds.delete(output_joints)
+                    logger.info(f"Remove {output_joints}")
+
+                joints = []
+                if not output_joints and state:
+                    for output_joint in current_component["output_joint"]:
+                        joints.append(output_joint.create())
+                    current_component.setup_skel(joints)
+                    logger.info(f"Create {joints}")
+                cmds.setAttr(
+                    f"{current_component.guide_root}.create_output_joint", state
+                )
+                cmds.select(current_component.guide_root)
+            finally:
+                cmds.undoInfo(closeChunk=True)
+            Settings.get_instance().refresh()
+
+        old_name = cmds.getAttr(f"{root}.name")
+        old_side = cmds.getAttr(f"{root}.side")
+        old_side_str = ["C", "L", "R"][old_side]
+        old_index = cmds.getAttr(f"{root}.index")
         name_line_edit = QtWidgets.QLineEdit(old_name)
+        name_line_edit.editingFinished.connect(partial(rename_name))
         side_combo_box = QtWidgets.QComboBox()
         side_combo_box.addItems(["C", "L", "R"])
         side_combo_box.setCurrentIndex(old_side)
@@ -57,23 +255,30 @@ class UIGenerator:
             QtWidgets.QSizePolicy.Policy.Expanding,
             QtWidgets.QSizePolicy.Policy.Fixed,
         )
+        side_combo_box.currentIndexChanged.connect(partial(rename_side))
         index_spin_box = QtWidgets.QSpinBox()
+        index_spin_box.setRange(0, 9999)
         index_spin_box.setValue(old_index)
         index_spin_box.setSizePolicy(
             QtWidgets.QSizePolicy.Policy.Expanding,
             QtWidgets.QSizePolicy.Policy.Fixed,
         )
-        old_parent_output_index = cmds.getAttr(root + ".parent_output_index")
+        index_spin_box.editingFinished.connect(partial(rename_index))
+        old_parent_output_index = cmds.getAttr(f"{root}.parent_output_index")
         parent_output_index_spin_box = QtWidgets.QSpinBox()
-        parent_output_index_spin_box.setMinimum(-1)
+        parent_output_index_spin_box.setRange(-1, 9999)
         parent_output_index_spin_box.setValue(old_parent_output_index)
         parent_output_index_spin_box.setSizePolicy(
             QtWidgets.QSizePolicy.Policy.Expanding,
             QtWidgets.QSizePolicy.Policy.Fixed,
         )
-        old_create_output_joint = cmds.getAttr(root + ".create_output_joint")
+        parent_output_index_spin_box.editingFinished.connect(
+            partial(set_parent_output_index)
+        )
+        old_create_output_joint = cmds.getAttr(f"{root}.create_output_joint")
         create_output_joint_check_box = QtWidgets.QCheckBox()
         create_output_joint_check_box.setChecked(old_create_output_joint)
+        create_output_joint_check_box.toggled.connect(partial(create_output_joint))
 
         line = QtWidgets.QFrame()
         line.setFrameShape(QtWidgets.QFrame.Shape.HLine)
@@ -109,6 +314,28 @@ class UIGenerator:
         return line_edit
 
     @classmethod
+    def add_check_box(
+        cls, parent: QtWidgets.QWidget, label: str, attribute: str
+    ) -> QtWidgets.QCheckBox:
+
+        def toggle_attribute():
+            pass
+
+        print(attribute)
+        check = True if cmds.getAttr(attribute) else False
+        check_box = QtWidgets.QCheckBox()
+        check_box.setChecked(check)
+        check_box.setSizePolicy(
+            QtWidgets.QSizePolicy.Policy.Expanding,
+            QtWidgets.QSizePolicy.Policy.Fixed,
+        )
+        check_box.toggled.connect(toggle_attribute)
+        parent_layout = parent.layout()
+        parent_layout.addRow(label, check_box)
+
+        return check_box
+
+    @classmethod
     def add_spin_box(
         cls,
         parent: QtWidgets.QWidget,
@@ -125,9 +352,8 @@ class UIGenerator:
 
         old_value = cmds.getAttr(attribute)
         spin_box = QtWidgets.QSpinBox()
+        spin_box.setRange(min_value, max_value)
         spin_box.setValue(old_value)
-        spin_box.setMinimum(min_value)
-        spin_box.setMaximum(max_value)
         spin_box.setSizePolicy(
             QtWidgets.QSizePolicy.Policy.Expanding,
             QtWidgets.QSizePolicy.Policy.Fixed,
@@ -137,8 +363,7 @@ class UIGenerator:
         if slider:
             _slider = QtWidgets.QSlider()
             _slider.setOrientation(QtCore.Qt.Orientation.Horizontal)
-            _slider.setMinimum(min_value)
-            _slider.setMaximum(max_value)
+            _slider.setRange(min_value, max_value)
             _slider.setValue(old_value)
             spin_box.valueChanged.connect(_slider.setValue)
             _slider.valueChanged.connect(spin_box.setValue)
@@ -273,12 +498,12 @@ class Assembly(DynamicWidget):
         parent_layout = parent.layout()
         parent_layout.addRow(label, layout)
 
-    def __init__(self, parent=None, root: str = None) -> None:
+    def __init__(self, parent=None, root: str = "") -> None:
         # region -    Assembly / callback
         def get_script_path(_attrs: list) -> list:
             _script_paths = []
             for _attr in _attrs:
-                _data = cmds.getAttr(root + "." + _attr)
+                _data = cmds.getAttr(f"{root}.{_attr}")
                 if _data:
                     _script_paths.append(_data)
             return _script_paths
@@ -290,19 +515,17 @@ class Assembly(DynamicWidget):
             _list_widget: QtWidgets.QListWidget,
         ) -> None:
             for _i, _script_path in enumerate(_script_paths):
-                cmds.setAttr(
-                    root + "." + _attribute + f"[{_i}]", _script_path, type="string"
-                )
+                cmds.setAttr(f"{root}.{_attribute}[{_i}]", _script_path, type="string")
                 cmds.connectAttr(
-                    root + "." + _attribute + f"[{_i}]",
-                    _rig_root + "." + _attribute + f"[{_i}]",
+                    f"{root}.{_attribute}[{_i}]",
+                    f"{_rig_root}.{_attribute}[{_i}]",
                 )
                 _text = ""
                 if _script_path.startswith("*"):
                     _script_path = _script_path[1:]
                     _text += "*"
                 _script_path = Path(_script_path)
-                _text += _script_path.name + " " + _script_path.parent.as_posix()
+                _text += f"{_script_path.name} {_script_path.parent.as_posix()}"
                 _list_widget.addItem(_text)
 
         def add_script(_list_widget: QtWidgets.QListWidget, _attribute: str) -> None:
@@ -316,9 +539,9 @@ class Assembly(DynamicWidget):
                 return
             file_path = Path(file_path[0])
 
-            _attrs = cmds.listAttr(root + "." + _attribute, multi=True)
+            _attrs = cmds.listAttr(f"{root}.{_attribute}", multi=True)
             rig_root = cmds.connectionInfo(
-                root + "." + _attribute + "[0]", destinationFromSource=True
+                f"{root}.{_attribute}[0]", destinationFromSource=True
             )[0].split(".")[0]
 
             _script_paths = get_script_path(_attrs)
@@ -326,7 +549,7 @@ class Assembly(DynamicWidget):
 
             # clear mult attribute
             for _attr in _attrs:
-                cmds.removeMultiInstance(root + "." + _attr, b=True)
+                cmds.removeMultiInstance(f"{root}.{_attr}", b=True)
             _list_widget.clear()
 
             # add
@@ -347,9 +570,9 @@ class Assembly(DynamicWidget):
             with open(file_path, "w") as f:
                 f.write(content)
 
-            _attrs = cmds.listAttr(root + "." + _attribute, multi=True)
+            _attrs = cmds.listAttr(f"{root}.{_attribute}", multi=True)
             rig_root = cmds.connectionInfo(
-                root + "." + _attribute + "[0]", destinationFromSource=True
+                f"{root}.{_attribute}[0]", destinationFromSource=True
             )[0].split(".")[0]
 
             _script_paths = get_script_path(_attrs)
@@ -357,7 +580,7 @@ class Assembly(DynamicWidget):
 
             # clear mult attribute
             for _attr in _attrs:
-                cmds.removeMultiInstance(root + "." + _attr, b=True)
+                cmds.removeMultiInstance(f"{root}.{_attr}", b=True)
             _list_widget.clear()
 
             # add
@@ -398,19 +621,19 @@ class Assembly(DynamicWidget):
             for _item in _all_items:
                 _name, _parent = _item.split(" ")
                 if _name.startswith("*"):
-                    _path = "*" + (Path(_parent) / _name[1:]).as_posix()
+                    _path = f"*{(Path(_parent) / _name[1:]).as_posix()}"
                 else:
                     _path = (Path(_parent) / _name).as_posix()
                 _script_paths.append(_path)
 
-            _attrs = cmds.listAttr(root + "." + _attribute, multi=True)
+            _attrs = cmds.listAttr(f"{root}.{_attribute}", multi=True)
             rig_root = cmds.connectionInfo(
-                root + "." + _attribute + "[0]", destinationFromSource=True
+                f"{root}.{_attribute}[0]", destinationFromSource=True
             )[0].split(".")[0]
 
             # clear mult attribute
             for _attr in _attrs:
-                cmds.removeMultiInstance(root + "." + _attr, b=True)
+                cmds.removeMultiInstance(f"{root}.{_attr}", b=True)
             _list_widget.clear()
 
             # add
@@ -445,19 +668,19 @@ class Assembly(DynamicWidget):
             for _item in _all_items:
                 _name, _parent = _item.split(" ")
                 if _name.startswith("*"):
-                    _path = "*" + (Path(_parent) / _name[1:]).as_posix()
+                    _path = f"*{(Path(_parent) / _name[1:]).as_posix()}"
                 else:
                     _path = (Path(_parent) / _name).as_posix()
                 _script_paths.append(_path)
 
-            _attrs = cmds.listAttr(root + "." + _attribute, multi=True)
+            _attrs = cmds.listAttr(f"{root}.{_attribute}", multi=True)
             rig_root = cmds.connectionInfo(
-                root + "." + _attribute + "[0]", destinationFromSource=True
+                f"{root}.{_attribute}[0]", destinationFromSource=True
             )[0].split(".")[0]
 
             # clear mult attribute
             for _attr in _attrs:
-                cmds.removeMultiInstance(root + "." + _attr, b=True)
+                cmds.removeMultiInstance(f"{root}.{_attr}", b=True)
             _list_widget.clear()
 
             # add
@@ -481,19 +704,19 @@ class Assembly(DynamicWidget):
             for _item in _all_items:
                 _name, _parent = _item.split(" ")
                 if _name.startswith("*"):
-                    _path = "*" + (Path(_parent) / _name[1:]).as_posix()
+                    _path = f"*{(Path(_parent) / _name[1:]).as_posix()}"
                 else:
                     _path = (Path(_parent) / _name).as_posix()
                 _script_paths.append(_path)
 
-            _attrs = cmds.listAttr(root + "." + _attribute, multi=True)
+            _attrs = cmds.listAttr(f"{root}.{_attribute}", multi=True)
             rig_root = cmds.connectionInfo(
-                root + "." + _attribute + "[0]", destinationFromSource=True
+                f"{root}.{_attribute}[0]", destinationFromSource=True
             )[0].split(".")[0]
 
             # clear mult attribute
             for _attr in _attrs:
-                cmds.removeMultiInstance(root + "." + _attr, b=True)
+                cmds.removeMultiInstance(f"{root}.{_attr}", b=True)
             _list_widget.clear()
 
             # add
@@ -510,7 +733,7 @@ class Assembly(DynamicWidget):
             for _item in _select_items:
                 _text = _item.text()
                 if not _text.startswith("*"):
-                    _item.setText("*" + _text)
+                    _item.setText(f"*{_text}")
 
             _all_items = [
                 _list_widget.item(i).text() for i in range(_list_widget.count())
@@ -519,23 +742,44 @@ class Assembly(DynamicWidget):
             for _item in _all_items:
                 _name, _parent = _item.split(" ")
                 if _name.startswith("*"):
-                    _path = "*" + (Path(_parent) / _name[1:]).as_posix()
+                    _path = f"*{(Path(_parent) / _name[1:]).as_posix()}"
                 else:
                     _path = (Path(_parent) / _name).as_posix()
                 _script_paths.append(_path)
 
-            _attrs = cmds.listAttr(root + "." + _attribute, multi=True)
+            _attrs = cmds.listAttr(f"{root}.{_attribute}", multi=True)
             rig_root = cmds.connectionInfo(
-                root + "." + _attribute + "[0]", destinationFromSource=True
+                f"{root}.{_attribute}[0]", destinationFromSource=True
             )[0].split(".")[0]
 
             # clear mult attribute
             for _attr in _attrs:
-                cmds.removeMultiInstance(root + "." + _attr, b=True)
+                cmds.removeMultiInstance(f"{root}.{_attr}", b=True)
             _list_widget.clear()
 
             # add
             set_script_path(rig_root, _attribute, _script_paths, _list_widget)
+
+        def set_modeling_path():
+            pass
+
+        def set_dummy_path():
+            pass
+
+        def set_blendshape_manager_path():
+            pass
+
+        def set_space_manager_path():
+            pass
+
+        def set_pose_manager_path():
+            pass
+
+        def set_sdk_manager_path():
+            pass
+
+        def set_deformer_manager_path():
+            pass
 
         # endregion
         super(Assembly, self).__init__(parent=parent, root=root)
@@ -546,48 +790,48 @@ class Assembly(DynamicWidget):
         self.add_check_box_line_edit_btn(
             self.parent_widget,
             "Modeling",
-            [root + ".run_import_modeling", root + ".modeling_path"],
+            [f"{root}.run_import_modeling", f"{root}.modeling_path"],
             down_icon,
         )
         self.add_check_box_line_edit_btn(
             self.parent_widget,
             "Dummy",
-            [root + ".run_import_dummy", root + ".dummy_path"],
+            [f"{root}.run_import_dummy", f"{root}.dummy_path"],
             down_icon,
         )
         self.add_check_box_line_edit_btn(
             self.parent_widget,
             "BlendShape Manager",
             [
-                root + ".run_import_blendshape_manager",
-                root + ".blendshape_manager_path",
+                f"{root}.run_import_blendshape_manager",
+                f"{root}.blendshape_manager_path",
             ],
             up_icon,
         )
         self.add_check_box_line_edit_btn(
             self.parent_widget,
             "Pose Manager",
-            [root + ".run_import_pose_manager", root + ".pose_manager_path"],
+            [f"{root}.run_import_pose_manager", f"{root}.pose_manager_path"],
             up_icon,
         )
         self.add_check_box_line_edit_btn(
             self.parent_widget,
             "SDK Manager",
-            [root + ".run_import_sdk_manager", root + ".sdk_path"],
+            [f"{root}.run_import_sdk_manager", f"{root}.sdk_manager_path"],
             up_icon,
         )
         self.add_check_box_line_edit_btn(
             self.parent_widget,
             "Space Manager",
-            [root + ".run_import_space_manager", root + ".space_manager_path"],
+            [f"{root}.run_import_space_manager", f"{root}.space_manager_path"],
             up_icon,
         )
         self.add_check_box_line_edit_btn(
             self.parent_widget,
             "DeformerWeights Manager",
             [
-                root + ".run_import_deformer_weights_manager",
-                root + ".deformer_weights_manager_path",
+                f"{root}.run_import_deformer_weights_manager",
+                f"{root}.deformer_weights_manager_path",
             ],
             up_icon,
         )
@@ -633,11 +877,17 @@ class Assembly(DynamicWidget):
 
         # region -    Assembly / ui
         for attribute in ["pre_custom_scripts", "post_custom_scripts"]:
+            label = f"Run {attribute.replace('_', ' ').capitalize()}"
+            check_box = UIGenerator.add_check_box(
+                parent=self.parent_widget,
+                label=label,
+                attribute=f"{root}.run_{attribute}",
+            )
             list_widget = ScriptListWidget()
             list_widget.clear()
 
             # populate
-            attrs = cmds.listAttr(root + "." + attribute, multi=True) or []
+            attrs = cmds.listAttr(f"{root}.{attribute}", multi=True) or []
             script_paths = get_script_path(attrs)
             for path in script_paths:
                 text = ""
@@ -645,7 +895,7 @@ class Assembly(DynamicWidget):
                     path = path[1:]
                     text += "*"
                 path = Path(path)
-                text += path.name + " " + path.parent.as_posix()
+                text += f"{path.name} {path.parent.as_posix()}"
                 list_widget.addItem(text)
 
             list_widget.orderChanged.connect(
@@ -702,7 +952,7 @@ class Assembly(DynamicWidget):
             self.parent_widget.layout().addRow(label, layout)
         # endregion
 
-        UIGenerator.add_notes(self.parent_widget, root + ".notes")
+        UIGenerator.add_notes(self.parent_widget, f"{root}.notes")
 
         self.parent_widget.layout().addItem(
             QtWidgets.QSpacerItem(
@@ -728,7 +978,7 @@ class Control01(DynamicWidget):
             manager_ui = get_manager_ui()
             rig = manager_ui.rig_tree_model.rig
 
-            current_component = UIGenerator.get_component(rig, name, side_str, index)
+            current_component = get_component(rig, name, side_str, index)
 
         controller_count_spin_box = UIGenerator.add_spin_box(
             self.parent_widget,

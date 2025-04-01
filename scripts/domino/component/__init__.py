@@ -25,18 +25,12 @@ import logging
 import sys
 
 
-__all__ = [
-    "assembly",
-    "control01",
-]
+__all__ = ["assembly", "control01", "fk01"]
 
 GUIDE = "guide"
 RIG = "rig"
 SKEL = "skel"
 ORIGINMATRIX = om.MMatrix()
-DUMMY_SETS = "dummy_sets"
-BLENDSHAPE_SETS = "blendShape_sets"
-DEFORMER_WEIGHTS_SETS = "deformerWeights_sets"
 
 
 T = TypeVar("T", bound="Rig")
@@ -1050,14 +1044,14 @@ class Rig(dict):
                 continue
             if "multi" in data:
                 for attr in (
-                    cmds.listAttr(self.rig_root + "." + long_name, multi=True) or []
+                    cmds.listAttr(f"{self.rig_root}.{long_name}", multi=True) or []
                 ):
                     cmds.connectAttr(
-                        self.guide_root + "." + attr, self.rig_root + "." + attr
+                        f"{self.guide_root}.{attr}", f"{self.rig_root}.{attr}"
                     )
             else:
                 cmds.connectAttr(
-                    self.guide_root + "." + long_name, self.rig_root + "." + long_name
+                    f"{self.guide_root}.{long_name}", f"{self.rig_root}.{long_name}"
                 )
         cmds.parentConstraint(GUIDE, self.rig_root)
 
@@ -1065,7 +1059,7 @@ class Rig(dict):
         cons = []
         for output in (
             cmds.listConnections(
-                self.rig_root + ".output", source=True, destination=False
+                f"{self.rig_root}.output", source=True, destination=False
             )
             or []
         ):
@@ -1078,13 +1072,13 @@ class Rig(dict):
         if self_cons:
             cons.append(self_cons)
         # constraint 삭제시 마지막 값으로 남지않는 문제.
-        attrs = cmds.listAttr(self.rig_root + ".guide_matrix", multi=True) or []
-        attrs += cmds.listAttr(self.rig_root + ".npo_matrix", multi=True) or []
+        attrs = cmds.listAttr(f"{self.rig_root}.guide_matrix", multi=True) or []
+        attrs += cmds.listAttr(f"{self.rig_root}.npo_matrix", multi=True) or []
         for attr in attrs:
             source_plug = cmds.listConnections(
-                self.rig_root + "." + attr, source=True, destination=False, plugs=True
+                f"{self.rig_root}.{attr}", source=True, destination=False, plugs=True
             )[0]
-            cmds.disconnectAttr(source_plug, self.rig_root + "." + attr)
+            cmds.disconnectAttr(source_plug, f"{self.rig_root}.{attr}")
         # output 아래 rigRoot 가 offset 되는 문제. constaint 먼저 삭제.
         if cons:
             cmds.delete(cons)
@@ -1153,12 +1147,12 @@ class Rig(dict):
         if cmds.objExists(self.rig_root):
             output_joints = (
                 cmds.listConnections(
-                    self.rig_root + ".output_joint", source=True, destination=False
+                    f"{self.rig_root}.output_joint", source=True, destination=False
                 )
                 or []
             )
             for output_joint in output_joints:
-                description = cmds.getAttr(output_joint + ".description")
+                description = cmds.getAttr(f"{output_joint}.description")
                 jnt_ins = Joint(node=output_joint)
                 jnt_ins.set_label(
                     new_side,
@@ -1171,13 +1165,13 @@ class Rig(dict):
                 )
 
         if cmds.objExists(self.guide_root):
-            cmds.setAttr(self.guide_root + ".name", new_name, type="string")
-            cmds.setAttr(self.guide_root + ".side", new_side)
-            cmds.setAttr(self.guide_root + ".index", new_index)
+            cmds.setAttr(f"{self.guide_root}.name", new_name, type="string")
+            cmds.setAttr(f"{self.guide_root}.side", new_side)
+            cmds.setAttr(f"{self.guide_root}.index", new_index)
         elif cmds.objExists(self.rig_root):
-            cmds.setAttr(self.rig_root + ".name", new_name, type="string")
-            cmds.setAttr(self.rig_root + ".side", new_side)
-            cmds.setAttr(self.rig_root + ".index", new_index)
+            cmds.setAttr(f"{self.rig_root}.name", new_name, type="string")
+            cmds.setAttr(f"{self.rig_root}.side", new_side)
+            cmds.setAttr(f"{self.rig_root}.index", new_index)
 
     def duplicate_component(self, apply_to_output: bool = False) -> None:
         stack = [(self, self.get_parent())]
@@ -1354,7 +1348,7 @@ class Rig(dict):
             if not cmds.objExists(component.rig_root):
                 continue
             module = importlib.import_module(
-                "domino.component." + component["component"]["value"]
+                f"domino.component.{component['component']['value']}"
             )
 
             # attribute
@@ -1364,20 +1358,20 @@ class Rig(dict):
                     value = []
                     for a in (
                         cmds.listAttr(
-                            component.rig_root + "." + attr.long_name, multi=True
+                            f"{component.rig_root}.{attr.long_name}", multi=True
                         )
                         or []
                     ):
-                        value.append(cmds.getAttr(component.rig_root + "." + a))
+                        value.append(cmds.getAttr(f"{component.rig_root}.{a}"))
                 else:
-                    value = cmds.getAttr(component.rig_root + "." + attr.long_name)
+                    value = cmds.getAttr(f"{component.rig_root}.{attr.long_name}")
                 component[attr.long_name]["value"] = value
 
             # controller data.
             component["controller"] = []
             for ctl in (
                 cmds.listConnections(
-                    component.rig_root + ".controller", source=True, destination=False
+                    f"{component.rig_root}.controller", source=True, destination=False
                 )
                 or []
             ):
@@ -1390,12 +1384,12 @@ class Rig(dict):
             component["output"] = []
             for output in (
                 cmds.listConnections(
-                    component.rig_root + ".output", source=True, destination=False
+                    f"{component.rig_root}.output", source=True, destination=False
                 )
                 or []
             ):
-                description = cmds.getAttr(output + ".description")
-                extension = cmds.getAttr(output + ".extension")
+                description = cmds.getAttr(f"{output}.description")
+                extension = cmds.getAttr(f"{output}.extension")
                 component._Output(
                     description=description, extension=extension, rig_instance=component
                 )
@@ -1404,7 +1398,7 @@ class Rig(dict):
             component["output_joint"] = []
             for output_joint in (
                 cmds.listConnections(
-                    component.rig_root + ".output_joint", source=True, destination=False
+                    f"{component.rig_root}.output_joint", source=True, destination=False
                 )
                 or []
             ):
@@ -1533,11 +1527,11 @@ def build(context: dict, component: T, attach_guide: bool = False) -> dict:
 
     # rig build info
     cmds.undoInfo(openChunk=True)
-    info = "mayaVersion : " + maya_version() + "\n"
-    info += "usedPlugins : "
+    info = "maya version\n\t" + maya_version()
+    info += "\nused plugins"
     plugins = used_plugins()
     for i in range(int(len(plugins) / 2)):
-        info += "\n\t" + plugins[i * 2] + "\t" + plugins[i * 2 + 1]
+        info += f"\n\t{plugins[i * 2]:<20}{plugins[i * 2 + 1]}"
     cmds.addAttr("rig", longName="notes", dataType="string")
     cmds.setAttr("rig.notes", info, type="string")
     cmds.setAttr("rig.notes", lock=True)
@@ -1568,8 +1562,8 @@ def serialize() -> T:
     assembly_node = ""
     for n in cmds.ls(type="transform"):
         if (
-            cmds.objExists(n + ".is_domino_rig_root")
-            and cmds.getAttr(n + ".component") == "assembly"
+            cmds.objExists(f"{n}.is_domino_rig_root")
+            and cmds.getAttr(f"{n}.component") == "assembly"
         ):
             assembly_node = n
 
@@ -1580,23 +1574,23 @@ def serialize() -> T:
     rig = None
     while stack:
         node, parent = stack.pop(0)
-        module_name = cmds.getAttr(node + ".component")
-        module = importlib.import_module("domino.component." + module_name)
+        module_name = cmds.getAttr(f"{node}.component")
+        module = importlib.import_module(f"domino.component.{module_name}")
         component = module.Rig()
 
         attribute_data = module.DATA
         for attr in attribute_data.copy():
             if attr[attr.long_name]["multi"]:
                 value = []
-                for a in cmds.listAttr(node + "." + attr.long_name, multi=True) or []:
-                    value.append(cmds.getAttr(node + "." + a))
+                for a in cmds.listAttr(f"{node}.{attr.long_name}", multi=True) or []:
+                    value.append(cmds.getAttr(f"{node}.{a}"))
             else:
-                value = cmds.getAttr(node + "." + attr.long_name)
+                value = cmds.getAttr(f"{node}.{attr.long_name}")
             component[attr.long_name]["value"] = value
 
         # controller data.
         for ctl in (
-            cmds.listConnections(node + ".controller", source=True, destination=False)
+            cmds.listConnections(f"{node}.controller", source=True, destination=False)
             or []
         ):
             ctl_ins = component._Controller(
@@ -1606,17 +1600,17 @@ def serialize() -> T:
 
         # output
         for output in (
-            cmds.listConnections(node + ".output", source=True, destination=False) or []
+            cmds.listConnections(f"{node}.output", source=True, destination=False) or []
         ):
-            description = cmds.getAttr(output + ".description")
-            extension = cmds.getAttr(output + ".extension")
+            description = cmds.getAttr(f"{output}.description")
+            extension = cmds.getAttr(f"{output}.extension")
             component._Output(
                 description=description, extension=extension, rig_instance=component
             )
 
         # output joint
         for output_joint in (
-            cmds.listConnections(node + ".output_joint", source=True, destination=False)
+            cmds.listConnections(f"{node}.output_joint", source=True, destination=False)
             or []
         ):
             output_joint_ins = component._OutputJoint(
@@ -1628,7 +1622,7 @@ def serialize() -> T:
             component.set_parent(parent)
 
         children = (
-            cmds.listConnections(node + ".children", destination=True, source=False)
+            cmds.listConnections(f"{node}.children", destination=True, source=False)
             or []
         )
         stack.extend([(child, component) for child in children])
