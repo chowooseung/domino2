@@ -72,8 +72,8 @@ def mirror_shape(node: str, left_str: str = "_L", right_str: str = "_R") -> None
             relative=True,
             shape=True,
         )
-        for shape in shapes:
-            cmds.rename(shape, destination + "Shape")
+        for shape in shapes.copy():
+            shape = cmds.rename(shape, destination + "Shape")
             cmds.setAttr(shape + ".isHistoricallyInteresting", 0)
         delete_list.append(dup_curve)
     cmds.delete(delete_list)

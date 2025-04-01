@@ -24,14 +24,23 @@ def show(*args) -> None:
 
 replace_shape_command = """from maya import cmds
 from domino.core import nurbscurve
+
 selected = cmds.ls(selection=True)
 if selected:
     destination_shapes = cmds.listRelatives(selected[-1], shapes=True)
     delete_list = []
     for ctl in selected[:-1]:
-        dup_curves = [cmds.duplicateCurve(shape, constructionHistory=False)[0] for shape in destination_shapes]
+        dup_curves = [
+            cmds.duplicateCurve(shape, constructionHistory=False)[0]
+            for shape in destination_shapes
+        ]
         temp_transform = cmds.createNode("transform", name="temp1122")
-        cmds.parent([cmds.listRelatives(c, shapes=True)[0] for c in dup_curves], temp_transform, relative=True, shape=True)
+        cmds.parent(
+            [cmds.listRelatives(c, shapes=True)[0] for c in dup_curves],
+            temp_transform,
+            relative=True,
+            shape=True,
+        )
         nurbscurve.replace_shape(temp_transform, ctl)
         delete_list.extend([temp_transform] + dup_curves)
     cmds.delete(delete_list)
@@ -39,6 +48,7 @@ if selected:
 
 mirror_shape_command = """from maya import cmds
 from domino.core import nurbscurve
+
 selected = cmds.ls(selection=True)
 left_str = cmds.textField("domino_left_mirror_string", query=True, text=True)
 right_str = cmds.textField("domino_right_mirror_string", query=True, text=True)
@@ -46,42 +56,52 @@ for sel in selected:
     nurbscurve.mirror_shape(sel, left_str, right_str)"""
 
 color_command = """from maya import cmds
-shapes = [y for x in cmds.ls(selection=True) for y in cmds.listRelatives(x, shapes=True) or []]
+
+shapes = [
+    y for x in cmds.ls(selection=True) for y in cmds.listRelatives(x, shapes=True) or []
+]
 for shape in shapes:
     cmds.setAttr(shape + ".overrideEnabled", 1)
     cmds.setAttr(shape + ".overrideColor", {0})"""
 
 rotate_x_command = """from maya import cmds
+
 selected = [x + ".cv[*]" for x in cmds.ls(selection=True)]
 rotate_value = cmds.intField("controller_rotate_int_field", query=True, value=True)
 cmds.rotate(rotate_value, 0, 0, selected, relative=True)"""
 
 rotate_y_command = """from maya import cmds
+
 selected = [x + ".cv[*]" for x in cmds.ls(selection=True)]
 rotate_value = cmds.intField("controller_rotate_int_field", query=True, value=True)
 cmds.rotate(0, rotate_value, 0, selected, relative=True)"""
 
 rotate_z_command = """from maya import cmds
+
 selected = [x + ".cv[*]" for x in cmds.ls(selection=True)]
 rotate_value = cmds.intField("controller_rotate_int_field", query=True, value=True)
 cmds.rotate(0, 0, rotate_value, selected, relative=True)"""
 
 scale_command = """from maya import cmds
+
 selected = [x + ".cv[*]" for x in cmds.ls(selection=True)]
 scale_value = cmds.floatField("controller_scale_float_field", query=True, value=True)
 cmds.scale(scale_value, scale_value, scale_value, selected, relative=True)"""
 
 scale_x_command = """from maya import cmds
+
 selected = [x + ".cv[*]" for x in cmds.ls(selection=True)]
 scale_value = cmds.floatField("controller_scale_float_field", query=True, value=True)
 cmds.scale(scale_value, 1, 1, selected, relative=True)"""
 
 scale_y_command = """from maya import cmds
+
 selected = [x + ".cv[*]" for x in cmds.ls(selection=True)]
 scale_value = cmds.floatField("controller_scale_float_field", query=True, value=True)
 cmds.scale(1, scale_value, 1, selected, relative=True)"""
 
 scale_z_command = """from maya import cmds
+
 selected = [x + ".cv[*]" for x in cmds.ls(selection=True)]
 scale_value = cmds.floatField("controller_scale_float_field", query=True, value=True)
 cmds.scale(1, 1, scale_value, selected, relative=True)"""
