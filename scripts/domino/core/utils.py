@@ -22,6 +22,11 @@ formatter = logging.Formatter("%(levelname)s %(message)s")
 info_handler.setFormatter(formatter)
 info_handler.addFilter(lambda record: record.levelno == logging.INFO)
 
+warning_handler = MayaGuiLogHandler()
+formatter = logging.Formatter("%(message)s")
+warning_handler.setFormatter(formatter)
+warning_handler.addFilter(lambda record: record.levelno == logging.WARNING)
+
 error_handler = MayaGuiLogHandler()
 formatter = logging.Formatter("%(message)s")
 error_handler.setFormatter(formatter)
@@ -29,7 +34,24 @@ error_handler.addFilter(lambda record: record.levelno == logging.ERROR)
 
 logger.addHandler(debug_handler)
 logger.addHandler(info_handler)
+logger.addHandler(warning_handler)
 logger.addHandler(error_handler)
+
+
+def log_format(indent, label, msg):
+    if msg:
+        if isinstance(msg, str):
+            msg = "\t" * (indent + 1) + msg
+        elif isinstance(msg, list):
+            if len(msg) == 1:
+                msg = "\t" * (indent + 1) + msg[0]
+            else:
+                msg = "\t" * (indent + 1) + ("\n" + "\t" * (indent + 1)).join(msg)
+        elif isinstance(msg, tuple):
+            msg = "\t" * (indent + 1) + str(msg)
+    else:
+        msg = ""
+    return ("\t" * indent) + label + "\n" + msg + "\n"
 
 
 def build_log(level):
@@ -44,10 +66,8 @@ def build_log(level):
             start_time = time.perf_counter()
 
             try:
-                call_msg = f"Calling `{func.__module__}` `{func.__name__}`"
+                call_msg = f"Calling `{func.__module__}` `{func.__name__}`\n"
                 if level == logging.DEBUG:
-                    call_msg += "\n\targs\n\t\t"
-
                     args_msg = []
                     for arg in args:
                         if arg.__class__.__name__ == "Rig":
@@ -61,53 +81,49 @@ def build_log(level):
                             args_msg.append(f"`{arg.name}(_OutputJoint)`")
                         else:
                             args_msg.append(arg)
-                    call_msg += ", ".join(args_msg)
 
-                    call_msg += "\n\tkwargs\n\t\t"
+                    call_msg += log_format(indent=1, label="args", msg=args_msg)
 
                     if func.__name__ == "print_context":
-                        call_msg += f"Identifier {kwargs['identifier']}\n\n"
-                        call_msg += "\t\tController\n"
+                        call_msg += log_format(indent=1, label="kwargs", msg="")[:-1]
+                        call_msg += log_format(
+                            indent=2, label="Identifier", msg=kwargs["identifier"]
+                        )
+                        controller_msg = []
                         for ctl in kwargs["controller"]:
-                            call_msg += f"\t\t\tdescription \"{ctl['description']}\"\n"
-                            call_msg += f"\t\t\t\tparent controller\n"
-                            for parent_ctl in ctl["parent_controllers"]:
-                                parent_identifier = "_".join(
-                                    [str(x) for x in parent_ctl[0] if x]
-                                )
-                                call_msg += f'\t\t\t\t\tidentifier : {parent_identifier}, description : "{parent_ctl[1]}"\n'
-                            if (
-                                kwargs["identifier"] == "origin"
-                                and ctl["description"] == ""
-                            ):
-                                call_msg += f"\t\t\t\t\tROOT\n"
-                            elif not ctl["parent_controllers"]:
-                                call_msg += f"\t\t\t\t\t**WARNING parent controller 를 설정해주세요**\n"
-                        call_msg += "\t\tOutput\n"
+                            d = ctl["description"]
+                            controller_msg.append(f"description {d}")
+                        call_msg += log_format(
+                            indent=2, label="Controller", msg=controller_msg
+                        )
+                        output_msg = []
                         for output in kwargs["output"]:
-                            call_msg += f"\t\t\tdescription {output['description']} extension {output['extension']}\n"
-                        call_msg += "\t\tOutput Joint\n"
+                            d = output["description"]
+                            e = output["extension"]
+                            output_msg.append(f"description {d} extension {e}")
+                        call_msg += log_format(indent=2, label="Output", msg=output_msg)
+                        output_joint_msg = []
                         for output_joint in kwargs["output_joint"]:
-                            call_msg += (
-                                f"\t\t\tdescription {output_joint['description']}\n"
-                            )
+                            d = output_joint["description"]
+                            output_joint_msg.append(f"description {d}")
+                        call_msg += log_format(
+                            indent=2, label="OutputJoint", msg=output_joint_msg
+                        )
                     else:
                         kwargs_msg = []
                         for k, v in kwargs.items():
                             kwargs_msg.append(f"{k}: {v}")
-                        call_msg += ", ".join(kwargs_msg)
-
-                logger.log(level, call_msg)
+                        call_msg += log_format(indent=1, label="kwargs", msg=kwargs_msg)
 
                 result = func(*args, **kwargs)
                 execution_time = time.perf_counter() - start_time
 
                 completed_msg = ""
                 if level == logging.DEBUG:
-                    completed_msg += f"return\n\t\t{result}\n\t"
+                    completed_msg += log_format(indent=1, label="return", msg=result)
                 completed_msg += f"Completed `{func.__module__}` `{func.__name__}` Execution Time : {execution_time:.4f} second"
 
-                logger.log(level, completed_msg)
+                logger.log(level, call_msg + completed_msg)
                 return result
             except Exception as e:
                 error_msg = f"`{func.__module__}` `{func.__name__}`"
