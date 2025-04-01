@@ -93,12 +93,20 @@ def popup_menu(parent_menu: str, *args, **kwargs) -> None:
 
 # region GUIDE Commands
 settings_command = """from maya import cmds, mel
+
 selected = cmds.ls(selection=True)
 if cmds.objExists(selected[0] + ".is_domino_guide_root"):
     cmds.AttributeEditor()
     mel.eval('setLocalView "Rigging" "" 1;')
 if cmds.objExists(selected[0] + ".is_domino_guide"):
-    cmds.select(cmds.listConnections(selected[0] + ".worldMatrix[0]", source=False, destination=True, type="transform"))
+    cmds.select(
+        cmds.listConnections(
+            selected[0] + ".worldMatrix[0]",
+            source=False,
+            destination=True,
+            type="transform",
+        )
+    )
     cmds.AttributeEditor()
     mel.eval('setLocalView "Rigging" "" 1;')"""
 
@@ -108,23 +116,48 @@ if len(selected) > 1:
     cmds.matchTransform(selected[:-1], selected[-1], position=True, rotation=True)"""
 
 aim_command = """from maya import cmds
+
 selected = cmds.ls(selection=True)
 if len(selected) == 2:
-    cmds.delete(cmds.aimConstraint(selected[1], selected[0], aimVector=(1, 0, 0), upVector=(0, 1, 0), worldUpType="scene"))
+    cmds.delete(
+        cmds.aimConstraint(
+            selected[1],
+            selected[0],
+            aimVector=(1, 0, 0),
+            upVector=(0, 1, 0),
+            worldUpType="scene",
+        )
+    )
     cmds.select(selected)
-if len(selected) == 3:
-    cmds.delete(cmds.aimConstraint(selected[1], selected[0], aimVector=(1, 0, 0), upVector=(0, 1, 0), worldUpType="object", worldUpObject=selected[2]))
+elif len(selected) == 3:
+    cmds.delete(
+        cmds.aimConstraint(
+            selected[1],
+            selected[0],
+            aimVector=(1, 0, 0),
+            upVector=(0, 1, 0),
+            worldUpType="object",
+            worldUpObject=selected[2],
+        )
+    )
     cmds.select(selected)"""
 
 detach_guide_command = """from maya import cmds
 import importlib
-selected = [x for x in cmds.ls(selection=True) if cmds.objExists(x + ".is_domino_guide")]
+
 roots = []
-for sel in selected:
-    roots.append(cmds.listConnections(sel + ".worldMatrix[0]", type="transform", connections=True)[1])
+for sel in cmds.ls(selection=True):
+    if cmds.objExists(sel + ".is_domino_guide"):
+        roots.append(
+            cmds.listConnections(
+                sel + ".worldMatrix[0]", type="transform", connections=True
+            )[1]
+        )
+    elif cmds.objExists(sel + ".is_domino_guide_root"):
+        roots.append(sel)
 for root in set(roots):
     if not cmds.objExists(root.replace("rigRoot", "guideRoot")):
-        continue   
+        continue
     component = cmds.getAttr(root + ".component")
     module = importlib.import_module("domino.component." + component)
     rig = module.Rig()
@@ -183,11 +216,9 @@ def guide_menu(parent_menu: str) -> None:
 # region RIG Commands
 validation_command = "from domino import validation;validation.show()"
 
-initialize_output_joint_command = """from maya import cmds
-"""
-
 spacemanager_command = """from maya import cmds
 from domino import spacemanager
+
 selected = cmds.ls(selection=True)[0]
 spacemanager.show()
 spacemanager.initialize()
@@ -196,12 +227,16 @@ if not parent or parent[0] != "origin_sub_ctl":
     cmds.parent("space_manager", "origin_sub_ctl")
 if not cmds.objExists(selected + ".space_manager"):
     cmds.addAttr(selected, longName="space_manager", attributeType="message")
-if cmds.connectionInfo(selected + ".space_manager", sourceFromDestination=True) != "space_manager.message":
+if (
+    cmds.connectionInfo(selected + ".space_manager", sourceFromDestination=True)
+    != "space_manager.message"
+):
     cmds.connectAttr("space_manager.message", selected + ".space_manager", force=True)
 cmds.select(selected)"""
 
 posemanager_command = """from maya import cmds
 from domino import posemanager
+
 selected = cmds.ls(selection=True)[0]
 posemanager.show()
 posemanager.initialize()
@@ -210,12 +245,16 @@ if not parent or parent[0] != "origin_sub_ctl":
     cmds.parent("pose_manager", "origin_sub_ctl")
 if not cmds.objExists(selected + ".pose_manager"):
     cmds.addAttr(selected, longName="pose_manager", attributeType="message")
-if cmds.connectionInfo(selected + ".pose_manager", sourceFromDestination=True) != "pose_manager.message":
+if (
+    cmds.connectionInfo(selected + ".pose_manager", sourceFromDestination=True)
+    != "pose_manager.message"
+):
     cmds.connectAttr("pose_manager.message", selected + ".pose_manager", force=True)
 cmds.select(selected)"""
 
 sdkmanager_command = """from maya import cmds
 from domino import sdkmanager
+
 selected = cmds.ls(selection=True)[0]
 sdkmanager.show()
 sdkmanager.initialize()
@@ -224,17 +263,25 @@ if not parent or parent[0] != "origin_sub_ctl":
     cmds.parent("sdk_manager", "origin_sub_ctl")
 if not cmds.objExists(selected + ".sdk_manager"):
     cmds.addAttr(selected, longName="sdk_manager", attributeType="message")
-if cmds.connectionInfo(selected + ".sdk_manager", sourceFromDestination=True) != "sdk_manager.message":
+if (
+    cmds.connectionInfo(selected + ".sdk_manager", sourceFromDestination=True)
+    != "sdk_manager.message"
+):
     cmds.connectAttr("sdk_manager.message", selected + ".sdk_manager", force=True)
 cmds.select(selected)"""
 
 add_data_command = """from maya import cmds
+
 selected = cmds.ls(selection=True)
 if cmds.objExists("rig"):
-    if not cmds.objExists("rig.custom_curve_data"):        
-        cmds.addAttr("rig", longName="custom_curve_data", attributeType="message", multi=True)
-    if not cmds.objExists("rig.custom_polygon_data"):        
-        cmds.addAttr("rig", longName="custom_polygon_data", attributeType="message", multi=True)
+    if not cmds.objExists("rig.custom_curve_data"):
+        cmds.addAttr(
+            "rig", longName="custom_curve_data", attributeType="message", multi=True
+        )
+    if not cmds.objExists("rig.custom_polygon_data"):
+        cmds.addAttr(
+            "rig", longName="custom_polygon_data", attributeType="message", multi=True
+        )
     for sel in selected[1:]:
         shapes = cmds.listRelatives(sel, shapes=True)
         if not shapes:
@@ -262,14 +309,6 @@ if cmds.objExists("rig"):
             )
             cmds.connectAttr(sel + ".message", f"rig.custom_polygon_data[{next_index}]")
     cmds.select(selected)"""
-
-save_command = """from domino.component import save
-filePath = cmds.fileDialog2(caption="Save Domino Rig",
-                            startingDirectory=cmds.workspace(query=True, rootDirectory=True),
-                            fileFilter="Domino Rig (*.domino)",
-                            fileMode=0)
-if filePath:
-    save(filePath[0])"""
 # endregion
 
 
@@ -312,14 +351,6 @@ def rig_menu(parent_menu: str) -> None:
         image="lasso-polygon.svg",
     )
 
-    cmds.menuItem(parent=parent_menu, divider=True)
-    cmds.menuItem(
-        parent=parent_menu,
-        label="Save rig to File",
-        image="save.png",
-        command=save_command,
-    )
-
 
 # endregion
 
@@ -350,33 +381,46 @@ for sel in selected:
 for con in set(controllers):
     Controller.reset(node=con)"""
 
-rt_symmetry_controller_command = """from maya import cmds
+rt_mirror_controller_command = """from maya import cmds
 from domino.core import Controller
-selected = [x for x in cmds.ls(selection=True) if cmds.objExists(x + ".is_domino_controller")]
+
+selected = [
+    x for x in cmds.ls(selection=True) if cmds.objExists(x + ".is_domino_controller")
+]
+attrs = ["tx", "ty", "tz", "rx", "ry", "rz"]
 for sel in selected:
     mirror_ctl = cmds.getAttr(sel + ".mirror_controller_name")
-    if not cmds.objExists(mirror_ctl) or mirror_ctl == sel: 
+    if not cmds.objExists(mirror_ctl) or mirror_ctl == sel:
         continue
-    t, r = Controller.get_mirror_RT(node=sel)
-    cmds.setAttr(mirror_ctl + ".t", *t)
-    cmds.setAttr(mirror_ctl + ".r", *r)"""
+    orig_t = cmds.getAttr(sel + ".t")[0]
+    orig_r = cmds.getAttr(sel + ".r")[0]
+    mirror_type = cmds.getAttr(sel + ".mirror_type")
+    t, r = Controller.get_mirror_RT(t=orig_t, r=orig_r, mirror_type=mirror_type)
+    for attr, value in zip(attrs, t + r):
+        if cmds.getAttr(mirror_ctl + "." + attr, lock=True):
+            continue   
+        cmds.setAttr(mirror_ctl + "." + attr, value)"""
 
 rt_flip_controller_command = """from maya import cmds
 from domino.core import Controller
-selected = [x for x in cmds.ls(selection=True) if cmds.objExists(x + ".is_domino_controller")]
+
+selected = [
+    x for x in cmds.ls(selection=True) if cmds.objExists(x + ".is_domino_controller")
+]
+attrs = ["tx", "ty", "tz", "rx", "ry", "rz"]
 for sel in selected:
     mirror_ctl = cmds.getAttr(sel + ".mirror_controller_name")
-    if not cmds.objExists(mirror_ctl) or mirror_ctl == sel: 
+    if not cmds.objExists(mirror_ctl) or mirror_ctl == sel:
         continue
-    t, r = Controller.get_mirror_RT(node=sel)
-    mirror_t = cmds.getAttr(mirror_ctl + ".t")[0]
-    mirror_r = cmds.getAttr(mirror_ctl + ".r")[0]
-    cmds.setAttr(mirror_ctl + ".t", *t)
-    cmds.setAttr(mirror_ctl + ".r", *r)
-    cmds.setAttr(sel + ".t", *mirror_t)
-    cmds.setAttr(sel + ".r", *mirror_r)"""
+    for attr in attrs:
+        if cmds.getAttr(mirror_ctl + "." + attr, lock=True):
+            continue   
+        mirror_value = cmds.getAttr(mirror_ctl + "." + attr)
+        sel_value = cmds.getAttr(sel + "." + attr)
+        cmds.setAttr(sel + "." + attr, mirror_value)
+        cmds.setAttr(mirror_ctl + "." + attr, sel_value)"""
 
-matrix_symmetry_controller_command = """"""
+matrix_mirror_controller_command = """"""
 matrix_flip_controller_command = """"""
 
 preroll_command = """from domino.core import Controller
@@ -427,7 +471,7 @@ def controller_menu(
         label="Mirror / Flip (PLANE)",
         radialPosition="NW",
         image="symmetryConstraint.svg",
-        command=rt_symmetry_controller_command,
+        command=rt_mirror_controller_command,
         enableCommandRepeat=True,
     )
     cmds.menuItem(
@@ -449,15 +493,13 @@ def controller_menu(
         command='print("Flip Set Key")',
     )
 
-    if is_assembly:
-        cmds.menuItem(
-            parent=parent_menu,
-            label="Set pre-roll frame",
-            image="character.svg",
-            command=preroll_command,
-            enableCommandRepeat=True,
-        )
-
+    cmds.menuItem(
+        parent=parent_menu,
+        label="Select child controllers",
+        image="pointer-down.svg",
+        command=select_child_controller_command,
+        enableCommandRepeat=True,
+    )
     if has_fkik_switch:
         cmds.menuItem(
             parent=parent_menu,
@@ -470,73 +512,96 @@ def controller_menu(
             optionBox=True,
             command='print("fk/ik Set Key")',
         )
-    cmds.menuItem(
-        parent=parent_menu,
-        label="Select child controllers",
-        image="pointer-down.svg",
-        command=select_child_controller_command,
-        enableCommandRepeat=True,
-    )
+    if is_assembly:
+        cmds.menuItem(
+            parent=parent_menu,
+            label="Set pre-roll frame",
+            image="character.svg",
+            command=preroll_command,
+            enableCommandRepeat=True,
+        )
 
 
 # endregion
 
 # region Skeleton Commands
 select_skel_command = """from maya import cmds
+
 selected = cmds.ls(selection=True)[0]
 namespace = selected.split(":")[0] if ":" in selected else ""
-cmds.select([x for x in cmds.ls(namespace + ":*" if namespace else "*", type="joint") if cmds.objExists(x + ".is_domino_skel")])"""
+cmds.select(
+    [
+        x
+        for x in cmds.ls(namespace + ":*" if namespace else "*", type="joint")
+        if cmds.objExists(x + ".is_domino_skel")
+    ]
+)"""
 
 bind_command = """from maya import cmds
+
 selected = cmds.ls(selection=True)
 meshes = cmds.ls(selection=True, dagObjects=True, noIntermediate=True, type="mesh")
 joints = cmds.ls(selection=True, type="joint")
 for mesh in meshes:
-    scs = [x for x in cmds.listHistory(mesh, pruneDagObjects=True) if cmds.nodeType(x) == "skinCluster"]
+    scs = [
+        x
+        for x in cmds.listHistory(mesh, pruneDagObjects=True)
+        if cmds.nodeType(x) == "skinCluster"
+    ]
     name = cmds.listRelatives(mesh, parent=True)[0] + str(len(scs)) + "_sc"
     cmds.skinCluster(
-        joints + [mesh], 
-        name=name, 
-        maximumInfluences=1, 
-        normalizeWeights=True, 
-        obeyMaxInfluences=False, 
+        joints + [mesh],
+        name=name,
+        maximumInfluences=1,
+        normalizeWeights=True,
+        obeyMaxInfluences=False,
         weightDistribution=1,
-        multi=True
+        multi=True,
     )
 cmds.select(selected)"""
 
-break_command = """from maya import cmds
-joints = [x for x in cmds.ls("*", type="joint") if cmds.objExists(x + ".is_domino_skel")]
+disconnect_command = """from maya import cmds
+
+joints = [
+    x for x in cmds.ls("*", type="joint") if cmds.objExists(x + ".is_domino_skel")
+]
 for jnt in joints:
-    plugs = cmds.listConnections(
-        jnt, 
-        source=True, 
-        destination=False, 
-        plugs=True, 
-        connections=True
-    ) or []
-    for i in range(int(len(plugs) / 2 )):
+    plugs = (
+        cmds.listConnections(
+            jnt, source=True, destination=False, plugs=True, connections=True
+        )
+        or []
+    )
+    for i in range(int(len(plugs) / 2)):
         cmds.disconnectAttr(plugs[i * 2 + 1], plugs[i * 2])"""
 
 bake_command = """from maya import cmds
+
 selected = cmds.ls(selection=True)[0]
 namespace = selected.split(":")[0] if ":" in selected else ""
-joints = [x for x in cmds.ls(namespace + ":*" if namespace else "*", type="joint") if cmds.objExists(x + ".is_domino_skel")]
+joints = [
+    x
+    for x in cmds.ls(namespace + ":*" if namespace else "*", type="joint")
+    if cmds.objExists(x + ".is_domino_skel")
+]
+start_time = cmds.playbackOptions(query=True, minTime=True)
+end_time = cmds.playbackOptions(query=True, maxTime=True)
 cmds.bakeResults(
     joints,
-    simulation=True, 
-    t="1:120", 
-    sampleBy=1, 
-    oversamplingRate=1, 
-    disableImplicitControl=True, 
-    preserveOutsideKeys=True, 
-    sparseAnimCurveBake=False, 
-    removeBakedAttributeFromLayer=False, 
-    removeBakedAnimFromLayer=False, 
-    bakeOnOverrideLayer=False, 
-    minimizeRotation=True, 
-    controlPoints=False, 
-    shape=True)"""
+    simulation=True,
+    t=(start_time, end_time),
+    sampleBy=1,
+    oversamplingRate=1,
+    disableImplicitControl=True,
+    preserveOutsideKeys=True,
+    sparseAnimCurveBake=False,
+    removeBakedAttributeFromLayer=False,
+    removeBakedAnimFromLayer=False,
+    bakeOnOverrideLayer=False,
+    minimizeRotation=True,
+    controlPoints=False,
+    shape=True,
+)"""
 # endregion
 
 
@@ -559,9 +624,9 @@ def skel_menu(parent_menu: str) -> None:
     )
     cmds.menuItem(
         parent=parent_menu,
-        label="Break(All Bind Skel)",
+        label="Disconnect From Controller",
         radialPosition="E",
-        command=break_command,
+        command=disconnect_command,
         image="resetSettings.svg",
     )
     cmds.menuItem(

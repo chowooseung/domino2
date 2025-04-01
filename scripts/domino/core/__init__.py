@@ -753,7 +753,13 @@ class Controller(Transform):
             )
             if cmds.objExists(x + ".is_domino_rig_root")
         ][0]
-        stack = [controller_root]
+        stack = []
+        stack.extend(
+            cmds.listConnections(
+                controller_root + ".children", source=False, destination=True
+            )
+            or []
+        )
         while stack:
             root = stack.pop(0)
 
