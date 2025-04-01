@@ -5,8 +5,9 @@ from maya import cmds
 from domino.core import dagmenu
 
 
-average_position_command = """from maya import cmds
+place_a_locator_average_position_command = """from maya import cmds
 import numpy as np
+
 selected = cmds.ls(selection=True, flatten=True)
 if selected:
     positions = []
@@ -15,15 +16,28 @@ if selected:
         cmds.select(vertices)
         vertices = cmds.ls(selection=True, flatten=True)
         for vertex in vertices:
-            positions.append(cmds.xform(vertex, query=True, translation=True, worldSpace=True))
+            positions.append(
+                cmds.xform(vertex, query=True, translation=True, worldSpace=True)
+            )
     else:
         for sel in selected:
-            positions.append(cmds.xform(sel, query=True, translation=True, worldSpace=True))
+            positions.append(
+                cmds.xform(sel, query=True, translation=True, worldSpace=True)
+            )
     result = list(np.mean(positions, axis=0))
     loc = cmds.spaceLocator(name="average_loc")[0]
     cmds.setAttr(loc + ".t", *result)"""
 
+place_locators_each_position_command = """from maya import cmds
+selected = cmds.ls(selection=True, flatten=True)
+if selected:
+    for sel in selected:
+        t = cmds.xform(sel, query=True, translation=True, worldSpace=True)
+        loc = cmds.spaceLocator(name="locators")[0]
+        cmds.setAttr(loc + ".t", *t)"""
+
 print_channel_box_status_command = """from maya import cmds
+
 set_attr_format = "cmds.setAttr('{node}.{attr}', {value})"
 result_str = ""
 main_objects = cmds.channelBox("mainChannelBox", query=True, mainObjectList=True)
@@ -32,29 +46,41 @@ if main_objects and attributes:
     for obj in main_objects:
         for attr in attributes:
             value = cmds.getAttr(obj + "." + attr)
-            result_str += "\\n" + set_attr_format.format(node=obj, attr=attr, value=value)
+            result_str += "\\n" + set_attr_format.format(
+                node=obj, attr=attr, value=value
+            )
 shape_objects = cmds.channelBox("mainChannelBox", query=True, shapeObjectList=True)
 attributes = cmds.channelBox("mainChannelBox", query=True, selectedShapeAttributes=True)
 if shape_objects and attributes:
     for obj in shape_objects:
         for attr in attributes:
             value = cmds.getAttr(obj + "." + attr)
-            result_str += "\\n" + set_attr_format.format(node=obj, attr=attr, value=value) 
+            result_str += "\\n" + set_attr_format.format(
+                node=obj, attr=attr, value=value
+            )
 history_objects = cmds.channelBox("mainChannelBox", query=True, historyObjectList=True)
-attributes = cmds.channelBox("mainChannelBox", query=True, selectedHistoryAttributes=True)
+attributes = cmds.channelBox(
+    "mainChannelBox", query=True, selectedHistoryAttributes=True
+)
 if history_objects and attributes:
     for obj in history_objects:
         for attr in attributes:
             value = cmds.getAttr(obj + "." + attr)
-            result_str += "\\n" + set_attr_format.format(node=obj, attr=attr, value=value) 
+            result_str += "\\n" + set_attr_format.format(
+                node=obj, attr=attr, value=value
+            )
 print(result_str)"""
 
 controller_panel_command = """from domino import controllerpanel
 controllerpanel.show()"""
 
-create_face_at_position_command = """from maya import cmds
+create_multi_plane_at_positions_command = """from maya import cmds
 from maya.api import OpenMaya as om
-positions = [cmds.xform(x, query=True, translation=True, worldSpace=True) for x in cmds.ls(selection=True)]
+
+positions = [
+    cmds.xform(x, query=True, translation=True, worldSpace=True)
+    for x in cmds.ls(selection=True)
+]
 meshes = []
 v1 = om.MVector((0.1, 0, -0.1))
 v2 = om.MVector((0.1, 0, 0.1))
@@ -62,16 +88,31 @@ v3 = om.MVector((-0.1, 0, -0.1))
 v4 = om.MVector((-0.1, 0, 0.1))
 for position in positions:
     p = om.MVector(position)
-    plane = cmds.polyPlane(constructionHistory=False, subdivisionsHeight=1, subdivisionsWidth=1)[0]
+    plane = cmds.polyPlane(
+        constructionHistory=False, subdivisionsHeight=1, subdivisionsWidth=1
+    )[0]
     for i, v in enumerate([v1, v2, v3, v4]):
         vtx_position = list(p + v)
         cmds.move(*vtx_position, plane + f".vtx[{i}]")
     meshes.append(plane)
 if len(meshes) == 1:
     cmds.rename(meshes[0], "face_at_position")
-if len(meshes) > 1:    
+if len(meshes) > 1:
     cmds.polyUnite(meshes, name="face_at_position", constructionHistory=False)
     cmds.polyAutoProjection(constructionHistory=False, percentageSpace=5, layout=2)"""
+
+extract_select_polygon_face_command = """from maya import cmds
+faces = [x for x in cmds.ls(selection=True) if ".f" in x]
+if faces:
+    mesh = faces[0].split(".")[0]
+    mesh = cmds.duplicate(mesh)[0]
+    faces = [mesh + "." + f.split(".")[1] for f in faces]
+    cmds.polyChipOff(faces, constructionHistory=False, duplicate=False)
+    _, extract_mesh = cmds.polySeparate(
+        mesh, removeShells=True, constructionHistory=False, inp=True
+    )
+    extract_mesh = cmds.rename(extract_mesh, "extract_mesh")
+    cmds.delete(mesh)"""
 
 
 def install_rig_commands_menu(menu_id):
@@ -85,13 +126,23 @@ def install_rig_commands_menu(menu_id):
     )
     cmds.menuItem(
         parent=sub_menu,
-        label="Place locator at average position",
-        command=average_position_command,
+        label="Place a locator at the average position",
+        command=place_a_locator_average_position_command,
     )
     cmds.menuItem(
         parent=sub_menu,
-        label="Create face at position",
-        command=create_face_at_position_command,
+        label="Place locators at each position",
+        command=place_locators_each_position_command,
+    )
+    cmds.menuItem(
+        parent=sub_menu,
+        label="Create multi plane at positions",
+        command=create_multi_plane_at_positions_command,
+    )
+    cmds.menuItem(
+        parent=sub_menu,
+        label="Extract select polygon face",
+        command=extract_select_polygon_face_command,
     )
     cmds.menuItem(
         parent=sub_menu,
