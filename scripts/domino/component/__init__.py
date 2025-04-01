@@ -7,13 +7,12 @@ from domino.core import (
     Curve,
     attribute,
     nurbscurve,
-    rigkit,
 )
 from domino.core.utils import build_log, logger, maya_version, used_plugins
 
 # maya
 from maya import cmds
-from maya.api import OpenMaya as om  # type: ignore
+from maya.api import OpenMaya as om
 
 # built-ins
 from typing import TypeVar
@@ -579,16 +578,26 @@ class Rig(dict):
             self._node = self.name
 
         @build_log(logging.DEBUG)
-        def create(self, parent: str, output: str) -> str:
+        def create(self) -> str:
             name, side, index = self.instance.identifier
+            parent = SKEL
+            if self["parent_description"] is not None:
+                parent = Name.create(
+                    convention=Name.joint_name_convention,
+                    name=name,
+                    side=side,
+                    index=index,
+                    description=self["parent_description"],
+                    extension=Name.joint_extension,
+                )
             ins = Joint(
-                parent=parent if parent else SKEL,
+                parent=parent,
                 name=name,
                 side=side,
                 index=index,
                 description=self["description"],
                 extension=Name.joint_extension,
-                m=cmds.xform(output, query=True, matrix=True, worldSpace=True),
+                m=ORIGINMATRIX,
                 use_joint_convention=True,
             )
             next_index = len(
@@ -603,6 +612,7 @@ class Rig(dict):
             cmds.addAttr(
                 jnt, longName="is_domino_skel", attributeType="bool", keyable=False
             )
+            cmds.addAttr(jnt, longName="skel_index", attributeType="long")
             cmds.connectAttr(
                 jnt + ".message",
                 self.instance.rig_root + f".output_joint[{next_index}]",
@@ -610,6 +620,12 @@ class Rig(dict):
             at_ins = attribute.Message(longName="output")
             at_ins.node = jnt
             attr = at_ins.create()
+
+            output = cmds.listConnections(
+                self.instance.rig_root + f".output[{next_index}]",
+                source=True,
+                destination=False,
+            )[0]
             cmds.connectAttr(output + ".message", attr)
 
             self._node = jnt
@@ -617,18 +633,24 @@ class Rig(dict):
 
         def __init__(
             self,
+            parent_description: str,
             description: str,
             rig_instance: T,
         ):
             self.instance = rig_instance
             self.instance["output_joint"].append(self)
+            self["parent_description"] = parent_description
             self["description"] = description
             self._node = self.name
 
     # endregion
 
-    def add_output_joint(self, description: str) -> None:
-        self._OutputJoint(description=description, rig_instance=self)
+    def add_output_joint(self, parent_description: str, description: str) -> None:
+        self._OutputJoint(
+            parent_description=parent_description,
+            description=description,
+            rig_instance=self,
+        )
 
     # region -    RIG / Add Bifrost Graph
     @build_log(logging.DEBUG)
@@ -662,7 +684,7 @@ class Rig(dict):
         guide_compound = cmds.vnnCompound(
             graph,
             "/",
-            addNode="BifrostGraph,Domino::Components," + component + "_guide",
+            addNode=f"BifrostGraph,Domino::Components,{component}_guide",
         )[0]
 
         cmds.vnnConnect(
@@ -681,18 +703,18 @@ class Rig(dict):
             f"/{guide_compound}.offset_output_rotate_z",
         )
         cmds.vnnConnect(graph, "/input.guide_matrix", f"/{guide_compound}.guide_matrix")
-        cmds.connectAttr(self.guide_root + ".guide_matrix", graph + ".guide_matrix")
+        cmds.connectAttr(f"{self.guide_root}.guide_matrix", f"{graph}.guide_matrix")
         cmds.connectAttr(
-            self.guide_root + ".offset_output_rotate_x",
-            graph + ".offset_output_rotate_x",
+            f"{self.guide_root}.offset_output_rotate_x",
+            f"{graph}.offset_output_rotate_x",
         )
         cmds.connectAttr(
-            self.guide_root + ".offset_output_rotate_y",
-            graph + ".offset_output_rotate_y",
+            f"{self.guide_root}.offset_output_rotate_y",
+            f"{graph}.offset_output_rotate_y",
         )
         cmds.connectAttr(
-            self.guide_root + ".offset_output_rotate_z",
-            graph + ".offset_output_rotate_z",
+            f"{self.guide_root}.offset_output_rotate_z",
+            f"{graph}.offset_output_rotate_z",
         )
         cmds.vnnNode(
             graph,
@@ -707,12 +729,28 @@ class Rig(dict):
         cmds.vnnNode(
             graph,
             "/output",
-            createInputPort=("initialize_output_matrix", "array<Math::double4x4>"),
+            createInputPort=(
+                "initialize_output_matrix",
+                "array<Math::double4x4>",
+            ),
+        )
+        cmds.vnnNode(
+            graph,
+            "/output",
+            createInputPort=(
+                "initialize_output_inverse_matrix",
+                "array<Math::double4x4>",
+            ),
         )
         cmds.vnnConnect(
             graph,
-            "/control01_guide.initialize_output_matrix",
+            f"/{guide_compound}.initialize_output_matrix",
             ".initialize_output_matrix",
+        )
+        cmds.vnnConnect(
+            graph,
+            f"/{guide_compound}.initialize_output_inverse_matrix",
+            ".initialize_output_inverse_matrix",
         )
         return graph
 
@@ -732,7 +770,7 @@ class Rig(dict):
         rig_compound = cmds.vnnCompound(
             graph,
             "/",
-            addNode="BifrostGraph,Domino::Components," + component + "_rig",
+            addNode=f"BifrostGraph,Domino::Components,{component}_rig",
         )[0]
         cmds.vnnConnect(graph, "/input.driver_matrix", f"/{rig_compound}.driver_matrix")
         cmds.vnnNode(
@@ -741,25 +779,19 @@ class Rig(dict):
         cmds.vnnConnect(graph, f"/{rig_compound}.output", "/output.output")
         return graph
 
-    def setup_skel_graph(self, joints: list) -> None:
-        # output joint matrix
-        count = 0
+    def setup_skel(self, joints: list) -> None:
         for output_joint in joints:
-            while cmds.connectionInfo(
-                f"{self.skel_graph}.output_matrix[{count}]", getExactDestination=True
-            ):
-                count += 1
             parent = cmds.listRelatives(output_joint, parent=True)[0]
-            # parent_output_matrix, initialize_parent_output_matrix
+            # parent_inverse_matrix, initialize_parent_inverse_matrix
             if parent != "skel":
                 parent_output = cmds.listConnections(
-                    parent + ".output", destination=False, source=True
+                    f"{parent}.output", destination=False, source=True
                 )[0]
-                parent_output_matrix = parent_output + ".worldMatrix[0]"
+                parent_inverse_matrix = f"{parent_output}.worldInverseMatrix[0]"
                 plugs = [
                     x
                     for x in cmds.listConnections(
-                        parent_output + ".message",
+                        f"{parent_output}.message",
                         destination=True,
                         source=False,
                         plugs=True,
@@ -769,65 +801,132 @@ class Rig(dict):
                 plug = [x for x in plugs if "output[" in x][0]
                 parent_root = plug.split(".")[0]
                 index = int(plug.split("[")[1].split("]")[0])
-                initialize_parent_output_matrix = (
-                    parent_root + f".initialize_output_matrix[{index}]"
+                initialize_parent_inverse_matrix = (
+                    f"{parent_root}.initialize_output_inverse_matrix[{index}]"
                 )
             else:
-                initialize_parent_output_matrix = parent_output_matrix = (
-                    "skel.worldMatrix[0]"
+                initialize_parent_inverse_matrix = parent_inverse_matrix = (
+                    "skel.worldInverseMatrix[0]"
                 )
-            # output_matrix, initialize_output_matrix
+            # output_matrix, initialize_output_matrix, initialize_output_inverse_matrix
             loc = cmds.listConnections(
-                output_joint + ".output", destination=False, source=True
+                f"{output_joint}.output", destination=False, source=True
             )[0]
-            output_matrix = loc + ".worldMatrix[0]"
+            output_matrix = f"{loc}.worldMatrix[0]"
             plugs = cmds.listConnections(
-                loc + ".message",
+                f"{loc}.message",
                 destination=True,
                 source=False,
             )
             root = [
-                plug for plug in plugs if cmds.objExists(plug + ".is_domino_rig_root")
+                plug for plug in plugs if cmds.objExists(f"{plug}.is_domino_rig_root")
             ][0]
-            list_attr = cmds.listAttr(root + ".output", multi=True)
+            list_attr = cmds.listAttr(f"{root}.output", multi=True)
             for attr in list_attr:
                 plug = cmds.listConnections(
-                    root + "." + attr, source=True, destination=False
+                    f"{root}.{attr}", source=True, destination=False
                 )[0]
                 if plug == loc:
                     break
             index = int(attr.split("[")[1].split("]")[0])
-            initialize_output_matrix = root + f".initialize_output_matrix[{index}]"
+            initialize_output_matrix = f"{root}.initialize_output_matrix[{index}]"
+            initialize_output_inverse_matrix = (
+                f"{root}.initialize_output_inverse_matrix[{index}]"
+            )
 
-            # connect bifrost graph
-            cmds.connectAttr(output_matrix, f"{self.skel_graph}.output_matrix[{count}]")
+            # connect
+            index = len(
+                cmds.listConnections(
+                    f"{SKEL}.parent_inverse_matrix", source=True, destination=False
+                )
+                or []
+            )
+            cmds.setAttr(f"{output_joint}.skel_index", index)
+            cmds.connectAttr(
+                parent_inverse_matrix, f"{SKEL}.parent_inverse_matrix[{index}]"
+            )
+            cmds.connectAttr(
+                initialize_parent_inverse_matrix,
+                f"{SKEL}.initialize_parent_inverse_matrix[{index}]",
+            )
             cmds.connectAttr(
                 initialize_output_matrix,
-                f"{self.skel_graph}.initialize_output_matrix[{count}]",
+                f"{SKEL}.initialize_output_matrix[{index}]",
             )
             cmds.connectAttr(
-                parent_output_matrix, f"{self.skel_graph}.parent_output_matrix[{count}]"
+                initialize_output_inverse_matrix,
+                f"{SKEL}.initialize_output_inverse_matrix[{index}]",
             )
-            cmds.connectAttr(
-                initialize_parent_output_matrix,
-                f"{self.skel_graph}.initialize_parent_output_matrix[{count}]",
+            parent_inverse_matrix = f"{SKEL}.parent_inverse_matrix[{index}]"
+            initialize_parent_inverse_matrix = (
+                f"{SKEL}.initialize_parent_inverse_matrix[{index}]"
             )
-            cmds.connectAttr(
-                f"{self.skel_graph}.output_translate[{count}]", output_joint + ".t"
+            initialize_output_matrix = f"{SKEL}.initialize_output_matrix[{index}]"
+            initialize_output_inverse_matrix = (
+                f"{SKEL}.initialize_output_inverse_matrix[{index}]"
             )
-            cmds.connectAttr(
-                f"{self.skel_graph}.output_rotate[{count}]", output_joint + ".r"
-            )
-            cmds.connectAttr(
-                f"{self.skel_graph}.output_scale[{count}]", output_joint + ".s"
-            )
-            cmds.connectAttr(
-                f"{self.skel_graph}.output_shear[{count}]", output_joint + ".shear"
-            )
-            cmds.connectAttr(
-                f"{self.skel_graph}.output_joint_orient[{count}]",
-                output_joint + ".jointOrient",
-            )
+
+            mult_m = cmds.createNode("multMatrix")
+            cmds.connectAttr(output_matrix, f"{mult_m}.matrixIn[0]")
+            cmds.connectAttr(parent_inverse_matrix, f"{mult_m}.matrixIn[1]")
+
+            decom_m = cmds.createNode("decomposeMatrix")
+            cmds.connectAttr(f"{mult_m}.matrixSum", f"{decom_m}.inputMatrix")
+            cmds.connectAttr(f"{decom_m}.outputTranslate", f"{output_joint}.t")
+            output_scale_attrs = [f"{decom_m}.outputScale{a}" for a in ["X", "Y", "Z"]]
+            scale_attrs = [f"{output_joint}.s{a}" for a in ["x", "y", "z"]]
+            for output_attr, attr in zip(output_scale_attrs, scale_attrs):
+                abs = cmds.createNode("absolute")
+                cmds.connectAttr(output_attr, f"{abs}.input")
+                sub = cmds.createNode("subtract")
+                cmds.connectAttr(f"{abs}.output", f"{sub}.input1")
+                cmds.setAttr(f"{sub}.input2", 1)
+                abs = cmds.createNode("absolute")
+                cmds.connectAttr(f"{sub}.output", f"{abs}.input")
+                condition = cmds.createNode("condition")
+                cmds.connectAttr(f"{abs}.output", f"{condition}.firstTerm")
+                cmds.setAttr(f"{condition}.secondTerm", 0.000001)
+                cmds.setAttr(f"{condition}.operation", 5)
+                cmds.setAttr(f"{condition}.colorIfTrueR", 1)
+                cmds.connectAttr(output_attr, f"{condition}.colorIfFalseR")
+                cmds.connectAttr(f"{condition}.outColorR", attr)
+
+            output_shear_attrs = [f"{decom_m}.outputShear{a}" for a in ["X", "X", "Y"]]
+            shear_attrs = [f"{output_joint}.shear{a}" for a in ["XY", "XZ", "YZ"]]
+            for output_attr, attr in zip(output_shear_attrs, shear_attrs):
+                abs = cmds.createNode("absolute")
+                cmds.connectAttr(output_attr, f"{abs}.input")
+                condition = cmds.createNode("condition")
+                cmds.connectAttr(f"{abs}.output", f"{condition}.firstTerm")
+                cmds.setAttr(f"{condition}.secondTerm", 0.000001)
+                cmds.setAttr(f"{condition}.operation", 5)
+                cmds.setAttr(f"{condition}.colorIfTrueR", 0)
+                cmds.connectAttr(output_attr, f"{condition}.colorIfFalseR")
+                cmds.connectAttr(f"{condition}.outColorR", attr)
+
+            mult_m = cmds.createNode("multMatrix")
+            cmds.connectAttr(initialize_output_matrix, f"{mult_m}.matrixIn[0]")
+            cmds.connectAttr(initialize_parent_inverse_matrix, f"{mult_m}.matrixIn[1]")
+
+            decom_m = cmds.createNode("decomposeMatrix")
+            cmds.connectAttr(f"{mult_m}.matrixSum", f"{decom_m}.inputMatrix")
+            cmds.connectAttr(f"{decom_m}.outputRotate", f"{output_joint}.jointOrient")
+
+            mult_m = cmds.createNode("multMatrix")
+            cmds.connectAttr(initialize_output_matrix, f"{mult_m}.matrixIn[0]")
+            cmds.connectAttr(initialize_parent_inverse_matrix, f"{mult_m}.matrixIn[1]")
+
+            inv_m = cmds.createNode("inverseMatrix")
+            cmds.connectAttr(f"{mult_m}.matrixSum", f"{inv_m}.inputMatrix")
+
+            mult_m = cmds.createNode("multMatrix")
+            cmds.connectAttr(output_matrix, f"{mult_m}.matrixIn[0]")
+            cmds.connectAttr(parent_inverse_matrix, f"{mult_m}.matrixIn[1]")
+            cmds.connectAttr(f"{inv_m}.outputMatrix", f"{mult_m}.matrixIn[2]")
+
+            decom_m = cmds.createNode("decomposeMatrix")
+            cmds.connectAttr(f"{mult_m}.matrixSum", f"{decom_m}.inputMatrix")
+            cmds.connectAttr(f"{decom_m}.outputRotate", f"{output_joint}.r")
 
     # endregion
 
@@ -853,12 +952,12 @@ class Rig(dict):
             ins = Transform(parent=None, name="", side="", index="", extension=GUIDE)
             ins.create()
             for attr in attrs:
-                cmds.setAttr(GUIDE + attr, lock=True, keyable=False)
+                cmds.setAttr(f"{GUIDE}{attr}", lock=True, keyable=False)
 
         self.add_guide_root()
         cmds.addAttr(self.guide_root, longName="notes", dataType="string")
-        cmds.setAttr(self.guide_root + ".notes", description, type="string")
-        cmds.setAttr(self.guide_root + ".notes", lock=True)
+        cmds.setAttr(f"{self.guide_root}.notes", description, type="string")
+        cmds.setAttr(f"{self.guide_root}.notes", lock=True)
 
     def rig(self, description: str = "") -> None:
         attrs = [".tx", ".ty", ".tz", ".rx", ".ry", ".rz", ".sx", ".sy", ".sz"]
@@ -867,145 +966,48 @@ class Rig(dict):
             rig = ins.create()
             cmds.addAttr(rig, longName="is_domino_rig", attributeType="bool")
             for attr in attrs:
-                cmds.setAttr(RIG + attr, lock=True, keyable=False)
-            cmds.sets(name=DUMMY_SETS, empty=True)
-            cmds.sets(name=BLENDSHAPE_SETS, empty=True)
-            cmds.sets(name=DEFORMER_WEIGHTS_SETS, empty=True)
-            cmds.sets(
-                [DUMMY_SETS, BLENDSHAPE_SETS, DEFORMER_WEIGHTS_SETS], name="rig_sets"
-            )
+                cmds.setAttr(f"{RIG}{attr}", lock=True, keyable=False)
+
+            model_sets = cmds.sets(name="model_sets", empty=True)
+            skel_sets = cmds.sets(name="skel_sets", empty=True)
+            geo_sets = cmds.sets(name="geometry_sets", empty=True)
+            cmds.sets([model_sets, skel_sets, geo_sets], name="rig_sets")
         if not cmds.objExists(SKEL):
             ins = Transform(parent=RIG, name="", side="", index="", extension=SKEL)
             ins.create()
             for attr in attrs:
-                cmds.setAttr(SKEL + attr, lock=True, keyable=False)
-        if not cmds.objExists(SKEL + "_bif"):
-            parent = cmds.createNode(
-                "transform",
-                name=SKEL + "_bif",
-                parent=SKEL,
+                cmds.setAttr(f"{SKEL}{attr}", lock=True, keyable=False)
+            cmds.addAttr(
+                SKEL,
+                longName="initialize_output_matrix",
+                attributeType="matrix",
+                multi=True,
             )
-            graph = cmds.createNode(
-                "bifrostGraphShape", name=self.skel_graph, parent=parent
+            cmds.addAttr(
+                SKEL,
+                longName="initialize_output_inverse_matrix",
+                attributeType="matrix",
+                multi=True,
             )
-            cmds.vnnCompound(
-                graph,
-                "/",
-                addNode="BifrostGraph,Domino::Compounds,connect_output_to_output_joint",
+            cmds.addAttr(
+                SKEL,
+                longName="parent_inverse_matrix",
+                attributeType="matrix",
+                multi=True,
             )
-            cmds.vnnCompound(
-                graph, "/connect_output_to_output_joint", setIsReferenced=False
-            )
-            cmds.vnnNode(
-                graph,
-                "/output",
-                createInputPort=("output_translate", "array<Math::float3>"),
-            )
-            cmds.vnnNode(
-                graph,
-                "/output",
-                createInputPort=("output_rotate", "array<Math::float3>"),
-            )
-            cmds.vnnNode(
-                graph,
-                "/output",
-                createInputPort=("output_scale", "array<Math::float3>"),
-            )
-            cmds.vnnNode(
-                graph,
-                "/output",
-                createInputPort=("output_shear", "array<Math::float3>"),
-            )
-            cmds.vnnNode(
-                graph,
-                "/output",
-                createInputPort=("output_joint_orient", "array<Math::float3>"),
-            )
-
-            cmds.vnnConnect(
-                graph,
-                "/connect_output_to_output_joint.output_translate",
-                ".output_translate",
-            )
-            cmds.vnnConnect(
-                graph, "/connect_output_to_output_joint.output_rotate", ".output_rotate"
-            )
-            cmds.vnnConnect(
-                graph, "/connect_output_to_output_joint.output_scale", ".output_scale"
-            )
-            cmds.vnnConnect(
-                graph, "/connect_output_to_output_joint.output_shear", ".output_shear"
-            )
-            cmds.vnnConnect(
-                graph,
-                "/connect_output_to_output_joint.output_joint_orient",
-                ".output_joint_orient",
-            )
-            cmds.vnnNode(
-                graph,
-                "/input",
-                createOutputPort=("initialize_output_matrix", "array<Math::float4x4>"),
-            )
-            cmds.vnnNode(
-                graph,
-                "/input",
-                createOutputPort=("output_matrix", "array<Math::float4x4>"),
-            )
-            cmds.vnnNode(
-                graph,
-                "/input",
-                createOutputPort=(
-                    "initialize_parent_output_matrix",
-                    "array<Math::float4x4>",
-                ),
-            )
-            cmds.vnnNode(
-                graph,
-                "/input",
-                createOutputPort=("parent_output_matrix", "array<Math::float4x4>"),
-            )
-            cmds.vnnConnect(
-                graph,
-                ".initialize_output_matrix",
-                "/connect_output_to_output_joint.initialize_output_matrix",
-                copyMetaData=True,
-            )
-            cmds.vnnConnect(
-                graph,
-                ".output_matrix",
-                "/connect_output_to_output_joint.output_matrix",
-                copyMetaData=True,
-            )
-            cmds.vnnConnect(
-                graph,
-                ".initialize_parent_output_matrix",
-                "/connect_output_to_output_joint.initialize_parent_output_matrix",
-                copyMetaData=True,
-            )
-            cmds.vnnConnect(
-                graph,
-                ".parent_output_matrix",
-                "/connect_output_to_output_joint.parent_output_matrix",
-                copyMetaData=True,
-            )
-            cmds.vnnCompound(
-                graph,
-                "/",
-                addNode="BifrostGraph,Core::Array,array_size",
-            )
-            cmds.vnnConnect(graph, ".initialize_output_matrix", "/array_size.array")
-            cmds.vnnConnect(
-                graph,
-                "/array_size.size",
-                "/connect_output_to_output_joint.max_iterations",
+            cmds.addAttr(
+                SKEL,
+                longName="initialize_parent_inverse_matrix",
+                attributeType="matrix",
+                multi=True,
             )
 
         self.add_rig_root()
         cmds.addAttr(self.rig_root, longName="notes", dataType="string")
-        cmds.setAttr(self.rig_root + ".notes", description, type="string")
-        cmds.setAttr(self.rig_root + ".notes", lock=True)
+        cmds.setAttr(f"{self.rig_root}.notes", description, type="string")
+        cmds.setAttr(f"{self.rig_root}.notes", lock=True)
         for i, m in enumerate(self["guide_matrix"]["value"]):
-            cmds.setAttr(self.rig_root + f".guide_matrix[{i}]", m, type="matrix")
+            cmds.setAttr(f"{self.rig_root}.guide_matrix[{i}]", m, type="matrix")
 
     # endregion
 
@@ -1205,7 +1207,7 @@ class Rig(dict):
                         )
                     )
                 # # setup output joint
-                duplicate_component.setup_skel_graph(output_joints)
+                duplicate_component.setup_skel(output_joints)
 
             stack.extend([(c, duplicate_component) for c in component["children"]])
 
@@ -1294,7 +1296,7 @@ class Rig(dict):
                             )
                         )
                     # # setup output joint
-                    duplicate_component.setup_skel_graph(output_joints)
+                    duplicate_component.setup_skel(output_joints)
 
                 stack.extend([(c, duplicate_component) for c in component["children"]])
 
@@ -1407,7 +1409,7 @@ class Rig(dict):
                 or []
             ):
                 output_joint_ins = component._OutputJoint(
-                    description="", rig_instance=component
+                    parent_description=None, description="", rig_instance=component
                 )
                 output_joint_ins.node = output_joint
 
@@ -1506,43 +1508,7 @@ def build(context: dict, component: T, attach_guide: bool = False) -> dict:
                 output_joints.append(joint_name)
             color_index += 1
             stack.extend(c["children"])
-        component.setup_skel_graph(output_joints)
-
-        if component["run_import_dummy"]["value"]:
-            cmds.select(component["dummy_sets"])
-            if cmds.ls(selection=True):
-                cmds.sets(component["dummy_sets"], edit=True, addElement=DUMMY_SETS)
-        if component["run_import_blendshape"]["value"]:
-            rigkit.import_blendshape(component["blendshape_path"]["value"])
-            cmds.select(component["blendshape_sets"])
-            if cmds.ls(selection=True):
-                cmds.sets(
-                    component["blendshape_sets"], edit=True, addElement=BLENDSHAPE_SETS
-                )
-        if component["run_import_deformer_weights"]["value"]:
-            for sc, nodes in component["binding"].items():
-                if not cmds.objExists(sc):
-                    cmds.skinCluster(
-                        nodes,
-                        name=sc,
-                        maximumInfluences=1,
-                        normalizeWeights=True,
-                        obeyMaxInfluences=False,
-                        weightDistribution=1,
-                        multi=True,
-                    )
-            rigkit.import_weights(component["deformer_weights_path"]["value"])
-            cmds.select(component["deformer_weights_sets"])
-            if cmds.ls(selection=True):
-                cmds.sets(
-                    component["deformer_weights_sets"],
-                    edit=True,
-                    addElement=DEFORMER_WEIGHTS_SETS,
-                )
-
-        # TODO : pose manager
-        # TODO : space manager
-        # TODO : sdk manager
+        component.setup_skel(output_joints)
         cmds.select("rig")
     finally:
         cmds.undoInfo(closeChunk=True)
@@ -1654,7 +1620,7 @@ def serialize() -> T:
             or []
         ):
             output_joint_ins = component._OutputJoint(
-                description="", rig_instance=component
+                parent_description=None, description="", rig_instance=component
             )
             output_joint_ins.node = output_joint
 
@@ -1686,28 +1652,6 @@ def serialize() -> T:
         with open(script, "r") as f:
             content += f.read()
         rig["post_custom_scripts_str"]["value"].append(content)
-
-    rig["dummy_sets"] = cmds.sets(DUMMY_SETS, query=True) or []
-    rig["blendshape_sets"] = cmds.sets(BLENDSHAPE_SETS, query=True) or []
-    geometries = cmds.sets(DEFORMER_WEIGHTS_SETS, query=True) or []
-    deformer_stack = {}
-    for geo in geometries:
-        chain = rigkit.get_deformer_chain(geo)
-        deformer_stack[geo] = chain
-
-    skincluster = []
-    for geo in geometries:
-        skincluster.extend(
-            [x for x in cmds.findDeformers(geo) if cmds.nodeType(x) == "skinCluster"]
-        )
-    rig["binding"] = {}
-    for sc in skincluster:
-        rig["binding"][sc] = [
-            cmds.skinCluster(sc, query=True, geometry=True)
-            + cmds.skinCluster(sc, query=True, influence=True),
-        ]
-    rig["deformer_weights_sets"] = geometries
-    rig["deformer_stack"] = deformer_stack
 
     # TODO : pose manager
     # TODO : space manager
@@ -1743,7 +1687,9 @@ def deserialize(data: dict, create=True) -> T:
             ins.data = output_data
         # output joint
         for output_joint_data in component_data["output_joint"]:
-            ins = component._OutputJoint(description="", rig_instance=component)
+            ins = component._OutputJoint(
+                parent_description=None, description="", rig_instance=component
+            )
             ins.data = output_joint_data
 
         if parent:
@@ -1834,47 +1780,6 @@ def save(file_path: str, data: dict | None = None) -> None:
     for i, path in enumerate(data["post_custom_scripts"]["value"]):
         cmds.setAttr(root + f".post_custom_scripts[{i}]", path, type="string")
 
-    # dummy path
-    dummy_dir = metadata_dir / "dummy"
-    if not dummy_dir.exists():
-        dummy_dir.mkdir()
-    if cmds.objExists(DUMMY_SETS):
-        dummy = cmds.sets(DUMMY_SETS, query=True) or []
-        for d in dummy:
-            cmds.select(d)
-            cmds.file(
-                dummy_dir / f"{d}.mb",
-                exportSelected=True,
-                typ="mayaBinary",
-                preserveReferences=True,
-                options="v=0;",
-            )
-        data["dummy_path"]["value"] = dummy_dir.as_posix()
-
-    # blendshape path
-    blendshape_dir = metadata_dir / "blendShape"
-    if not blendshape_dir.exists():
-        blendshape_dir.mkdir()
-    if cmds.objExists(BLENDSHAPE_SETS):
-        geometries = cmds.sets(BLENDSHAPE_SETS, query=True) or []
-        blendshapes = []
-        for geo in geometries:
-            blendshapes.extend(
-                [x for x in cmds.findDeformers(geo) if cmds.nodeType(x) == "blendShape"]
-            )
-        for blendshape in blendshapes:
-            rigkit.export_blendshape(blendshape_dir.as_posix(), blendshape)
-        data["blendshape_path"]["value"] = blendshape_dir.as_posix()
-
-    # deformerWeights path
-    deformer_weights_dir = metadata_dir / "deformerWeights"
-    if not deformer_weights_dir.exists():
-        deformer_weights_dir.mkdir()
-    if cmds.objExists(DEFORMER_WEIGHTS_SETS):
-        geometries = cmds.sets(DEFORMER_WEIGHTS_SETS, query=True) or []
-        rigkit.export_weights(deformer_weights_dir.as_posix(), geometries)
-        data["deformer_weights_path"]["value"] = deformer_weights_dir.as_posix()
-
     with open(file_path, "w") as f:
         json.dump(data, f, indent=2, ensure_ascii=False)
 
@@ -1892,7 +1797,6 @@ def load(file_path: str, create=True) -> T:
 
     logger.info(f"Load filePath: {file_path}")
 
-    data["domino_path"] = file_path
     return deserialize(data, create)
 
 

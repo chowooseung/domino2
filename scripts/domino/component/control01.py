@@ -25,6 +25,11 @@ DATA = [
         multi=True,
         value=[list(ORIGINMATRIX)],
     ),
+    attribute.Matrix(
+        longName="initialize_output_inverse_matrix",
+        multi=True,
+        value=[list(ORIGINMATRIX)],
+    ),
     attribute.Integer(longName="guide_mirror_type", multi=True, value=[1]),
     # 부모로 사용할 상위 component 의 output index
     attribute.Integer(
@@ -52,7 +57,8 @@ description = """## control01
 개별 컨트롤러를 생성합니다.   
 
 #### Settings
-- Controller count : Controller 의 갯수."""
+- Controller count
+> Controller 의 개수입니다."""
 
 # endregion
 
@@ -75,7 +81,7 @@ class Rig(component.Rig):
     def populate_output_joint(self):
         if not self["output_joint"]:
             for i in range(len(self["guide_matrix"]["value"])):
-                self.add_output_joint(description=i)
+                self.add_output_joint(parent_description=None, description=i)
 
     # region RIG
     @build_log(logging.INFO)
@@ -129,7 +135,7 @@ class Rig(component.Rig):
 
             # output joint
             if self["create_output_joint"]["value"]:
-                self["output_joint"][i].create(parent=None, output=loc)
+                self["output_joint"][i].create()
 
     # endregion
 
@@ -158,6 +164,10 @@ class Rig(component.Rig):
             cmds.connectAttr(
                 self.guide_graph + f".initialize_output_matrix[{i}]",
                 self.guide_root + f".initialize_output_matrix[{i}]",
+            )
+            cmds.connectAttr(
+                self.guide_graph + f".initialize_output_inverse_matrix[{i}]",
+                self.guide_root + f".initialize_output_inverse_matrix[{i}]",
             )
 
     # endregion

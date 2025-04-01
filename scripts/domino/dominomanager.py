@@ -15,6 +15,7 @@ from domino.component import (
     save,
     load,
     Name,
+    SKEL,
 )
 from domino.core.utils import logger
 from domino.dominosettings import Settings
@@ -40,40 +41,27 @@ def cb_setup_output_joint(child, parent, client_data) -> None:
         return
 
     try:
+        cmds.undoInfo(openChunk=True)
         output_joint = child.fullPathName()
         parent = parent.fullPathName()
 
-        output_attr = cmds.connectionInfo(
-            output_joint + ".output", sourceFromDestination=True
-        )
-        output = output_attr.split(".")[0]
-
-        skel_graph_attr = [
-            x
-            for x in cmds.connectionInfo(
-                output + ".worldMatrix[0]", destinationFromSource=True
-            )
-            if cmds.nodeType(x) == "bifrostGraphShape"
-        ]
-        if not skel_graph_attr:
-            return
-        index = int(skel_graph_attr[0].split("[")[1].split("]")[0])
+        index = cmds.getAttr(output_joint + ".skel_index")
         if parent.split("|")[-1] == "skel":
             cmds.connectAttr(
-                "skel.worldMatrix[0]",
-                f"skel_bifGraph.initialize_parent_output_matrix[{index}]",
+                "skel.worldInverseMatrix[0]",
+                f"{SKEL}.initialize_parent_inverse_matrix[{index}]",
                 force=True,
             )
             cmds.connectAttr(
-                "skel.worldMatrix[0]",
-                f"skel_bifGraph.parent_output_matrix[{index}]",
+                "skel.worldInverseMatrix[0]",
+                f"{SKEL}.parent_inverse_matrix[{index}]",
                 force=True,
             )
             logger.info(
-                f"Connect skel.worldMatrix[0] -> skel_bifGraph.initialize_parent_output_matrix[{index}]"
+                f"Connect {SKEL}.worldInverseMatrix[0] -> {SKEL}.initialize_parent_inverse_matrix[{index}]"
             )
             logger.info(
-                f"Connect skel.worldMatrix[0] -> skel_bifGraph.parent_output_matrix[{index}]"
+                f"Connect {SKEL}.worldInverseMatrix[0] -> {SKEL}.parent_inverse_matrix[{index}]"
             )
             return
         if cmds.objExists(parent + ".is_domino_skel"):
@@ -88,31 +76,29 @@ def cb_setup_output_joint(child, parent, client_data) -> None:
                 )
                 if cmds.nodeType(x) == "transform" and ".output" in x
             ]
-            if not parent_root_attr:
-                return
             output_index = int(parent_root_attr[0].split("[")[1].split("]")[0])
             parent_root = parent_root_attr[0].split(".")[0]
 
-            parent_output_matrix = parent_output + ".worldMatrix[0]"
-            initialize_parent_output_matrix = (
-                parent_root + f".initialize_output_matrix[{output_index}]"
+            parent_inverse_matrix = parent_output + ".worldInverseMatrix[0]"
+            initialize_parent_inverse_matrix = (
+                parent_root + f".initialize_output_inverse_matrix[{output_index}]"
             )
 
             cmds.connectAttr(
-                parent_output_matrix,
-                f"skel_bifGraph.parent_output_matrix[{index}]",
+                parent_inverse_matrix,
+                f"{SKEL}.parent_inverse_matrix[{index}]",
                 force=True,
             )
             cmds.connectAttr(
-                initialize_parent_output_matrix,
-                f"skel_bifGraph.initialize_parent_output_matrix[{index}]",
+                initialize_parent_inverse_matrix,
+                f"{SKEL}.initialize_parent_inverse_matrix[{index}]",
                 force=True,
             )
             logger.info(
-                f"Connect {initialize_parent_output_matrix} -> skel_bifGraph.initialize_parent_output_matrix[{index}]"
+                f"Connect {initialize_parent_inverse_matrix} -> {SKEL}.initialize_parent_inverse_matrix[{index}]"
             )
             logger.info(
-                f"Connect {parent_output_matrix} -> skel_bifGraph.parent_output_matrix[{index}]"
+                f"Connect {parent_inverse_matrix} -> {SKEL}.parent_inverse_matrix[{index}]"
             )
     except Exception as e:
         logger.error(e, exc_info=True)
@@ -559,7 +545,7 @@ QTreeView::branch:open:has-children  {{
                         )
                     )
                 # setup output joint
-                rig.setup_skel_graph(output_joints)
+                rig.setup_skel(output_joints)
             rig.sync_from_scene()
             # endregion
 
@@ -597,7 +583,7 @@ QTreeView::branch:open:has-children  {{
                         extension=Name.joint_extension,
                     )
                 )
-            component.setup_skel_graph(output_joints)
+            component.setup_skel(output_joints)
             # endregion
 
             # refresh model

@@ -13,7 +13,7 @@ from domino.core import (
 from domino.core.utils import build_log
 
 # maya
-from maya.api import OpenMaya as om  # type: ignore
+from maya.api import OpenMaya as om
 from maya import cmds
 
 # built-ins
@@ -34,11 +34,18 @@ DATA = [
     attribute.Matrix(
         longName="initialize_output_matrix",
         multi=True,
-        value=[list(ORIGINMATRIX)],
+        value=[list(ORIGINMATRIX) for _ in range(2)],
+    ),
+    attribute.Matrix(
+        longName="initialize_output_inverse_matrix",
+        multi=True,
+        value=[list(ORIGINMATRIX) for _ in range(2)],
     ),
     attribute.Integer(longName="guide_mirror_type", multi=True, value=[1]),
+    attribute.Bool(longName="run_pre_custom_scripts", value=0),
     attribute.String(longName="pre_custom_scripts", multi=True),
     attribute.String(longName="pre_custom_scripts_str", multi=True),
+    attribute.Bool(longName="run_post_custom_scripts", value=0),
     attribute.String(longName="post_custom_scripts", multi=True),
     attribute.String(longName="post_custom_scripts_str", multi=True),
     attribute.String(longName="domino_path"),
@@ -53,7 +60,7 @@ DATA = [
     attribute.Bool(longName="run_import_pose_manager", value=1),
     attribute.String(longName="pose_manager_path"),
     attribute.Bool(longName="run_import_sdk_manager", value=1),
-    attribute.String(longName="sdk_path"),
+    attribute.String(longName="sdk_manager_path"),
     attribute.Bool(longName="run_import_space_manager", value=1),
     attribute.String(longName="space_manager_path"),
 ]
@@ -67,13 +74,23 @@ description = """## assembly
 - COG 는 무게중심점입니다.
 
 #### Settings
-- side c str : 가운데를 나타내는 문자열
-- side l str : 왼쪽을 나타내는 문자열
-- side r str : 오른쪽을 나타내는 문자열
-- joint extension : joint 를 나타내는 문자열
-- controller extension : controller 를 나타내는 문자
-- custom scripts  
-> rig build 시 같이 실행되는 pre, post script 를 관리합니다."""
+- Modeling  
+> build 시 먼저 modeling 을 불러옵니다.
+- Dummy  
+> build 시 먼저 dummy 를 불러옵니다.
+- Blendshape Manager
+> build 시 blendshape manager 를 로드합니다.
+- Pose Manager
+> build 시 pose manager 를 로드합니다.
+- SDK Manager
+> build 시 sdk manager 를 로드합니다.
+- Space Manager
+> build 시 space manager 를 로드합니다.
+- Deformer Weights Manager
+> build 시 deformer weights manager 를 로드합니다.
+- Custom Scripts  
+> build 시 같이 실행되는 pre, post script 를 관리합니다.
+> Manager 에서 domino path 를 버전업 하게되면 script 또한 버전업 되어서 저장됩니다."""
 # endregion
 
 
@@ -104,8 +121,8 @@ class Rig(component.Rig):
 
     def populate_output_joint(self):
         if not self["output_joint"]:
-            self.add_output_joint(description="")
-            self.add_output_joint(description="COG")
+            self.add_output_joint(parent_description=None, description="")
+            self.add_output_joint(parent_description="", description="COG")
 
     # region RIG
     @build_log(logging.INFO)
@@ -161,14 +178,14 @@ class Rig(component.Rig):
             side=side,
             index=index,
             extension="output",
-            m=ORIGINMATRIX,
+            m=cmds.xform(COG_ctl, query=True, matrix=True, worldSpace=True),
         )
         output = ins.create()
         self["output"][1].connect()
 
         # output joint
-        j = self["output_joint"][0].create(parent=None, output=sub_ctl)
-        self["output_joint"][1].create(parent=j, output=COG_ctl)
+        self["output_joint"][0].create()
+        self["output_joint"][1].create()
 
     # endregion
 
@@ -188,5 +205,16 @@ class Rig(component.Rig):
         cmds.setAttr(pick_m + ".useShear", 0)
         cmds.connectAttr(guide + ".worldMatrix[0]", pick_m + ".inputMatrix")
         cmds.connectAttr(pick_m + ".outputMatrix", self.guide_root + ".npo_matrix[0]")
+        cmds.connectAttr(
+            pick_m + ".outputMatrix",
+            self.guide_root + ".initialize_output_matrix[1]",
+        )
+
+        inv_m = cmds.createNode("inverseMatrix")
+        cmds.connectAttr(pick_m + ".outputMatrix", inv_m + ".inputMatrix")
+        cmds.connectAttr(
+            inv_m + ".outputMatrix",
+            self.guide_root + ".initialize_output_inverse_matrix[1]",
+        )
 
     # endregion
