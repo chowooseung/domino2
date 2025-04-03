@@ -1037,6 +1037,13 @@ class Control01(DynamicWidget):
                 current_component.populate()
                 current_component.rig()
                 current_component.attach_guide()
+                output_joints = cmds.listConnections(
+                    f"{current_component.rig_root}.output_joint",
+                    source=True,
+                    destination=False,
+                )
+                current_component.setup_skel(output_joints)
+
                 cmds.select(current_component.guide_root)
                 manager_ui.rig_tree_model.populate_model()
                 Settings.get_instance().refresh()
