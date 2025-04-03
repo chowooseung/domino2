@@ -979,6 +979,69 @@ class Control01(DynamicWidget):
             rig = manager_ui.rig_tree_model.rig
 
             current_component = get_component(rig, name, side_str, index)
+            if current_component["children"]:
+                logger.warning("하위 컴포넌트가 존재합니다. 확인해주세요.")
+                Settings.get_instance().refresh()
+                return
+
+            old_count = len(cmds.listAttr(f"{root}.guide_matrix", multi=True))
+            count = controller_count_spin_box.value()
+
+            if old_count == count:
+                Settings.get_instance().refresh()
+                return
+
+            try:
+                cmds.undoInfo(openChunk=True)
+                current_component.detach_guide()
+                output_joints = cmds.listConnections(
+                    f"{current_component.rig_root}.output_joint",
+                    source=True,
+                    destination=False,
+                )
+                joint_children = []
+                for j in output_joints:
+                    children = cmds.listRelatives(j, children=True)
+                    if children:
+                        joint_children.extend(list(set(children) - set(output_joints)))
+                if joint_children:
+                    cmds.parent(joint_children, "skel")
+                cmds.delete([current_component.rig_root] + output_joints)
+                if old_count > count:
+                    current_component["guide_matrix"]["value"] = current_component[
+                        "guide_matrix"
+                    ]["value"][:count]
+                    current_component["initialize_output_matrix"]["value"] = (
+                        current_component["initialize_output_matrix"]["value"][:count]
+                    )
+                    current_component["initialize_output_inverse_matrix"]["value"] = (
+                        current_component["initialize_output_inverse_matrix"]["value"][
+                            :count
+                        ]
+                    )
+                elif old_count < count:
+                    for _ in range(old_count, count):
+                        current_component["guide_matrix"]["value"].append(
+                            list(om.MMatrix())
+                        )
+                        current_component["initialize_output_matrix"]["value"].append(
+                            list(om.MMatrix())
+                        )
+                        current_component["initialize_output_inverse_matrix"][
+                            "value"
+                        ].append(list(om.MMatrix()))
+                current_component["controller_count"]["value"] = count
+                current_component["controller"] = []
+                current_component["output"] = []
+                current_component["output_joint"] = []
+                current_component.populate()
+                current_component.rig()
+                current_component.attach_guide()
+                cmds.select(current_component.guide_root)
+                manager_ui.rig_tree_model.populate_model()
+                Settings.get_instance().refresh()
+            finally:
+                cmds.undoInfo(closeChunk=True)
 
         controller_count_spin_box = UIGenerator.add_spin_box(
             self.parent_widget,
@@ -1102,6 +1165,8 @@ cmds.evalDeferred(command)"""
                 guide_root = plug.split(".")[0]
             elif cmds.objExists(f"{selected[0]}.is_domino_guide_root"):
                 guide_root = selected[0]
+            else:
+                return
             component = cmds.getAttr(f"{guide_root}.component")
             ui_ins = UITABLE[component](root=guide_root)
         except Exception as e:
