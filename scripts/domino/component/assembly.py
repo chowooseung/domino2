@@ -22,6 +22,7 @@ import logging
 
 # region Initialize Settings
 ORIGINMATRIX = om.MMatrix()
+matrices = [list(ORIGINMATRIX) for _ in range(2)]
 DATA = [
     attribute.String(longName="component", value="assembly"),
     attribute.String(longName="side_c_str", value=center),
@@ -34,12 +35,12 @@ DATA = [
     attribute.Matrix(
         longName="initialize_output_matrix",
         multi=True,
-        value=[list(ORIGINMATRIX) for _ in range(2)],
+        value=matrices,
     ),
     attribute.Matrix(
         longName="initialize_output_inverse_matrix",
         multi=True,
-        value=[list(ORIGINMATRIX) for _ in range(2)],
+        value=matrices,
     ),
     attribute.Integer(longName="guide_mirror_type", multi=True, value=[1]),
     attribute.Bool(longName="run_pre_custom_scripts", value=0),
@@ -193,7 +194,7 @@ class Rig(component.Rig):
     @build_log(logging.INFO)
     def guide(self):
         super().guide(description=description)
-        m = cmds.getAttr(self.rig_root + ".guide_matrix[0]")
+        m = cmds.getAttr(f"{self.rig_root}.guide_matrix[0]")
         guide = self.add_guide(
             parent=self.guide_root,
             description="COG",
@@ -201,20 +202,20 @@ class Rig(component.Rig):
             mirror_type=self["guide_mirror_type"]["value"][0],
         )
         pick_m = cmds.createNode("pickMatrix")
-        cmds.setAttr(pick_m + ".useScale", 0)
-        cmds.setAttr(pick_m + ".useShear", 0)
-        cmds.connectAttr(guide + ".worldMatrix[0]", pick_m + ".inputMatrix")
-        cmds.connectAttr(pick_m + ".outputMatrix", self.guide_root + ".npo_matrix[0]")
+        cmds.setAttr(f"{pick_m}.useScale", 0)
+        cmds.setAttr(f"{pick_m}.useShear", 0)
+        cmds.connectAttr(f"{guide}.worldMatrix[0]", f"{pick_m}.inputMatrix")
+        cmds.connectAttr(f"{pick_m}.outputMatrix", f"{self.guide_root}.npo_matrix[0]")
         cmds.connectAttr(
-            pick_m + ".outputMatrix",
-            self.guide_root + ".initialize_output_matrix[1]",
+            f"{pick_m}.outputMatrix",
+            f"{self.guide_root}.initialize_output_matrix[1]",
         )
 
         inv_m = cmds.createNode("inverseMatrix")
-        cmds.connectAttr(pick_m + ".outputMatrix", inv_m + ".inputMatrix")
+        cmds.connectAttr(f"{pick_m}.outputMatrix", f"{inv_m}.inputMatrix")
         cmds.connectAttr(
-            inv_m + ".outputMatrix",
-            self.guide_root + ".initialize_output_inverse_matrix[1]",
+            f"{inv_m}.outputMatrix",
+            f"{self.guide_root}.initialize_output_inverse_matrix[1]",
         )
 
     # endregion

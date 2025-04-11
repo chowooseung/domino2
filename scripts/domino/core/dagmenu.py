@@ -545,7 +545,7 @@ joints = cmds.ls(selection=True, type="joint")
 for mesh in meshes:
     scs = [
         x
-        for x in cmds.listHistory(mesh, pruneDagObjects=True)
+        for x in cmds.findDeformers(mesh) or []
         if cmds.nodeType(x) == "skinCluster"
     ]
     name = cmds.listRelatives(mesh, parent=True)[0] + str(len(scs)) + "_sc"

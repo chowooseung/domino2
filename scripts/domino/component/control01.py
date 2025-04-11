@@ -4,7 +4,7 @@ from domino.core import attribute, Name, Transform
 from domino.core.utils import build_log
 
 # maya
-from maya.api import OpenMaya as om  # type: ignore
+from maya.api import OpenMaya as om
 from maya import cmds
 
 # built-ins
@@ -13,22 +13,23 @@ import logging
 
 # region Initialize Settings
 ORIGINMATRIX = om.MMatrix()
+matrices = [list(ORIGINMATRIX)]
 DATA = [
     attribute.String(longName="component", value="control01"),
     attribute.String(longName="name", value="control"),
     attribute.Enum(longName="side", enumName=Name.side_list, value=0),
     attribute.Integer(longName="index", minValue=0),
-    attribute.Matrix(longName="guide_matrix", multi=True, value=[list(ORIGINMATRIX)]),
-    attribute.Matrix(longName="npo_matrix", multi=True, value=[list(ORIGINMATRIX)]),
+    attribute.Matrix(longName="guide_matrix", multi=True, value=matrices),
+    attribute.Matrix(longName="npo_matrix", multi=True, value=matrices),
     attribute.Matrix(
         longName="initialize_output_matrix",
         multi=True,
-        value=[list(ORIGINMATRIX)],
+        value=matrices,
     ),
     attribute.Matrix(
         longName="initialize_output_inverse_matrix",
         multi=True,
-        value=[list(ORIGINMATRIX)],
+        value=matrices,
     ),
     attribute.Integer(longName="guide_mirror_type", multi=True, value=[1]),
     # 부모로 사용할 상위 component 의 output index
@@ -58,7 +59,7 @@ description = """## control01
 
 #### Settings
 - Controller count
-> Controller 의 개수입니다."""
+> Controller 의 수입니다."""
 
 # endregion
 
@@ -103,7 +104,7 @@ class Rig(component.Rig):
                 npo_matrix_index=i,
             )
             cmds.connectAttr(
-                self.rig_root + f".guide_mirror_type[{i}]", ctl + ".mirror_type"
+                f"{self.rig_root}.guide_mirror_type[{i}]", f"{ctl}.mirror_type"
             )
 
             ins = Transform(
@@ -119,16 +120,16 @@ class Rig(component.Rig):
 
             # inverse scale 일 경우 output joint 에 -1 이 적용되지 않도록 loc scaleZ 설정.
             source = cmds.listConnections(
-                npo + ".offsetParentMatrix", source=True, destination=False, plugs=True
+                f"{npo}.offsetParentMatrix", source=True, destination=False, plugs=True
             )[0]
             decom_m = cmds.createNode("decomposeMatrix")
-            cmds.connectAttr(source, decom_m + ".inputMatrix")
+            cmds.connectAttr(source, f"{decom_m}.inputMatrix")
 
             condition = cmds.createNode("condition")
-            cmds.setAttr(condition + ".operation", 4)
-            cmds.setAttr(condition + ".colorIfTrueR", -1)
-            cmds.connectAttr(decom_m + ".outputScaleZ", condition + ".firstTerm")
-            cmds.connectAttr(condition + ".outColorR", loc + ".sz")
+            cmds.setAttr(f"{condition}.operation", 4)
+            cmds.setAttr(f"{condition}.colorIfTrueR", -1)
+            cmds.connectAttr(f"{decom_m}.outputScaleZ", f"{condition}.firstTerm")
+            cmds.connectAttr(f"{condition}.outColorR", f"{loc}.sz")
 
             # output
             self["output"][i].connect()
@@ -158,16 +159,16 @@ class Rig(component.Rig):
             )
 
             cmds.connectAttr(
-                self.guide_graph + f".npo_matrix[{i}]",
-                self.guide_root + f".npo_matrix[{i}]",
+                f"{self.guide_graph}.npo_matrix[{i}]",
+                f"{self.guide_root}.npo_matrix[{i}]",
             )
             cmds.connectAttr(
-                self.guide_graph + f".initialize_output_matrix[{i}]",
-                self.guide_root + f".initialize_output_matrix[{i}]",
+                f"{self.guide_graph}.initialize_output_matrix[{i}]",
+                f"{self.guide_root}.initialize_output_matrix[{i}]",
             )
             cmds.connectAttr(
-                self.guide_graph + f".initialize_output_inverse_matrix[{i}]",
-                self.guide_root + f".initialize_output_inverse_matrix[{i}]",
+                f"{self.guide_graph}.initialize_output_inverse_matrix[{i}]",
+                f"{self.guide_root}.initialize_output_inverse_matrix[{i}]",
             )
 
     # endregion

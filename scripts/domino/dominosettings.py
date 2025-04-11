@@ -17,6 +17,7 @@ import importlib.util
 
 # domino
 from domino.core.utils import logger
+from domino.component import SKEL, ORIGINMATRIX
 
 # icon
 icon_dir = Path(__file__).parent.parent.parent / "icons"
@@ -224,7 +225,7 @@ class UIGenerator:
                 cmds.undoInfo(openChunk=True)
                 if output_joints and not state:
                     if children:
-                        cmds.parent(children, "skel")
+                        cmds.parent(children, SKEL)
                     cmds.delete(output_joints)
                     logger.info(f"Remove {output_joints}")
 
@@ -241,6 +242,9 @@ class UIGenerator:
             finally:
                 cmds.undoInfo(closeChunk=True)
             Settings.get_instance().refresh()
+
+        def change_offset_output_rotate(spin_box, attr):
+            cmds.setAttr(f"{root}.{attr}", spin_box.value())
 
         old_name = cmds.getAttr(f"{root}.name")
         old_side = cmds.getAttr(f"{root}.side")
@@ -284,12 +288,54 @@ class UIGenerator:
         line.setFrameShape(QtWidgets.QFrame.Shape.HLine)
         line.setFrameShadow(QtWidgets.QFrame.Shadow.Sunken)
 
+        offset_layout = QtWidgets.QHBoxLayout()
+        offset_x_spin_box = QtWidgets.QSpinBox()
+        offset_x_spin_box.setRange(0, 360)
+        offset_x_spin_box.setValue(cmds.getAttr(f"{root}.offset_output_rotate_x"))
+        offset_x_spin_box.setSizePolicy(
+            QtWidgets.QSizePolicy.Policy.Expanding,
+            QtWidgets.QSizePolicy.Policy.Fixed,
+        )
+        offset_x_spin_box.editingFinished.connect(
+            partial(
+                change_offset_output_rotate, offset_x_spin_box, "offset_output_rotate_x"
+            )
+        )
+        offset_y_spin_box = QtWidgets.QSpinBox()
+        offset_y_spin_box.setRange(0, 360)
+        offset_y_spin_box.setValue(cmds.getAttr(f"{root}.offset_output_rotate_y"))
+        offset_y_spin_box.setSizePolicy(
+            QtWidgets.QSizePolicy.Policy.Expanding,
+            QtWidgets.QSizePolicy.Policy.Fixed,
+        )
+        offset_y_spin_box.editingFinished.connect(
+            partial(
+                change_offset_output_rotate, offset_y_spin_box, "offset_output_rotate_y"
+            )
+        )
+        offset_z_spin_box = QtWidgets.QSpinBox()
+        offset_z_spin_box.setValue(cmds.getAttr(f"{root}.offset_output_rotate_z"))
+        offset_z_spin_box.setRange(0, 360)
+        offset_z_spin_box.setSizePolicy(
+            QtWidgets.QSizePolicy.Policy.Expanding,
+            QtWidgets.QSizePolicy.Policy.Fixed,
+        )
+        offset_z_spin_box.editingFinished.connect(
+            partial(
+                change_offset_output_rotate, offset_z_spin_box, "offset_output_rotate_z"
+            )
+        )
+        offset_layout.addWidget(offset_x_spin_box)
+        offset_layout.addWidget(offset_y_spin_box)
+        offset_layout.addWidget(offset_z_spin_box)
+
         parent_layout = parent.layout()
         parent_layout.addRow("Name", name_line_edit)
         parent_layout.addRow("Side", side_combo_box)
         parent_layout.addRow("Index", index_spin_box)
-        parent_layout.addRow("Parent output index", parent_output_index_spin_box)
-        parent_layout.addRow("Create output joint", create_output_joint_check_box)
+        parent_layout.addRow("Parent Output Index", parent_output_index_spin_box)
+        parent_layout.addRow("Create Output Joint", create_output_joint_check_box)
+        parent_layout.addRow("Offset Output Rotate", offset_layout)
         parent_layout.addRow(line)
 
     # endregion
@@ -321,7 +367,6 @@ class UIGenerator:
         def toggle_attribute():
             pass
 
-        print(attribute)
         check = True if cmds.getAttr(attribute) else False
         check_box = QtWidgets.QCheckBox()
         check_box.setChecked(check)
@@ -760,6 +805,9 @@ class Assembly(DynamicWidget):
             # add
             set_script_path(rig_root, _attribute, _script_paths, _list_widget)
 
+        def toggled_run_script(_attr, _checked):
+            cmds.setAttr(_attr, _checked)
+
         def set_modeling_path():
             pass
 
@@ -861,7 +909,7 @@ class Assembly(DynamicWidget):
             )
             menu.exec(_list_widget.mapToGlobal(pos))
 
-        def reveal_in_explorer(_text: str) -> None:
+        def reveal_in_explorer(_text):
             _, _parent = _text.split(" ")
 
             _path = Path(_parent)
@@ -882,6 +930,11 @@ class Assembly(DynamicWidget):
                 parent=self.parent_widget,
                 label=label,
                 attribute=f"{root}.run_{attribute}",
+            )
+            checked = cmds.getAttr(f"{root}.run_{attribute}")
+            check_box.setChecked(checked)
+            check_box.toggled.connect(
+                partial(toggled_run_script, f"{root}.run_{attribute}")
             )
             list_widget = ScriptListWidget()
             list_widget.clear()
@@ -970,7 +1023,7 @@ class Assembly(DynamicWidget):
 # region Control01
 class Control01(DynamicWidget):
 
-    def __init__(self, parent=None, root: str = None) -> None:
+    def __init__(self, parent=None, root=None):
         super(Control01, self).__init__(parent=parent, root=root)
         UIGenerator.add_common_component_settings(self.parent_widget, root)
 
@@ -1005,7 +1058,7 @@ class Control01(DynamicWidget):
                     if children:
                         joint_children.extend(list(set(children) - set(output_joints)))
                 if joint_children:
-                    cmds.parent(joint_children, "skel")
+                    cmds.parent(joint_children, SKEL)
                 cmds.delete([current_component.rig_root] + output_joints)
                 if old_count > count:
                     current_component["guide_matrix"]["value"] = current_component[
@@ -1022,14 +1075,14 @@ class Control01(DynamicWidget):
                 elif old_count < count:
                     for _ in range(old_count, count):
                         current_component["guide_matrix"]["value"].append(
-                            list(om.MMatrix())
+                            list(ORIGINMATRIX)
                         )
                         current_component["initialize_output_matrix"]["value"].append(
-                            list(om.MMatrix())
+                            list(ORIGINMATRIX)
                         )
                         current_component["initialize_output_inverse_matrix"][
                             "value"
-                        ].append(list(om.MMatrix()))
+                        ].append(list(ORIGINMATRIX))
                 current_component["controller_count"]["value"] = count
                 current_component["controller"] = []
                 current_component["output"] = []
@@ -1072,22 +1125,169 @@ class Control01(DynamicWidget):
 # region Fk01
 class Fk01(DynamicWidget):
 
-    def __init__(self, parent=None, root: str = None) -> None:
-        super(Control01, self).__init__(parent=parent, root=root)
+    def __init__(self, parent=None, root=None):
+        super(Fk01, self).__init__(parent=parent, root=root)
         UIGenerator.add_common_component_settings(self.parent_widget, root)
 
-        def change_controller_count():
-            pass
+        def change_count():
+            manager_ui = get_manager_ui()
+            rig = manager_ui.rig_tree_model.rig
 
-        controller_count_spin_box = UIGenerator.add_spin_box(
+            current_component = get_component(rig, name, side_str, index)
+            if current_component["children"]:
+                logger.warning("하위 컴포넌트가 존재합니다. 확인해주세요.")
+                Settings.get_instance().refresh()
+                return
+
+            root_count = root_count_spin_box.value()
+            chain_counts = [s_box.value() for s_box in chain_count_spin_boxes]
+
+            if (old_root_count == root_count) and (old_chain_counts == chain_counts):
+                Settings.get_instance().refresh()
+                return
+
+            matrices = [list(ORIGINMATRIX) for _ in range(2)]
+            try:
+                cmds.undoInfo(openChunk=True)
+                current_component.detach_guide()
+                output_joints = cmds.listConnections(
+                    f"{current_component.rig_root}.output_joint",
+                    source=True,
+                    destination=False,
+                )
+                joint_children = []
+                for j in output_joints:
+                    children = cmds.listRelatives(j, children=True)
+                    if children:
+                        joint_children.extend(list(set(children) - set(output_joints)))
+                if joint_children:
+                    cmds.parent(joint_children, SKEL)
+                cmds.delete([current_component.rig_root] + output_joints)
+                if old_root_count > root_count:
+                    delete_count = sum(old_chain_counts[old_root_count - root_count :])
+                    current_component["guide_matrix"]["value"] = current_component[
+                        "guide_matrix"
+                    ]["value"][:delete_count]
+                    current_component["initialize_output_matrix"]["value"] = (
+                        current_component["initialize_output_matrix"]["value"][
+                            :delete_count
+                        ]
+                    )
+                    current_component["initialize_output_inverse_matrix"]["value"] = (
+                        current_component["initialize_output_inverse_matrix"]["value"][
+                            :delete_count
+                        ]
+                    )
+                    chain_counts = chain_counts[:delete_count]
+                elif old_root_count < root_count:
+                    for _ in range(old_root_count, root_count):
+                        current_component["guide_matrix"]["value"].extend(matrices)
+                        current_component["initialize_output_matrix"]["value"].extend(
+                            matrices
+                        )
+                        current_component["initialize_output_inverse_matrix"][
+                            "value"
+                        ].extend(matrices)
+                        chain_counts.append(2)
+                elif old_chain_counts != chain_counts:
+                    chain_guide_matrices = []
+                    chain_output_matrices = []
+                    chain_output_inverse_matrices = []
+                    i = 0
+                    for count in old_chain_counts:
+                        chain_guide_matrices.append(
+                            current_component["guide_matrix"]["value"][i : i + count]
+                        )
+                        chain_output_matrices.append(
+                            current_component["initialize_output_matrix"]["value"][
+                                i : i + count
+                            ]
+                        )
+                        chain_output_inverse_matrices.append(
+                            current_component["initialize_output_inverse_matrix"][
+                                "value"
+                            ][i : i + count]
+                        )
+                        i += count
+                    c = 0
+                    for new_count, old_count in zip(chain_counts, old_chain_counts):
+                        if old_count > new_count:
+                            chain_guide_matrices[c] = chain_guide_matrices[c][
+                                :new_count
+                            ]
+                            chain_output_matrices[c] = chain_output_matrices[c][
+                                :new_count
+                            ]
+                            chain_output_inverse_matrices[c] = (
+                                chain_output_inverse_matrices[c][:new_count]
+                            )
+                        elif old_count < new_count:
+                            chain_guide_matrices[c].append(list(ORIGINMATRIX))
+                            chain_output_matrices[c].append(list(ORIGINMATRIX))
+                            chain_output_inverse_matrices[c].append(list(ORIGINMATRIX))
+                        c += 1
+                    current_component["guide_matrix"]["value"].extend(
+                        [y for x in chain_guide_matrices for y in x]
+                    )
+                    current_component["initialize_output_matrix"]["value"].extend(
+                        [y for x in chain_output_inverse_matrices for y in x]
+                    )
+                    current_component["initialize_output_inverse_matrix"][
+                        "value"
+                    ].extend([y for x in chain_output_inverse_matrices for y in x])
+                current_component["root_count"]["value"] = root_count
+                current_component["chain_count"]["value"] = chain_counts
+                current_component["controller"] = []
+                current_component["output"] = []
+                current_component["output_joint"] = []
+                current_component.populate()
+                current_component.rig()
+                current_component.attach_guide()
+                output_joints = cmds.listConnections(
+                    f"{current_component.rig_root}.output_joint",
+                    source=True,
+                    destination=False,
+                )
+                current_component.setup_skel(output_joints)
+
+                cmds.select(current_component.guide_root)
+                manager_ui.rig_tree_model.populate_model()
+                Settings.get_instance().refresh()
+            finally:
+                cmds.undoInfo(closeChunk=True)
+
+        name = cmds.getAttr(f"{root}.name")
+        side = cmds.getAttr(f"{root}.side")
+        side_str = ["C", "L", "R"][side]
+        index = cmds.getAttr(f"{root}.index")
+
+        old_root_count = cmds.getAttr(f"{root}.root_count")
+        old_chain_counts = []
+        for i in range(old_root_count):
+            old_chain_counts.append(cmds.getAttr(f"{root}.chain_count[{i}]"))
+
+        root_count = cmds.getAttr(f"{root}.root_count")
+        root_count_spin_box = UIGenerator.add_spin_box(
             self.parent_widget,
-            label="Controller Count",
-            attribute=f"{root}.controller_count",
+            label="Root Count",
+            attribute=f"{root}.root_count",
             slider=False,
             min_value=1,
             max_value=999,
         )
-        controller_count_spin_box.editingFinished.connect(change_controller_count)
+        root_count_spin_box.editingFinished.connect(change_count)
+        chain_count_spin_boxes = []
+        for i in range(root_count):
+            chain_count_spin_box = UIGenerator.add_spin_box(
+                self.parent_widget,
+                label=f"Root {i + 1} Chain Count",
+                attribute=f"{root}.chain_count[{i}]",
+                slider=False,
+                min_value=1,
+                max_value=999,
+            )
+            chain_count_spin_box.editingFinished.connect(change_count)
+            chain_count_spin_boxes.append(chain_count_spin_box)
         UIGenerator.add_notes(self.parent_widget, f"{root}.notes")
 
 
@@ -1098,7 +1298,7 @@ class Fk01(DynamicWidget):
 UITABLE = {"assembly": Assembly, "control01": Control01, "fk01": Fk01}
 
 
-def cb_auto_settings(*args) -> None:
+def cb_auto_settings(*args):
     selected = cmds.ls(selection=True)
     if not selected:
         return None
@@ -1120,7 +1320,7 @@ class Settings(MayaQWidgetDockableMixin, QtWidgets.QDialog):
     ui_script = """from maya import cmds
 command = "from domino.dominosettings import Settings;ui=Settings.get_instance();ui.show(dockable=True)"
 cmds.evalDeferred(command)"""
-    control_name = ui_name + "WorkspaceControl"
+    control_name = f"{ui_name}WorkspaceControl"
 
     callback_id = None
 
@@ -1142,7 +1342,7 @@ cmds.evalDeferred(command)"""
 
         self.layout_ = QtWidgets.QVBoxLayout(self)
 
-    def refresh(self) -> None:
+    def refresh(self):
         # region -    Settings / clear layout
         self.empty_label = QtWidgets.QLabel("Guide 를 선택해주세요.")
 
@@ -1184,7 +1384,7 @@ cmds.evalDeferred(command)"""
         # add settings widget
         self.layout_.addWidget(ui_ins)
 
-    def showEvent(self, e) -> None:
+    def showEvent(self, e):
         cmds.workspaceControl(self.control_name, edit=True, uiScript=self.ui_script)
         self.refresh()
         if self.callback_id is None:
@@ -1194,7 +1394,7 @@ cmds.evalDeferred(command)"""
             logger.info(f"Add Auto Settings callback id: {self.callback_id}")
         super(Settings, self).showEvent(e)
 
-    def hideEvent(self, e) -> None:
+    def hideEvent(self, e):
         if self.callback_id:
             logger.info(f"Remove Auto Settings callback id: {self.callback_id}")
             om.MMessage.removeCallback(self.callback_id)

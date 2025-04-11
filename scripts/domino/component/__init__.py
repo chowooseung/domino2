@@ -558,9 +558,11 @@ class Rig(dict):
         @node.setter
         def node(self, n: str) -> None:
             self._node = n
-            self["description"] = cmds.getAttr(self._node + ".description")
+            self["description"] = cmds.getAttr(f"{self._node}.description")
             self["parent"] = cmds.listRelatives(self._node, parent=True)[0]
             self["name"] = self._node
+            self["radius"] = cmds.getAttr(f"{self._node}.radius")
+            self["draw_style"] = cmds.getAttr(f"{self._node}.drawStyle")
 
         @property
         def data(self) -> dict:
@@ -596,7 +598,7 @@ class Rig(dict):
             )
             next_index = len(
                 cmds.listConnections(
-                    self.instance.rig_root + ".output_joint",
+                    f"{self.instance.rig_root}.output_joint",
                     source=True,
                     destination=False,
                 )
@@ -608,19 +610,20 @@ class Rig(dict):
             )
             cmds.addAttr(jnt, longName="skel_index", attributeType="long")
             cmds.connectAttr(
-                jnt + ".message",
-                self.instance.rig_root + f".output_joint[{next_index}]",
+                f"{jnt}.message",
+                f"{self.instance.rig_root}.output_joint[{next_index}]",
             )
             at_ins = attribute.Message(longName="output")
             at_ins.node = jnt
             attr = at_ins.create()
 
             output = cmds.listConnections(
-                self.instance.rig_root + f".output[{next_index}]",
+                f"{self.instance.rig_root}.output[{next_index}]",
                 source=True,
                 destination=False,
             )[0]
-            cmds.connectAttr(output + ".message", attr)
+            cmds.connectAttr(f"{output}.message", attr)
+            cmds.setAttr(f"{jnt}.rotateAxis", lock=True)
 
             self._node = jnt
             return jnt
@@ -746,7 +749,7 @@ class Rig(dict):
             f"/{guide_compound}.initialize_output_inverse_matrix",
             ".initialize_output_inverse_matrix",
         )
-        return graph
+        return graph, guide_compound
 
     @build_log(logging.DEBUG)
     def add_rig_graph(self) -> str:
@@ -837,19 +840,24 @@ class Rig(dict):
             )
             cmds.setAttr(f"{output_joint}.skel_index", index)
             cmds.connectAttr(
-                parent_inverse_matrix, f"{SKEL}.parent_inverse_matrix[{index}]"
+                parent_inverse_matrix,
+                f"{SKEL}.parent_inverse_matrix[{index}]",
+                force=True,
             )
             cmds.connectAttr(
                 initialize_parent_inverse_matrix,
                 f"{SKEL}.initialize_parent_inverse_matrix[{index}]",
+                force=True,
             )
             cmds.connectAttr(
                 initialize_output_matrix,
                 f"{SKEL}.initialize_output_matrix[{index}]",
+                force=True,
             )
             cmds.connectAttr(
                 initialize_output_inverse_matrix,
                 f"{SKEL}.initialize_output_inverse_matrix[{index}]",
+                force=True,
             )
             parent_inverse_matrix = f"{SKEL}.parent_inverse_matrix[{index}]"
             initialize_parent_inverse_matrix = (
@@ -1496,8 +1504,8 @@ def build(context: dict, component: T, attach_guide: bool = False) -> dict:
                 parent = cmds.listRelatives(joint_name, parent=True)[0]
                 if "parent" in output_joint and parent != output_joint["parent"]:
                     cmds.parent(joint_name, output_joint["parent"])
-                cmds.setAttr(joint_name + ".overrideEnabled", 1)
-                cmds.setAttr(joint_name + ".overrideEnabled", 1)
+                cmds.setAttr(f"{joint_name}.radius", output_joint["radius"])
+                cmds.setAttr(f"{joint_name}.drawStyle", output_joint["draw_style"])
                 cmds.color(joint_name, userDefined=color_index_list[color_index])
                 output_joints.append(joint_name)
             color_index += 1
