@@ -13,7 +13,7 @@ import logging
 
 # region Initialize Settings
 ORIGINMATRIX = om.MMatrix()
-matrices = [list(ORIGINMATRIX) for _ in range(2)]
+matrices = [list(ORIGINMATRIX) for _ in range(4)]
 DATA = [
     attribute.String(longName="component", value="fk01"),
     attribute.String(longName="name", value="fk"),
