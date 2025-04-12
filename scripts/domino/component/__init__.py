@@ -15,7 +15,6 @@ from maya import cmds
 from maya.api import OpenMaya as om
 
 # built-ins
-from typing import TypeVar
 from pathlib import Path
 import copy
 import json
@@ -33,9 +32,6 @@ SKEL = "skel"
 ORIGINMATRIX = om.MMatrix()
 
 
-T = TypeVar("T", bound="Rig")
-
-
 # region RIG
 class Rig(dict):
     """
@@ -50,22 +46,22 @@ class Rig(dict):
 
     # region -    RIG / PROPERTY
     @property
-    def assembly(self) -> T:
+    def assembly(self):
         component = self
         while component.get_parent() is not None:
             component = component.get_parent()
         return component
 
     @property
-    def identifier(self) -> tuple:
+    def identifier(self):
         return (
             self["name"]["value"],
-            Name.side_list[self["side"]["value"]],
+            Name.side_str_list[self["side"]["value"]],
             self["index"]["value"],
         )
 
     @property
-    def guide_root(self) -> str:
+    def guide_root(self):
         name, side, index = self.identifier
         return Name.create(
             convention=Name.controller_name_convention,
@@ -76,7 +72,7 @@ class Rig(dict):
         )
 
     @property
-    def rig_root(self) -> str:
+    def rig_root(self):
         name, side, index = self.identifier
         return Name.create(
             convention=Name.controller_name_convention,
@@ -87,7 +83,7 @@ class Rig(dict):
         )
 
     @property
-    def guide_graph(self) -> str:
+    def guide_graph(self):
         name, side, index = self.identifier
         return Name.create(
             convention=Name.controller_name_convention,
@@ -98,7 +94,7 @@ class Rig(dict):
         )
 
     @property
-    def rig_graph(self) -> str:
+    def rig_graph(self):
         name, side, index = self.identifier
         return Name.create(
             convention=Name.controller_name_convention,
@@ -109,16 +105,16 @@ class Rig(dict):
         )
 
     @property
-    def skel_graph(self) -> str:
+    def skel_graph(self):
         return SKEL + "_bifGraph"
 
     # endregion
 
     # region -    RIG / componnet parent
-    def get_parent(self) -> T:
+    def get_parent(self):
         return self._parent
 
-    def set_parent(self, parent: T | None) -> None:
+    def set_parent(self, parent):
         # parent 를 변경시 rig root hierarchy 도 가능하면 변경.
         if self._parent:
             self._parent["children"].remove(self)
@@ -160,7 +156,7 @@ class Rig(dict):
 
     # region -    RIG / Add root
     @build_log(logging.DEBUG)
-    def add_guide_root(self) -> None:
+    def add_guide_root(self):
         cmds.createNode("transform", name=self.guide_root, parent=GUIDE)
         cmds.addAttr(
             self.guide_root, longName="is_domino_guide_root", attributeType="bool"
@@ -180,7 +176,7 @@ class Rig(dict):
             ins.create()
 
     @build_log(logging.DEBUG)
-    def add_rig_root(self) -> None:
+    def add_rig_root(self):
         name, side, index = self.identifier
         parent = RIG
         if self.get_parent():
@@ -224,9 +220,7 @@ class Rig(dict):
             )
 
     @build_log(logging.DEBUG)
-    def add_guide(
-        self, parent: str, description: str, m: list | om.MMatrix, mirror_type: int = 1
-    ) -> str:
+    def add_guide(self, parent, description, m, mirror_type=1):
         """Guide -> rig root attribute
         ~~_guideRoot
          ~~_guide -> ~~_rigRoot.guide[0] -> bifrost.~~Data.guide_matrix[0]
@@ -295,7 +289,7 @@ class Rig(dict):
     class _Controller(dict):
 
         @property
-        def name(self) -> str:
+        def name(self):
             name, side, index = self.instance.identifier
             return Name.create(
                 convention=Name.controller_name_convention,
@@ -307,11 +301,11 @@ class Rig(dict):
             )
 
         @property
-        def node(self) -> str:
+        def node(self):
             return self._node
 
         @node.setter
-        def node(self, n: str) -> None:
+        def node(self, n):
             self._node = n
             self["description"] = cmds.getAttr(self._node + ".description")
 
@@ -331,8 +325,9 @@ class Rig(dict):
                 else:
                     name = cmds.getAttr(parent_root + ".name")
                     side = cmds.getAttr(parent_root + ".side")
+                    side_str = Name.side_str_list[side]
                     index = cmds.getAttr(parent_root + ".index")
-                    identifier = (name, side, index)
+                    identifier = (name, side_str, index)
                 description = cmds.getAttr(parent_ctl + ".description")
                 parent_controllers = (identifier, description)
                 self["parent_controllers"].append(parent_controllers)
@@ -342,23 +337,23 @@ class Rig(dict):
             self["shape"] = ins.data
 
         @property
-        def data(self) -> dict:
+        def data(self):
             return self
 
         @data.setter
-        def data(self, d: dict) -> None:
+        def data(self, d):
             self.update(d)
             self._node = self.name
 
         @build_log(logging.DEBUG)
         def create(
             self,
-            parent: str,
-            shape: dict | str,
-            color: int | om.MColor,
-            npo_matrix_index: int | None = None,
-            fkik_command_attr: str = "",
-        ) -> tuple:
+            parent,
+            shape,
+            color,
+            npo_matrix_index=None,
+            fkik_command_attr="",
+        ):
             parent_controllers_str = []
             for identifier, description in self["parent_controllers"]:
                 parent_controllers_str.append(
@@ -429,12 +424,7 @@ class Rig(dict):
             self.node = ctl
             return npo, ctl
 
-        def __init__(
-            self,
-            description: str,
-            parent_controllers: list,
-            rig_instance: T,
-        ):
+        def __init__(self, description, parent_controllers, rig_instance):
             self.instance = rig_instance
             self.instance["controller"].append(self)
             self["description"] = description
@@ -443,7 +433,7 @@ class Rig(dict):
 
     # endregion
 
-    def add_controller(self, description: str, parent_controllers: list) -> None:
+    def add_controller(self, description, parent_controllers):
         self._Controller(
             description=description,
             parent_controllers=parent_controllers,
@@ -451,12 +441,7 @@ class Rig(dict):
         )
 
     @build_log(logging.DEBUG)
-    def add_joint(
-        self,
-        parent: str,
-        description: str,
-        m: list | om.MMatrix,
-    ) -> str:
+    def add_joint(self, parent, description, m):
         name, side, index = self.identifier
         ins = Joint(
             parent=parent,
@@ -474,7 +459,7 @@ class Rig(dict):
     class _Output(dict):
 
         @property
-        def name(self) -> str:
+        def name(self):
             name, side, index = self.instance.identifier
             return Name.create(
                 convention=Name.controller_name_convention,
@@ -486,14 +471,14 @@ class Rig(dict):
             )
 
         @property
-        def data(self) -> dict:
+        def data(self):
             return self
 
         @data.setter
-        def data(self, d: dict) -> None:
+        def data(self, d):
             self.update(d)
 
-        def connect(self) -> tuple:
+        def connect(self):
             next_index = len(
                 cmds.listConnections(
                     self.instance.rig_root + ".output",
@@ -520,12 +505,7 @@ class Rig(dict):
                     self.name + ".rz",
                 )
 
-        def __init__(
-            self,
-            description: str,
-            extension: str,
-            rig_instance: T,
-        ):
+        def __init__(self, description, extension, rig_instance):
             self.instance = rig_instance
             self.instance["output"].append(self)
             self["description"] = description
@@ -533,14 +513,14 @@ class Rig(dict):
 
     # endregion
 
-    def add_output(self, description: str, extension: str) -> None:
+    def add_output(self, description, extension):
         self._Output(description=description, extension=extension, rig_instance=self)
 
     # region -    RIG / _OutputJoint
     class _OutputJoint(dict):
 
         @property
-        def name(self) -> str:
+        def name(self):
             name, side, index = self.instance.identifier
             return Name.create(
                 convention=Name.joint_name_convention,
@@ -552,11 +532,11 @@ class Rig(dict):
             )
 
         @property
-        def node(self) -> str:
+        def node(self):
             return self._node
 
         @node.setter
-        def node(self, n: str) -> None:
+        def node(self, n):
             self._node = n
             self["description"] = cmds.getAttr(f"{self._node}.description")
             self["parent"] = cmds.listRelatives(self._node, parent=True)[0]
@@ -565,16 +545,16 @@ class Rig(dict):
             self["draw_style"] = cmds.getAttr(f"{self._node}.drawStyle")
 
         @property
-        def data(self) -> dict:
+        def data(self):
             return self
 
         @data.setter
-        def data(self, d: dict) -> None:
+        def data(self, d):
             self.update(d)
             self._node = self.name
 
         @build_log(logging.DEBUG)
-        def create(self) -> str:
+        def create(self):
             name, side, index = self.instance.identifier
             parent = SKEL
             if self["parent_description"] is not None:
@@ -628,12 +608,7 @@ class Rig(dict):
             self._node = jnt
             return jnt
 
-        def __init__(
-            self,
-            parent_description: str,
-            description: str,
-            rig_instance: T,
-        ):
+        def __init__(self, parent_description, description, rig_instance):
             self.instance = rig_instance
             self.instance["output_joint"].append(self)
             self["parent_description"] = parent_description
@@ -642,7 +617,7 @@ class Rig(dict):
 
     # endregion
 
-    def add_output_joint(self, parent_description: str, description: str) -> None:
+    def add_output_joint(self, parent_description, description):
         self._OutputJoint(
             parent_description=parent_description,
             description=description,
@@ -651,7 +626,7 @@ class Rig(dict):
 
     # region -    RIG / Add Bifrost Graph
     @build_log(logging.DEBUG)
-    def add_guide_graph(self) -> str:
+    def add_guide_graph(self):
         component = self["component"]["value"]
 
         parent = cmds.createNode(
@@ -752,7 +727,7 @@ class Rig(dict):
         return graph, guide_compound
 
     @build_log(logging.DEBUG)
-    def add_rig_graph(self) -> str:
+    def add_rig_graph(self):
         component = self["component"]["value"]
 
         parent = cmds.createNode(
@@ -776,7 +751,7 @@ class Rig(dict):
         cmds.vnnConnect(graph, f"/{rig_compound}.output", "/output.output")
         return graph
 
-    def setup_skel(self, joints: list) -> None:
+    def setup_skel(self, joints):
         for output_joint in joints:
             parent = cmds.listRelatives(output_joint, parent=True)[0]
             # parent_inverse_matrix, initialize_parent_inverse_matrix
@@ -933,7 +908,7 @@ class Rig(dict):
     # endregion
 
     # region -    RIG / Super method
-    def __init__(self, data: list = []) -> None:
+    def __init__(self, data):
         """initialize 시 component 의 데이터를 instance 에 업데이트 합니다."""
         self._parent = None
         self["children"] = []
@@ -948,7 +923,7 @@ class Rig(dict):
             else:
                 self.update(d)
 
-    def guide(self, description: str = "") -> None:
+    def guide(self, description=""):
         attrs = [".tx", ".ty", ".tz", ".rx", ".ry", ".rz"]
         if not cmds.objExists(GUIDE):
             ins = Transform(parent=None, name="", side="", index="", extension=GUIDE)
@@ -961,7 +936,7 @@ class Rig(dict):
         cmds.setAttr(f"{self.guide_root}.notes", description, type="string")
         cmds.setAttr(f"{self.guide_root}.notes", lock=True)
 
-    def rig(self, description: str = "") -> None:
+    def rig(self, description=""):
         attrs = [".tx", ".ty", ".tz", ".rx", ".ry", ".rz", ".sx", ".sy", ".sz"]
         if not cmds.objExists(RIG):
             ins = Transform(parent=None, name="", side="", index="", extension=RIG)
@@ -1013,7 +988,7 @@ class Rig(dict):
 
     # endregion
 
-    def populate(self) -> None:
+    def populate(self):
         stack = [self]
         while stack:
             component = stack.pop(0)
@@ -1022,7 +997,7 @@ class Rig(dict):
             component.populate_output_joint()
             stack.extend(component["children"])
 
-    def get_valid_component_index(self, name: str, side: int) -> int:
+    def get_valid_component_index(self, name, side):
         identifiers = []
         stack = [self.assembly]
         while stack:
@@ -1040,7 +1015,7 @@ class Rig(dict):
         return index
 
     # region -    RIG / Editing component
-    def attach_guide(self) -> None:
+    def attach_guide(self):
         if cmds.objExists(self.guide_root):
             self.detach_guide()
         self.guide()
@@ -1063,7 +1038,7 @@ class Rig(dict):
                 )
         cmds.parentConstraint(GUIDE, self.rig_root)
 
-    def detach_guide(self) -> None:
+    def detach_guide(self):
         cons = []
         for output in (
             cmds.listConnections(
@@ -1094,7 +1069,7 @@ class Rig(dict):
         if not cmds.listRelatives(GUIDE):
             cmds.delete(GUIDE)
 
-    def mirror_guide_matrices(self) -> list:
+    def mirror_guide_matrices(self):
         guide_matrices = self["guide_matrix"]["value"]
         guide_mirror_types = self["guide_mirror_type"]["value"]
         mirror_matrices = []
@@ -1104,9 +1079,7 @@ class Rig(dict):
             )
         return mirror_matrices
 
-    def rename_component(
-        self, new_name: str, new_side: int, new_index: int, apply_to_output=False
-    ):
+    def rename_component(self, new_name, new_side, new_index, apply_to_output=False):
         identifiers = []
         stack = [self.assembly]
         while stack:
@@ -1181,7 +1154,7 @@ class Rig(dict):
             cmds.setAttr(f"{self.rig_root}.side", new_side)
             cmds.setAttr(f"{self.rig_root}.index", new_index)
 
-    def duplicate_component(self, apply_to_output: bool = False) -> None:
+    def duplicate_component(self, apply_to_output=False):
         stack = [(self, self.get_parent())]
         while stack:
             component, parent_component = stack.pop(0)
@@ -1213,9 +1186,7 @@ class Rig(dict):
 
             stack.extend([(c, duplicate_component) for c in component["children"]])
 
-    def mirror_component(
-        self, reuse_exists: bool, apply_to_output: bool = False
-    ) -> None:
+    def mirror_component(self, reuse_exists, apply_to_output=False):
         # side 가 center 이거나 하위 component 모두 똑같지 않은 경우 return.
         this_component_side = self["side"]["value"]
         stack = [self]
@@ -1349,7 +1320,7 @@ class Rig(dict):
 
     # endregion
 
-    def sync_from_scene(self) -> None:
+    def sync_from_scene(self):
         stack = [self.assembly]
         while stack:
             component = stack.pop(0)
@@ -1423,7 +1394,7 @@ class Rig(dict):
 
 # region BUILD
 @build_log(logging.INFO)
-def build(context: dict, component: T, attach_guide: bool = False) -> dict:
+def build(context, component, attach_guide=False):
     context["_attach_guide"] = True if attach_guide else False
     # import modeling
     if "modeling" in component:
@@ -1565,7 +1536,7 @@ def build(context: dict, component: T, attach_guide: bool = False) -> dict:
 
 
 # region EXPORT / IMPORT
-def serialize() -> T:
+def serialize():
     """마야 노드에서 json 으로 저장 할 수 있는 데이터로 직렬화합니다."""
     assembly_node = ""
     for n in cmds.ls(type="transform"):
@@ -1663,7 +1634,7 @@ def serialize() -> T:
     return rig
 
 
-def deserialize(data: dict, create=True) -> T:
+def deserialize(data, create=True):
     """직렬화 한 데이터를 마야 노드로 변환합니다."""
     stack = [(data, None)]
     rig = None
@@ -1707,7 +1678,7 @@ def deserialize(data: dict, create=True) -> T:
 
 
 @build_log(logging.INFO)
-def save(file_path: str, data: dict | None = None) -> None:
+def save(file_path, data=None):
     """리그를 json 으로 저장합니다."""
     if not file_path:
         return
@@ -1789,7 +1760,7 @@ def save(file_path: str, data: dict | None = None) -> None:
 
 
 @build_log(logging.INFO)
-def load(file_path: str, create=True) -> T:
+def load(file_path, create=True):
     """json 을 리그로 불러옵니다."""
     if not file_path:
         return

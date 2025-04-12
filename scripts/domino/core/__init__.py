@@ -1,6 +1,6 @@
 # maya
 from maya import cmds
-from maya.api import OpenMaya as om  # type: ignore
+from maya.api import OpenMaya as om
 
 # domino
 from domino.core import nurbscurve, matrix

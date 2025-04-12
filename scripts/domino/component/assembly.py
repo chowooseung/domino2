@@ -98,7 +98,7 @@ description = """## assembly
 class Rig(component.Rig):
 
     @property
-    def identifier(self) -> tuple:
+    def identifier(self):
         return "origin", "", ""
 
     def __init__(self):

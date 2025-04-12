@@ -1,6 +1,6 @@
 # maya
 from maya import cmds
-from maya.utils import MayaGuiLogHandler  # type: ignore
+from maya.utils import MayaGuiLogHandler
 
 # built-ins
 import logging
@@ -156,9 +156,9 @@ def build_log(level):
     return deco
 
 
-def maya_version() -> str:
+def maya_version():
     return cmds.about(version=True)
 
 
-def used_plugins() -> list:
+def used_plugins():
     return cmds.pluginInfo(query=True, pluginsInUse=True) or []

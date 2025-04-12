@@ -1,15 +1,10 @@
 # maya
-from maya.api import OpenMaya as om  # type: ignore
+from maya.api import OpenMaya as om
 
 ORIGINMATRIX = om.MMatrix()
 
 
-def get_look_at_matrix(
-    pos: om.MVector,
-    look_at: om.MVector,
-    up: om.MVector,
-    axis: list = ["x", "y"],
-) -> om.MMatrix:
+def get_look_at_matrix(pos, look_at, up, axis=["x", "y"]):
     """get lookAt(aim) Matrix
 
     Args:
@@ -107,11 +102,8 @@ def get_look_at_matrix(
 
 
 def get_mirror_matrix(
-    world_m: om.MMatrix,
-    behavior: bool = False,
-    inverse_scale: bool = False,
-    plane_m: om.MMatrix = ORIGINMATRIX,
-) -> om.MMatrix:
+    world_m, behavior=False, inverse_scale=False, plane_m=ORIGINMATRIX
+):
     """get mirror matrix
 
     Args:
@@ -156,7 +148,7 @@ def get_mirror_matrix(
         return local_m * mirror_m * plane_m
 
 
-def behavior_to_inverse_scale(m: om.MMatrix) -> om.MMatrix:
+def behavior_to_inverse_scale(m):
     """negate behavior matrix 를 inverse scale mirror matrix 로 제자리에서 변환합니다.
 
     Args:
