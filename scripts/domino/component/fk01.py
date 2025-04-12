@@ -13,7 +13,7 @@ import logging
 
 # region Initialize Settings
 ORIGINMATRIX = om.MMatrix()
-matrices = [list(ORIGINMATRIX) for _ in range(4)]
+matrices = [list(ORIGINMATRIX) for _ in range(2)]
 DATA = [
     attribute.String(longName="component", value="fk01"),
     attribute.String(longName="name", value="fk"),
@@ -39,9 +39,9 @@ DATA = [
     # output joint 생성 option
     attribute.Bool(longName="create_output_joint", value=1),
     # root 수.
-    attribute.Integer(longName="root_count", minValue=1, value=2),
+    attribute.Integer(longName="root_count", minValue=1, value=1),
     # root 당 chain 수.
-    attribute.Integer(longName="chain_count", minValue=2, value=[2, 2], multi=True),
+    attribute.Integer(longName="chain_count", minValue=2, value=[2], multi=True),
     # offset output rotate
     attribute.DoubleAngle(
         longName="offset_output_rotate_x", minValue=-360, maxValue=360
