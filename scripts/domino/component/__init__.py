@@ -557,7 +557,9 @@ class Rig(dict):
         def create(self):
             name, side, index = self.instance.identifier
             parent = SKEL
-            if self["parent_description"] is not None:
+            if self["parent"] is not None:
+                parent = self["parent"]
+            elif self["parent_description"] is not None:
                 parent = Name.create(
                     convention=Name.joint_name_convention,
                     name=name,
@@ -611,6 +613,7 @@ class Rig(dict):
         def __init__(self, parent_description, description, rig_instance):
             self.instance = rig_instance
             self.instance["output_joint"].append(self)
+            self["parent"] = None
             self["parent_description"] = parent_description
             self["description"] = description
             self._node = self.name
