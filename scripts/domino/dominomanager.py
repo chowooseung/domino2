@@ -3,15 +3,14 @@ from PySide6 import QtWidgets, QtCore, QtGui
 
 # maya
 from maya import cmds
-from maya.api import OpenMaya as om  # type: ignore
-from maya.app.general.mayaMixin import MayaQWidgetDockableMixin  # type: ignore
+from maya.api import OpenMaya as om
+from maya.app.general.mayaMixin import MayaQWidgetDockableMixin
 
 # domino
 from domino.component import (
     __all__ as component_list,
     build,
     serialize,
-    T,
     save,
     load,
     Name,
@@ -36,7 +35,7 @@ component_list.remove("assembly")
 
 
 # region maya cb
-def cb_setup_output_joint(child, parent, client_data) -> None:
+def cb_setup_output_joint(child, parent, client_data):
     if not cmds.objExists(child.fullPathName() + ".is_domino_skel"):
         return
 
@@ -111,11 +110,11 @@ def cb_setup_output_joint(child, parent, client_data) -> None:
 class ComponentItem(QtGui.QStandardItem):
 
     @property
-    def component(self) -> T | None:
+    def component(self):
         return self._component
 
     @component.setter
-    def component(self, c: T) -> None:
+    def component(self, c):
         self._component = c
 
     def __init__(self, *args, **kwargs):
@@ -133,11 +132,11 @@ class RigModel(QtGui.QStandardItemModel):
         super(RigModel, self).__init__()
         self.rig = None
 
-    def serialize(self) -> T | None:
+    def serialize(self):
         self.rig = serialize()
         return self.rig
 
-    def flags(self, index: QtCore.QModelIndex):
+    def flags(self, index):
         default_flags = super(RigModel, self).flags(index)
         if index.isValid():
             return (
@@ -147,7 +146,7 @@ class RigModel(QtGui.QStandardItemModel):
             )
         return default_flags | QtCore.Qt.ItemFlag.ItemIsDropEnabled
 
-    def mimeData(self, indexes: list) -> QtCore.QMimeData:
+    def mimeData(self, indexes):
         mime_data = QtCore.QMimeData()
 
         data = []
@@ -159,12 +158,12 @@ class RigModel(QtGui.QStandardItemModel):
         mime_data.setData("application/x-custom-data", binary_data)
         return mime_data
 
-    def canDropMimeData(self, data, action, row, column, parent) -> bool:
+    def canDropMimeData(self, data, action, row, column, parent):
         if not data.hasFormat("application/x-custom-data"):
             return False
         return True
 
-    def dropMimeData(self, data, action, row, column, parent) -> bool:
+    def dropMimeData(self, data, action, row, column, parent):
         if not data.hasFormat("application/x-custom-data"):
             return False
         binary_data = data.data("application/x-custom-data").data()
@@ -192,10 +191,10 @@ class RigModel(QtGui.QStandardItemModel):
         self.populate_model()
         return True
 
-    def supportedDropActions(self) -> QtCore.Qt.DropAction:
+    def supportedDropActions(self):
         return super(RigModel, self).supportedDropActions()
 
-    def populate_model(self) -> None:
+    def populate_model(self):
         self.layoutAboutToBeChanged.emit()
         self.clear()
 
@@ -234,7 +233,7 @@ cmds.evalDeferred(command)"""
     # callback
     callback_id = None
 
-    def __init__(self, parent=None) -> None:
+    def __init__(self, parent=None):
         if cmds.workspaceControl(self.control_name, query=True, exists=True):
             cmds.workspaceControl(self.control_name, edit=True, restore=True)
             cmds.workspaceControl(self.control_name, edit=True, close=True)
@@ -383,7 +382,7 @@ QTreeView::branch:open:has-children  {{
         layout.addWidget(self.component_list_widget)
         self.component_list_widget.doubleClicked.connect(self.add_component)
 
-    def refresh(self) -> None:
+    def refresh(self):
         self.domino_path_line_edit.clear()
         self.rig_tree_model.serialize()
         self.rig_tree_model.populate_model()
@@ -443,7 +442,7 @@ QTreeView::branch:open:has-children  {{
                 self.rig_tree_view.expand(i)
                 stack.extend([it.child(x) for x in range(it.rowCount())])
 
-    def open_settings(self) -> None:
+    def open_settings(self):
         item_index = self.rig_tree_view.selectedIndexes()
         if not item_index:
             return
@@ -475,7 +474,7 @@ QTreeView::branch:open:has-children  {{
             if cmds.objExists(guide_root):
                 cmds.select(guide_root)
 
-    def clear_rig_view(self) -> None:
+    def clear_rig_view(self):
         self.rig_tree_model.rig = None
         self.rig_tree_model.clear()
 
@@ -565,10 +564,11 @@ QTreeView::branch:open:has-children  {{
                 item = self.rig_tree_model.itemFromIndex(parent_item_index[0])
                 parent = item.component
 
-            index = rig.get_valid_component_index(
-                component["name"]["value"], component["side"]["value"]
-            )
-            component["index"]["value"] = index
+            if component["component"]["value"] != "uicontainer01":
+                index = rig.get_valid_component_index(
+                    component["name"]["value"], component["side"]["value"]
+                )
+                component["index"]["value"] = index
             component.set_parent(parent)
             component.populate()
             # endregion
@@ -617,7 +617,7 @@ QTreeView::branch:open:has-children  {{
         finally:
             cmds.undoInfo(closeChunk=True)
 
-    def mirror_component(self, reuse_exists: bool = False) -> None:
+    def mirror_component(self, reuse_exists=False):
         indexes = self.rig_tree_view.selectedIndexes()
         if not indexes:
             return
@@ -647,7 +647,7 @@ QTreeView::branch:open:has-children  {{
         finally:
             cmds.undoInfo(closeChunk=True)
 
-    def set_side(self, side: str) -> None:
+    def set_side(self, side):
         indexes = self.rig_tree_view.selectedIndexes()
         if not indexes:
             return
@@ -658,6 +658,8 @@ QTreeView::branch:open:has-children  {{
             for index in indexes:
                 item = self.rig_tree_model.itemFromIndex(index)
                 component = item.component
+                if component["component"]["value"] in ["assembly", "uicontainer01"]:
+                    continue
                 index = rig.get_valid_component_index(component["name"]["value"], side)
                 component.rename_component(
                     component["name"]["value"], side, index, True
@@ -667,20 +669,20 @@ QTreeView::branch:open:has-children  {{
             cmds.undoInfo(closeChunk=True)
 
     # region -    Manager / Import, Export
-    def save(self) -> None:
+    def save(self):
         data = self.rig_tree_model.rig
         if not data:
             return
         data.sync_from_scene()
 
         # region get file path
-        def ensure_version_in_file_path(file_path: str) -> str:
+        def ensure_version_in_file_path(file_path):
             path = Path(file_path)
             directory = path.parent
             name, ext = path.name.split(".")
             return (directory / ".".join([name + "_v001", ext])).as_posix()
 
-        def increase_version_in_file_path(file_path: str, version: str) -> str:
+        def increase_version_in_file_path(file_path, version):
             fill_count = len(version) - 1
             new_version = int(version[1:]) + 1
             return file_path.replace(version, f"v{str(new_version).zfill(fill_count)}")
@@ -735,20 +737,20 @@ QTreeView::branch:open:has-children  {{
             self.domino_path_line_edit.setText(file_path[0])
             build({}, rig)
 
-    def load_template(self, file_path: str, create: bool) -> None:
+    def load_template(self, file_path, create):
         """file_line_edit 에 path 를 기록하지 않고 load 합니다."""
         rig = load(file_path, create)
         self.rig_tree_model.rig = rig
         self.rig_tree_model.populate_model()
 
     # endregion
-    def build(self, new_scene: bool = False) -> None:
+    def build(self, new_scene=False):
         if new_scene:
             cmds.file(newFile=True, force=True)
         rig = self.rig_tree_model.rig
         build({}, rig)
 
-    def showEvent(self, e) -> None:
+    def showEvent(self, e):
         cmds.workspaceControl(self.control_name, edit=True, uiScript=self.ui_script)
         self.refresh()
         if self.callback_id is None:
@@ -758,7 +760,7 @@ QTreeView::branch:open:has-children  {{
             logger.info(f"Add output joint Dag callback id: {self.callback_id}")
         super(Manager, self).showEvent(e)
 
-    def hideEvent(self, e) -> None:
+    def hideEvent(self, e):
         if self.callback_id:
             logger.info(f"Remove output joint Dag callback id: {self.callback_id}")
             om.MMessage.removeCallback(self.callback_id)

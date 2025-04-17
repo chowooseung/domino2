@@ -127,7 +127,7 @@ def ui(*args, **kwargs) -> None:
         height=height,
         recomputeSize=False,
         command=replace_shape_command,
-        annotation="선택해주세요. controller, 바꿀 shape",
+        annotation="선택해주세요.\n1. controllers\n2. 바꿀 shape",
     )
     w = width / 5
     cmds.rowLayout(
@@ -147,14 +147,22 @@ def ui(*args, **kwargs) -> None:
     cmds.setParent(column_layout)
 
     w = width / 6 - 2
-    indexes = [20, 13, 17, 21, 6, 29]
+    indexes = [13, 20, 17, 21, 6, 29]
+    annotations = [
+        "Right Fk",
+        "Right IK",
+        "Center FK",
+        "Center Ik",
+        "Left FK",
+        "Left IK",
+    ]
     cmds.rowLayout(
         parent=column_layout,
         numberOfColumns=6,
         columnWidth6=(w, w, w, w, w, w),
         margins=1,
     )
-    for index in indexes:
+    for annotation, index in zip(annotations, indexes):
         color = cmds.colorIndex(index, query=True)
         cmds.button(
             label="",
@@ -162,6 +170,7 @@ def ui(*args, **kwargs) -> None:
             height=height,
             command=color_command.format(index),
             backgroundColor=color,
+            annotation=annotation,
         )
     cmds.setParent(column_layout)
 

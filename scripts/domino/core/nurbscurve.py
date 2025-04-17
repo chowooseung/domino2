@@ -5,20 +5,23 @@ from maya.api import OpenMaya as om
 ORIGINMATRIX = om.MMatrix()
 
 
-def replace_shape(source: str, destination: str) -> None:
+def replace_shape(source, destination):
     source_shapes = cmds.listRelatives(source, shapes=True, fullPath=True) or []
     destination_shapes = (
         cmds.listRelatives(destination, shapes=True, fullPath=True) or []
     )
     if destination_shapes:
         cmds.delete(destination_shapes)
+    if not source_shapes:
+        # source_shapes 가 없을경우 destination 이 지워짐.
+        return
     shapes = cmds.parent(source_shapes, destination, relative=True, shape=True)
     for shape in shapes:
         shape = cmds.rename(shape, destination + "Shape")
         cmds.setAttr(shape + ".isHistoricallyInteresting", 0)
 
 
-def translate_shape(node: str, t: list) -> None:
+def translate_shape(node, t):
     shapes = cmds.listRelatives(node, shapes=True) or []
     for shape in shapes:
         cmds.move(
@@ -30,7 +33,7 @@ def translate_shape(node: str, t: list) -> None:
         )
 
 
-def rotate_shape(node: str, r: list) -> None:
+def rotate_shape(node, r):
     shapes = cmds.listRelatives(node, shapes=True) or []
     t = cmds.xform(node, query=True, translation=True, worldSpace=True)
     for shape in shapes:
@@ -44,14 +47,14 @@ def rotate_shape(node: str, r: list) -> None:
         )
 
 
-def scale_shape(node: str, s: list) -> None:
+def scale_shape(node, s):
     shapes = cmds.listRelatives(node, shapes=True) or []
     t = cmds.xform(node, query=True, translation=True, worldSpace=True)
     for shape in shapes:
         cmds.scale(*s, shape + ".cv[*]", pivot=t)
 
 
-def mirror_shape(node: str, left_str: str = "_L", right_str: str = "_R") -> None:
+def mirror_shape(node, left_str="_L", right_str="_R"):
     source = node
     if left_str in source:
         destination = source.replace(left_str, right_str)
@@ -79,19 +82,13 @@ def mirror_shape(node: str, left_str: str = "_L", right_str: str = "_R") -> None
     cmds.delete(delete_list)
 
 
-def create(shape: str, color: om.MColor | int, m: om.MMatrix = ORIGINMATRIX) -> str:
+def create(shape, color, m=ORIGINMATRIX):
     func = globals().get(shape)
     if func and callable(func):
         return func(color=color, m=m)
 
 
-def generate(
-    destination: str,
-    points: list,
-    degree: int,
-    color: om.MColor | int,
-    close: bool = False,
-) -> None:
+def generate(destination, points, degree, color, close=False):
     if close:
         points.extend(points[:degree])
         knots = range(len(points) + degree - 1)
@@ -115,7 +112,7 @@ def generate(
     cmds.setAttr(shape + ".isHistoricallyInteresting", 0)
 
 
-def origin(color: om.MColor | int, m: om.MMatrix) -> str:
+def origin(color, m):
     dlen = 0.5
     # circle
     v0 = om.MVector(0, 0, -dlen * 1.108)
@@ -149,7 +146,7 @@ def origin(color: om.MColor | int, m: om.MMatrix) -> str:
     return node
 
 
-def arrow(color: om.MColor | int, m: om.MMatrix) -> str:
+def arrow(color, m):
     points = [
         (-0.0, 0.0, -0.5),
         (0.5, 0.0, 0.0),
@@ -174,7 +171,7 @@ def arrow(color: om.MColor | int, m: om.MMatrix) -> str:
     return node
 
 
-def arrow4(color: om.MColor | int, m: om.MMatrix) -> str:
+def arrow4(color, m):
     points = [
         [-0.1, 0.0, -0.3],
         [-0.2, 0.0, -0.3],
@@ -216,7 +213,7 @@ def arrow4(color: om.MColor | int, m: om.MMatrix) -> str:
     return node
 
 
-def square(color: om.MColor | int, m: om.MMatrix) -> str:
+def square(color, m):
     dlen = 0.5
     v0 = om.MVector(dlen, 0, 0)
     v1 = om.MVector(-dlen, 0, 0)
@@ -236,7 +233,7 @@ def square(color: om.MColor | int, m: om.MMatrix) -> str:
     return node
 
 
-def wave(color: om.MColor | int, m: om.MMatrix) -> str:
+def wave(color, m):
     points = [
         [0.129648, 0.0, -0.567988],
         [0.0, 0.0, -0.338736],
@@ -281,7 +278,7 @@ def wave(color: om.MColor | int, m: om.MMatrix) -> str:
     return node
 
 
-def halfmoon(color: om.MColor | int, m: om.MMatrix) -> str:
+def halfmoon(color, m):
     node = cmds.createNode("transform", name="halfmoon")
 
     points = [
@@ -319,7 +316,7 @@ def halfmoon(color: om.MColor | int, m: om.MMatrix) -> str:
     return node
 
 
-def halfcircle(color: om.MColor | int, m: om.MMatrix) -> str:
+def halfcircle(color, m):
     points = [
         [0.0, 0.0, -0.5],
         [-0.065, 0.0, -0.5],
@@ -347,7 +344,7 @@ def halfcircle(color: om.MColor | int, m: om.MMatrix) -> str:
     return node
 
 
-def circle(color: om.MColor | int, m: om.MMatrix) -> str:
+def circle(color, m):
     dlen = 0.5
     v0 = om.MVector(0, 0, -dlen * 1.108)
     v1 = om.MVector(dlen * 0.78, 0, -dlen * 0.78)
@@ -370,7 +367,7 @@ def circle(color: om.MColor | int, m: om.MMatrix) -> str:
     return node
 
 
-def sphere(color: om.MColor | int, m: om.MMatrix) -> str:
+def sphere(color, m):
     c0 = circle(color, ORIGINMATRIX)
     cmds.setAttr(c0 + ".rz", 90)
     c1 = circle(color, ORIGINMATRIX)
@@ -394,7 +391,7 @@ def sphere(color: om.MColor | int, m: om.MMatrix) -> str:
     return node
 
 
-def locator(color: om.MColor | int, m: om.MMatrix) -> str:
+def locator(color, m):
     node = cmds.createNode("transform", name="locator")
 
     dlen = 0.5
@@ -417,7 +414,7 @@ def locator(color: om.MColor | int, m: om.MMatrix) -> str:
     return node
 
 
-def cube(color: om.MColor | int, m: om.MMatrix) -> str:
+def cube(color, m):
     dlen = 0.5
     v0 = om.MVector(dlen, dlen, dlen)
     v1 = om.MVector(dlen, dlen, -dlen)
@@ -437,7 +434,7 @@ def cube(color: om.MColor | int, m: om.MMatrix) -> str:
     return node
 
 
-def cylinder(color: om.MColor | int, m: om.MMatrix) -> str:
+def cylinder(color, m):
     node = cmds.createNode("transform", name="cylinder")
 
     dlen = 0.5
@@ -487,7 +484,7 @@ def cylinder(color: om.MColor | int, m: om.MMatrix) -> str:
     return node
 
 
-def x(color: om.MColor | int, m: om.MMatrix) -> str:
+def x(color, m):
     node = cmds.createNode("transform", name="x")
 
     dlen = 0.25
@@ -533,7 +530,7 @@ def x(color: om.MColor | int, m: om.MMatrix) -> str:
     return node
 
 
-def angle(color: om.MColor | int, m: om.MMatrix) -> str:
+def angle(color, m):
     dlen = 0.5
     v0 = om.MVector(dlen, 0, dlen)
     v1 = om.MVector(dlen, 0, -dlen)
@@ -552,7 +549,7 @@ def angle(color: om.MColor | int, m: om.MMatrix) -> str:
     return node
 
 
-def dodecahedron(color: om.MColor | int, m: om.MMatrix) -> str:
+def dodecahedron(color, m):
     shapes = [
         [
             [-0.19, 0.496, 0.0],
@@ -656,7 +653,7 @@ def dodecahedron(color: om.MColor | int, m: om.MMatrix) -> str:
     return node
 
 
-def axis(color: om.MColor | int, m: om.MMatrix) -> str:
+def axis(color, m):
     node = cmds.createNode("transform", name="axis")
 
     points = [
@@ -710,7 +707,7 @@ def axis(color: om.MColor | int, m: om.MMatrix) -> str:
     return node
 
 
-def bracket(color: om.MColor | int, m: om.MMatrix) -> str:
+def bracket(color, m):
     dlen = 0.5
     v0 = om.MVector(0, dlen, 0)
     v1 = om.MVector(0, 0, 0)
@@ -723,10 +720,77 @@ def bracket(color: om.MColor | int, m: om.MMatrix) -> str:
     return node
 
 
-def line(color: om.MColor | int, m: om.MMatrix) -> str:
+def line(color, m):
     node = cmds.createNode("transform", name="line")
 
     points = [om.MVector(0.5, 0, 0), om.MVector(-0.5, 0, 0)]
+    generate(destination=node, points=points, degree=1, color=color)
+    cmds.xform(node, matrix=m)
+    return node
+
+
+def uicontainer(color, m):
+    node = cmds.createNode("transform", name="uicontainer")
+
+    points = [
+        [1.0, 0.25, 0.0],
+        [-1.0, 0.25, 0.0],
+        [-1.0, -0.25, 0.0],
+        [1.0, -0.25, 0.0],
+        [1.0, 0.25, 0.0],
+    ]
+    generate(destination=node, points=points, degree=1, color=color)
+    points = [
+        [2.0, 4.25, 0.0],
+        [-2.0, 4.25, 0.0],
+        [-2.0, -0.75, 0.0],
+        [2.0, -0.75, 0.0],
+        [2.0, 4.25, 0.0],
+    ]
+    generate(destination=node, points=points, degree=1, color=color)
+    cmds.xform(node, matrix=m)
+    return node
+
+
+def uisliderframe(color, m):
+    node = cmds.createNode("transform", name="uisliderframe")
+
+    points = [
+        [-1.4, 1.4, 0.0],
+        [1.4, 1.4, 0.0],
+        [1.4, -1.4, 0.0],
+        [-1.4, -1.4, 0.0],
+        [-1.4, 1.4, 0.0],
+    ]
+    generate(destination=node, points=points, degree=1, color=color)
+    cmds.xform(node, matrix=m)
+    return node
+
+
+def uislidercontrol(color, m):
+    node = cmds.createNode("transform", name="uislidercontrol")
+
+    points = [
+        [-0.2, 0.2, 0.0],
+        [0.2, 0.2, 0.0],
+        [0.2, -0.2, 0.0],
+        [-0.2, -0.2, 0.0],
+        [-0.2, 0.2, 0.0],
+    ]
+    generate(destination=node, points=points, degree=1, color=color)
+    cmds.xform(node, matrix=m)
+    return node
+
+
+def uisliderguideline(color, m):
+    node = cmds.createNode("transform", name="uisliderguideline")
+
+    points = [
+        [-1.0, -0.25, 0.0],
+        [-1.0, 0.25, 0.0],
+        [-1.0, 0.0, 0.0],
+        [0.0, 0.0, 0.0],
+    ]
     generate(destination=node, points=points, degree=1, color=color)
     cmds.xform(node, matrix=m)
     return node

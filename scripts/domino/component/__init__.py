@@ -24,7 +24,7 @@ import logging
 import sys
 
 
-__all__ = ["assembly", "control01", "fk01"]
+__all__ = ["assembly", "control01", "fk01", "uicontainer01"]
 
 GUIDE = "guide"
 RIG = "rig"
@@ -181,7 +181,7 @@ class Rig(dict):
         parent = RIG
         if self.get_parent():
             parent_output = cmds.listConnections(
-                self.get_parent().rig_root + ".output", source=True, destination=False
+                f"{self.get_parent().rig_root}.output", source=True, destination=False
             )
             parent = parent_output[-1]
 
@@ -199,8 +199,8 @@ class Rig(dict):
         cmds.addAttr(
             rig_root, longName="output_joint", attributeType="message", multi=True
         )
-        cmds.setAttr(rig_root + ".useOutlinerColor", 1)
-        cmds.setAttr(rig_root + ".outlinerColor", 0.375, 0.75, 0.75)
+        cmds.setAttr(f"{rig_root}.useOutlinerColor", 1)
+        cmds.setAttr(f"{rig_root}.outlinerColor", 0.375, 0.75, 0.75)
 
         # data
         for long_name, data in self.items():
@@ -216,7 +216,7 @@ class Rig(dict):
         # parent, child
         if self.get_parent():
             cmds.connectAttr(
-                self.get_parent().rig_root + ".children", self.rig_root + ".parent"
+                f"{self.get_parent().rig_root}.children", f"{self.rig_root}.parent"
             )
 
     @build_log(logging.DEBUG)
@@ -248,22 +248,20 @@ class Rig(dict):
         crv = nurbscurve.create("axis", 0)
         for shape in cmds.listRelatives(crv, shapes=True):
             shape = cmds.parent(shape, guide, relative=True, shape=True)
-            cmds.rename(shape, guide + "Shape")
+            cmds.rename(shape, f"{guide}Shape")
         cmds.delete(crv)
-        cmds.setAttr(guide + ".displayHandle", 1)
+        cmds.setAttr(f"{guide}.displayHandle", 1)
         cmds.addAttr(guide, longName="is_domino_guide", attributeType="bool")
         next_index = len(
             cmds.listConnections(
-                self.guide_root + ".guide_matrix", source=True, destination=False
+                f"{self.guide_root}.guide_matrix", source=True, destination=False
             )
             or []
         )
         cmds.connectAttr(
-            guide + ".worldMatrix[0]", self.guide_root + f".guide_matrix[{next_index}]"
+            f"{guide}.worldMatrix[0]", f"{self.guide_root}.guide_matrix[{next_index}]"
         )
-        cmds.connectAttr(
-            guide + ".message", self.guide_root + f"._guides[{next_index}]"
-        )
+        cmds.connectAttr(f"{guide}.message", f"{self.guide_root}._guides[{next_index}]")
         at = attribute.Enum(
             longName="mirror_type",
             enumName=["orientation", "behavior", "inverse_scale"],
@@ -274,13 +272,13 @@ class Rig(dict):
         at.node = guide
         at.create()
         cmds.connectAttr(
-            guide + ".mirror_type",
-            self.guide_root + f".guide_mirror_type[{next_index}]",
+            f"{guide}.mirror_type",
+            f"{self.guide_root}.guide_mirror_type[{next_index}]",
         )
-        cmds.setAttr(guide + ".sx", lock=True, keyable=False)
-        cmds.setAttr(guide + ".sy", lock=True, keyable=False)
-        cmds.setAttr(guide + ".sz", lock=True, keyable=False)
-        cmds.setAttr(guide + ".v", lock=True, keyable=False)
+        cmds.setAttr(f"{guide}.sx", lock=True, keyable=False)
+        cmds.setAttr(f"{guide}.sy", lock=True, keyable=False)
+        cmds.setAttr(f"{guide}.sz", lock=True, keyable=False)
+        cmds.setAttr(f"{guide}.v", lock=True, keyable=False)
         return guide
 
     # endregion
@@ -313,22 +311,25 @@ class Rig(dict):
             self["parent_controllers"] = []
             for parent_ctl in (
                 cmds.listConnections(
-                    self._node + ".parent_controllers", source=True, destination=False
+                    f"{self._node}.parent_controllers", source=True, destination=False
                 )
                 or []
             ):
                 ins = Controller(node=parent_ctl)
                 parent_root = ins.root
 
-                if cmds.getAttr(parent_root + ".component") == "assembly":
+                if cmds.getAttr(f"{parent_root}.component") == "assembly":
                     identifier = ("origin", "", "")
+                elif cmds.getAttr(f"{parent_root}.component") == "uicontainer01":
+                    name = cmds.getAttr(f"{parent_root}.name")
+                    identifier = (name, "", "")
                 else:
-                    name = cmds.getAttr(parent_root + ".name")
-                    side = cmds.getAttr(parent_root + ".side")
+                    name = cmds.getAttr(f"{parent_root}.name")
+                    side = cmds.getAttr(f"{parent_root}.side")
                     side_str = Name.side_str_list[side]
-                    index = cmds.getAttr(parent_root + ".index")
+                    index = cmds.getAttr(f"{parent_root}.index")
                     identifier = (name, side_str, index)
-                description = cmds.getAttr(parent_ctl + ".description")
+                description = cmds.getAttr(f"{parent_ctl}.description")
                 parent_controllers = (identifier, description)
                 self["parent_controllers"].append(parent_controllers)
 
@@ -381,6 +382,9 @@ class Rig(dict):
                 color=color,
             )
             npo, ctl = ins.create()
+            cmds.setAttr(f"{npo}.t", 0, 0, 0)
+            cmds.setAttr(f"{npo}.r", 0, 0, 0)
+            cmds.setAttr(f"{npo}.s", 1, 1, 1)
             if npo_matrix_index is not None:
                 # multi index 초과하는 범위를 초기화 없이 연결 할 경우
                 # getAttr 로 npo_matrix[npo_matrix_index]를 query 시
@@ -388,23 +392,22 @@ class Rig(dict):
                 # 초기 값 세팅을 해줘야 함.
                 if (
                     cmds.getAttr(
-                        self.instance.rig_root + f".npo_matrix[{npo_matrix_index}]"
+                        f"{self.instance.rig_root}.npo_matrix[{npo_matrix_index}]"
                     )
                     is None
                 ):
                     cmds.setAttr(
-                        self.instance.rig_root + f".npo_matrix[{npo_matrix_index}]",
+                        f"{self.instance.rig_root}.npo_matrix[{npo_matrix_index}]",
                         ORIGINMATRIX,
                         type="matrix",
                     )
                 cmds.connectAttr(
-                    self.instance.rig_root
-                    + ".npo_matrix[{0}]".format(npo_matrix_index),
-                    npo + ".offsetParentMatrix",
+                    f"{self.instance.rig_root}.npo_matrix[{npo_matrix_index}]",
+                    f"{npo}.offsetParentMatrix",
                 )
             next_index = len(
                 cmds.listConnections(
-                    self.instance.rig_root + ".controller",
+                    f"{self.instance.rig_root}.controller",
                     source=True,
                     destination=False,
                 )
@@ -412,15 +415,15 @@ class Rig(dict):
             )
             cmds.addAttr(ctl, longName="component", dataType="string")
             cmds.setAttr(
-                ctl + ".component", self.instance["component"]["value"], type="string"
+                f"{ctl}.component", self.instance["component"]["value"], type="string"
             )
-            cmds.setAttr(ctl + ".component", lock=True)
+            cmds.setAttr(f"{ctl}.component", lock=True)
             cmds.connectAttr(
-                ctl + ".message", self.instance.rig_root + f".controller[{next_index}]"
+                f"{ctl}.message", f"{self.instance.rig_root}.controller[{next_index}]"
             )
             if fkik_command_attr:
                 cmds.addAttr(ctl, longName="fkik_command_attr", dataType="message")
-                cmds.connectAttr(fkik_command_attr, ctl + ".fkik_command_attr")
+                cmds.connectAttr(fkik_command_attr, f"{ctl}.fkik_command_attr")
             self.node = ctl
             return npo, ctl
 
@@ -646,15 +649,6 @@ class Rig(dict):
             "/input",
             createOutputPort=("guide_matrix", "array<Math::float4x4>"),
         )
-        cmds.vnnNode(
-            graph, "/input", createOutputPort=("offset_output_rotate_x", "float")
-        )
-        cmds.vnnNode(
-            graph, "/input", createOutputPort=("offset_output_rotate_y", "float")
-        )
-        cmds.vnnNode(
-            graph, "/input", createOutputPort=("offset_output_rotate_z", "float")
-        )
 
         guide_compound = cmds.vnnCompound(
             graph,
@@ -662,35 +656,8 @@ class Rig(dict):
             addNode=f"BifrostGraph,Domino::Components,{component}_guide",
         )[0]
 
-        cmds.vnnConnect(
-            graph,
-            "/input.offset_output_rotate_x",
-            f"/{guide_compound}.offset_output_rotate_x",
-        )
-        cmds.vnnConnect(
-            graph,
-            "/input.offset_output_rotate_y",
-            f"/{guide_compound}.offset_output_rotate_y",
-        )
-        cmds.vnnConnect(
-            graph,
-            "/input.offset_output_rotate_z",
-            f"/{guide_compound}.offset_output_rotate_z",
-        )
         cmds.vnnConnect(graph, "/input.guide_matrix", f"/{guide_compound}.guide_matrix")
         cmds.connectAttr(f"{self.guide_root}.guide_matrix", f"{graph}.guide_matrix")
-        cmds.connectAttr(
-            f"{self.guide_root}.offset_output_rotate_x",
-            f"{graph}.offset_output_rotate_x",
-        )
-        cmds.connectAttr(
-            f"{self.guide_root}.offset_output_rotate_y",
-            f"{graph}.offset_output_rotate_y",
-        )
-        cmds.connectAttr(
-            f"{self.guide_root}.offset_output_rotate_z",
-            f"{graph}.offset_output_rotate_z",
-        )
         cmds.vnnNode(
             graph,
             "/output",
@@ -727,6 +694,43 @@ class Rig(dict):
             f"/{guide_compound}.initialize_output_inverse_matrix",
             ".initialize_output_inverse_matrix",
         )
+        if cmds.objExists(f"{self.guide_root}.offset_output_rotate_x"):
+            cmds.vnnNode(
+                graph, "/input", createOutputPort=("offset_output_rotate_x", "float")
+            )
+            cmds.vnnNode(
+                graph, "/input", createOutputPort=("offset_output_rotate_y", "float")
+            )
+            cmds.vnnNode(
+                graph, "/input", createOutputPort=("offset_output_rotate_z", "float")
+            )
+            cmds.vnnConnect(
+                graph,
+                "/input.offset_output_rotate_x",
+                f"/{guide_compound}.offset_output_rotate_x",
+            )
+            cmds.vnnConnect(
+                graph,
+                "/input.offset_output_rotate_y",
+                f"/{guide_compound}.offset_output_rotate_y",
+            )
+            cmds.vnnConnect(
+                graph,
+                "/input.offset_output_rotate_z",
+                f"/{guide_compound}.offset_output_rotate_z",
+            )
+            cmds.connectAttr(
+                f"{self.guide_root}.offset_output_rotate_x",
+                f"{graph}.offset_output_rotate_x",
+            )
+            cmds.connectAttr(
+                f"{self.guide_root}.offset_output_rotate_y",
+                f"{graph}.offset_output_rotate_y",
+            )
+            cmds.connectAttr(
+                f"{self.guide_root}.offset_output_rotate_z",
+                f"{graph}.offset_output_rotate_z",
+            )
         return graph, guide_compound
 
     @build_log(logging.DEBUG)

@@ -215,16 +215,16 @@ class Rig(component.Rig):
                 )
 
                 cmds.connectAttr(
-                    self.guide_graph + f".npo_matrix[{count}]",
-                    self.guide_root + f".npo_matrix[{count}]",
+                    f"{self.guide_graph}.npo_matrix[{count}]",
+                    f"{self.guide_root}.npo_matrix[{count}]",
                 )
                 cmds.connectAttr(
-                    self.guide_graph + f".initialize_output_matrix[{count}]",
-                    self.guide_root + f".initialize_output_matrix[{count}]",
+                    f"{self.guide_graph}.initialize_output_matrix[{count}]",
+                    f"{self.guide_root}.initialize_output_matrix[{count}]",
                 )
                 cmds.connectAttr(
-                    self.guide_graph + f".initialize_output_inverse_matrix[{count}]",
-                    self.guide_root + f".initialize_output_inverse_matrix[{count}]",
+                    f"{self.guide_graph}.initialize_output_inverse_matrix[{count}]",
+                    f"{self.guide_root}.initialize_output_inverse_matrix[{count}]",
                 )
                 count += 1
                 parent = guide
