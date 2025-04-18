@@ -1344,6 +1344,7 @@ class UIContainer01(DynamicWidget):
                 cmds.undoInfo(closeChunk=True)
 
         def edit_text():
+            manager_ui = get_manager_ui()
             old_text = cmds.getAttr(f"{root}.container_text")
             new_text = text_line_edit.text()
             for s in new_text:
@@ -1368,6 +1369,7 @@ class UIContainer01(DynamicWidget):
                 cmds.setAttr(f"{grp}.overrideEnabled", 1)
                 cmds.setAttr(f"{grp}.overrideDisplayType", 2)
                 cmds.delete(temp)
+                manager_ui.refresh()
                 Settings.get_instance().refresh()
             finally:
                 cmds.undoInfo(closeChunk=True)
@@ -1443,12 +1445,13 @@ class UIContainer01(DynamicWidget):
                 )
                 current_component.setup_skel(output_joints)
                 cmds.select(f"{root}")
-                manager_ui.rig_tree_model.populate_model()
+                manager_ui.refresh()
                 Settings.get_instance().refresh()
             finally:
                 cmds.undoInfo(closeChunk=True)
 
         def change_slider_side(slider_index, index, *args):
+            manager_ui = get_manager_ui()
             side_list = ["", "L", "R"]
             slider_side_list = cmds.getAttr(f"{root}.slider_side")[0]
             old_side_index = slider_side_list[slider_index]
@@ -1484,6 +1487,10 @@ class UIContainer01(DynamicWidget):
                     f"{root}.slider_keyable_attribute_name[{slider_index}]"
                 ).split(",")
             ]
+            if name_attrs[0] or name_attrs[1] or name_attrs[2] or name_attrs[3]:
+                logger.warning("attribute name 을 초기화 후 변경해주세요.")
+                Settings.get_instance().refresh()
+                return
 
             try:
                 cmds.undoInfo(openChunk=True)
@@ -1512,11 +1519,13 @@ class UIContainer01(DynamicWidget):
                     if cmds.objExists(f"{output_joint}.{old_name}"):
                         cmds.renameAttr(f"{output_joint}.{old_name}", new_name)
                     c += 1
+                manager_ui.refresh()
                 Settings.get_instance().refresh()
             finally:
                 cmds.undoInfo(closeChunk=True)
 
         def edit_slider_description(slider_index, index):
+            manager_ui = get_manager_ui()
             new_description = description_line_edits[index].text()
             for s in new_description:
                 if not s.isalpha() and not s.isalnum():
@@ -1539,6 +1548,23 @@ class UIContainer01(DynamicWidget):
                 Settings.get_instance().refresh()
                 return
 
+            rig_root = cmds.listConnections(
+                f"{root}.component", source=False, destination=True
+            )[0]
+            output_joint = cmds.listConnections(
+                f"{rig_root}.output_joint", source=True, destination=False
+            )[0]
+            ptx_attr, mtx_attr, pty_attr, mty_attr = [
+                x
+                for x in cmds.getAttr(
+                    f"{root}.slider_keyable_attribute_name[{slider_index}]"
+                ).split(",")
+            ]
+            if ptx_attr or mtx_attr or pty_attr or mty_attr:
+                logger.warning("attribute name 을 초기화 후 변경해주세요.")
+                Settings.get_instance().refresh()
+                return
+
             try:
                 cmds.undoInfo(openChunk=True)
                 nodes = cmds.ls(
@@ -1557,11 +1583,33 @@ class UIContainer01(DynamicWidget):
                     new_description,
                     type="string",
                 )
+                if not ptx_attr:
+                    old_ptx_attr = f"{old_description}{side_str}_tx_plus"
+                    new_ptx_attr = f"{new_description}{side_str}_tx_plus"
+                    if cmds.objExists(f"{output_joint}.{old_ptx_attr}"):
+                        cmds.renameAttr(f"{output_joint}.{old_ptx_attr}", new_ptx_attr)
+                if not mtx_attr:
+                    old_mtx_attr = f"{old_description}{side_str}_tx_minus"
+                    new_mtx_attr = f"{new_description}{side_str}_tx_minus"
+                    if cmds.objExists(f"{output_joint}.{old_mtx_attr}"):
+                        cmds.renameAttr(f"{output_joint}.{old_mtx_attr}", new_mtx_attr)
+                if not pty_attr:
+                    old_pty_attr = f"{old_description}{side_str}_ty_plus"
+                    new_pty_attr = f"{new_description}{side_str}_ty_plus"
+                    if cmds.objExists(f"{output_joint}.{old_pty_attr}"):
+                        cmds.renameAttr(f"{output_joint}.{old_pty_attr}", new_pty_attr)
+                if not mty_attr:
+                    old_mty_attr = f"{old_description}{side_str}_ty_minus"
+                    new_mty_attr = f"{new_description}{side_str}_ty_minus"
+                    if cmds.objExists(f"{output_joint}.{old_mty_attr}"):
+                        cmds.renameAttr(f"{output_joint}.{old_mty_attr}", new_mty_attr)
+                manager_ui.refresh()
                 Settings.get_instance().refresh()
             finally:
                 cmds.undoInfo(closeChunk=True)
 
         def toggle_keyable_attrs(slider_index, index, *args):
+            manager_ui = get_manager_ui()
             _ptx_check_box, _mtx_check_box, _pty_check_box, _mty_check_box = (
                 keyable_attr_check_boxes[index]
             )
@@ -1839,11 +1887,13 @@ class UIContainer01(DynamicWidget):
                     type="string",
                 )
                 cmds.select(selected)
+                manager_ui.refresh()
                 Settings.get_instance().refresh()
             finally:
                 cmds.undoInfo(closeChunk=True)
 
         def edit_keyable_attr_name(slider_index, index):
+            manager_ui = get_manager_ui()
             _ptx_line_edit, _mtx_line_edit, _pty_line_edit, _mty_line_edit = (
                 keyable_attr_description_line_edits[index]
             )
@@ -1920,54 +1970,85 @@ class UIContainer01(DynamicWidget):
             side_index = slider_side_list[slider_index]
             side = side_list[int(side_index)]
 
+            new_str = ",".join([new_ptx_attr, new_mtx_attr, new_pty_attr, new_mty_attr])
+            if new_ptx_attr:
+                new_ptx_attr += side
+            if old_ptx_attr:
+                old_ptx_attr += side
+            if not new_ptx_attr:
+                new_ptx_attr = f"{description}{side}_tx_plus"
+            if not old_ptx_attr:
+                old_ptx_attr = f"{description}{side}_tx_plus"
+            if new_mtx_attr:
+                new_mtx_attr += side
+            if old_mtx_attr:
+                old_mtx_attr += side
+            if not new_mtx_attr:
+                new_mtx_attr = f"{description}{side}_tx_minus"
+            if not old_mtx_attr:
+                old_mtx_attr = f"{description}{side}_tx_minus"
+            if new_pty_attr:
+                new_pty_attr += side
+            if old_pty_attr:
+                old_pty_attr += side
+            if not new_pty_attr:
+                new_pty_attr = f"{description}{side}_ty_plus"
+            if not old_pty_attr:
+                old_pty_attr = f"{description}{side}_ty_plus"
+            if new_mty_attr:
+                new_mty_attr += side
+            if old_mty_attr:
+                old_mty_attr += side
+            if not new_mty_attr:
+                new_mty_attr = f"{description}{side}_ty_minus"
+            if not old_mty_attr:
+                old_mty_attr = f"{description}{side}_ty_minus"
+
+            if old_ptx_attr != new_ptx_attr and cmds.objExists(
+                f"{output_joint}.{new_ptx_attr}"
+            ):
+                logger.warning(f"{output_joint}.{new_ptx_attr} 이미 존재합니다.")
+                Settings.get_instance().refresh()
+                return
+            if old_mtx_attr != new_mtx_attr and cmds.objExists(
+                f"{output_joint}.{new_mtx_attr}"
+            ):
+                logger.warning(f"{output_joint}.{new_mtx_attr} 이미 존재합니다.")
+                Settings.get_instance().refresh()
+                return
+            if old_pty_attr != new_pty_attr and cmds.objExists(
+                f"{output_joint}.{new_pty_attr}"
+            ):
+                logger.warning(f"{output_joint}.{new_pty_attr} 이미 존재합니다.")
+                Settings.get_instance().refresh()
+                return
+            if old_mty_attr != new_mty_attr and cmds.objExists(
+                f"{output_joint}.{new_mty_attr}"
+            ):
+                logger.warning(f"{output_joint}.{new_mty_attr} 이미 존재합니다.")
+                Settings.get_instance().refresh()
+                return
+
             try:
                 cmds.undoInfo(openChunk=True)
+                if old_ptx_attr != new_ptx_attr:
+                    if cmds.objExists(f"{output_joint}.{old_ptx_attr}"):
+                        cmds.renameAttr(f"{output_joint}.{old_ptx_attr}", new_ptx_attr)
+                if old_mtx_attr != new_mtx_attr:
+                    if cmds.objExists(f"{output_joint}.{old_mtx_attr}"):
+                        cmds.renameAttr(f"{output_joint}.{old_mtx_attr}", new_mtx_attr)
+                if old_pty_attr != new_pty_attr:
+                    if cmds.objExists(f"{output_joint}.{old_pty_attr}"):
+                        cmds.renameAttr(f"{output_joint}.{old_pty_attr}", new_pty_attr)
+                if old_mty_attr != new_mty_attr:
+                    if cmds.objExists(f"{output_joint}.{old_mty_attr}"):
+                        cmds.renameAttr(f"{output_joint}.{old_mty_attr}", new_mty_attr)
                 cmds.setAttr(
                     f"{root}.slider_keyable_attribute_name[{slider_index}]",
-                    ",".join([new_ptx_attr, new_mtx_attr, new_pty_attr, new_mty_attr]),
+                    new_str,
                     type="string",
                 )
-
-                if old_ptx_attr != new_ptx_attr:
-                    if new_ptx_attr:
-                        new_ptx_attr += side
-                    if old_ptx_attr:
-                        old_ptx_attr += side
-                    if not old_ptx_attr:
-                        old_ptx_attr = f"{description}{side}_tx_plus"
-                    if not new_ptx_attr:
-                        new_ptx_attr = f"{description}{side}_tx_plus"
-                    cmds.renameAttr(f"{output_joint}.{old_ptx_attr}", new_ptx_attr)
-                if old_mtx_attr != new_mtx_attr:
-                    if new_mtx_attr:
-                        new_mtx_attr += side
-                    if old_mtx_attr:
-                        old_mtx_attr += side
-                    if not old_mtx_attr:
-                        old_mtx_attr = f"{description}{side}_tx_minus"
-                    if not new_mtx_attr:
-                        new_mtx_attr = f"{description}{side}_tx_minus"
-                    cmds.renameAttr(f"{output_joint}.{old_mtx_attr}", new_mtx_attr)
-                if old_pty_attr != new_pty_attr:
-                    if new_pty_attr:
-                        new_pty_attr += side
-                    if old_pty_attr:
-                        old_pty_attr += side
-                    if not old_pty_attr:
-                        old_pty_attr = f"{description}{side}_ty_plus"
-                    if not new_pty_attr:
-                        new_pty_attr = f"{description}{side}_ty_plus"
-                    cmds.renameAttr(f"{output_joint}.{old_pty_attr}", new_pty_attr)
-                if old_mty_attr != new_mty_attr:
-                    if new_mty_attr:
-                        new_mty_attr += side
-                    if old_mty_attr:
-                        old_mty_attr += side
-                    if not old_mty_attr:
-                        old_mty_attr = f"{description}{side}_ty_minus"
-                    if not new_mty_attr:
-                        new_mty_attr = f"{description}{side}_ty_minus"
-                    cmds.renameAttr(f"{output_joint}.{old_mty_attr}", new_mty_attr)
+                manager_ui.refresh()
                 Settings.get_instance().refresh()
             finally:
                 cmds.undoInfo(closeChunk=True)

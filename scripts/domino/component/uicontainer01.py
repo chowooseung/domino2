@@ -13,7 +13,7 @@ import logging
 
 # region Initialize Settings
 ORIGINMATRIX = om.MMatrix()
-matrices = [list(ORIGINMATRIX) for _ in range(4)]
+matrices = [list(ORIGINMATRIX) for _ in range(3)]
 DATA = [
     attribute.String(longName="component", value="uicontainer01"),
     attribute.String(longName="name", value="uiContainer"),
@@ -37,24 +37,22 @@ DATA = [
     # output joint 생성 option
     attribute.Bool(longName="create_output_joint", value=1),
     # text.
-    attribute.String(longName="container_text", value="text"),
+    attribute.String(longName="container_text", value="uiConatinerText"),
     # slider 갯수.
-    attribute.Integer(longName="slider_count", minValue=1, value=2),
-    # slider side. ["C", "L", "R"]
+    attribute.Integer(longName="slider_count", minValue=1, value=1),
+    # slider side. ["", "L", "R"]
     attribute.Integer(longName="slider_side", multi=True, value=[0, 0]),
     # slider description.
+    attribute.String(longName="slider_description", multi=True, value=["slider0"]),
+    # slider keyable attribute. +tx, -tx, +ty, -ty. 1 은 on 0 은 off.
     attribute.String(
-        longName="slider_description", multi=True, value=["example", "example2"]
+        longName="slider_keyable_attribute", multi=True, value=["1,1,1,1"]
     ),
-    # slider keyable attribute. +tx, +ty, -tx, -ty. 1 은 on 0 은 off.
-    attribute.String(
-        longName="slider_keyable_attribute", multi=True, value=["1,1,1,1", "1,1,1,1"]
-    ),
-    # slider keyable attribute 이름. +tx, +ty, -tx, -ty.
+    # slider keyable attribute 이름. +tx, -tx, +ty, -ty.
     attribute.String(
         longName="slider_keyable_attribute_name",
         multi=True,
-        value=[",,,exam4", "exam6,exam21,exam33,exam45"],
+        value=[",,,"],
     ),
 ]
 
@@ -76,6 +74,14 @@ ui 을 생성합니다.
 > slider 가 +tx, -tx, +ty, -ty 중 어떤것을 사용할지 정합니다.
 - slider_keyable_attribute_name
 > slider 의 각 attribute에 대한 description 입니다.
+
+controller 의 값은 바로 사용 할 수 있도록 output joint 로 연결됩니다.  
+
+output joint 의 attribute name 은 다음과 같이 결정됩니다.  
+1. attribute name 이 없을때  
+> {slider_description}{side}_tx_plus
+2. attribute name 이 있을때
+> {attribute_name}{side}
 """
 
 
