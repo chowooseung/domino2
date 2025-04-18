@@ -11,7 +11,7 @@ GUIDE_APPLY_CHILDREN_OPTION = "domino_guide_apply_children"
 
 
 # region INSTALL Menu
-def install(menu_id: str) -> None:
+def install(menu_id):
     if STATEOPTION not in cmds.optionVar(list=True):
         cmds.optionVar(intValue=(STATEOPTION, 0))
 
@@ -26,7 +26,7 @@ def install(menu_id: str) -> None:
                     parent_menus.append(m_id.replace('"', ""))
         cmds.optionVar(stringValue=(PARENTMENUS, " ".join(parent_menus)))
 
-    def callback_dag_menu_install() -> None:
+    def callback_dag_menu_install():
         status = cmds.optionVar(query=STATEOPTION)
         parent_menus = cmds.optionVar(query=PARENTMENUS).split(" ")
         for menu in parent_menus:
@@ -37,7 +37,7 @@ def install(menu_id: str) -> None:
                     f"""menu -edit -postMenuCommand "buildObjectMenuItemsNow {menu}" {menu}"""
                 )
 
-    def toggle_domino_dag_menu_status(*args, **kwargs) -> None:
+    def toggle_domino_dag_menu_status(*args, **kwargs):
         if cmds.optionVar(query=STATEOPTION):
             cmds.optionVar(intValue=(STATEOPTION, 0))
         else:
@@ -50,7 +50,7 @@ def install(menu_id: str) -> None:
     cmds.setParent(menu_id, menu=True)
     cmds.menuItem(divider=True)
     cmds.menuItem(
-        STATEOPTION + "_menu",
+        f"{STATEOPTION}_menu",
         label="Dag Menu",
         command=partial(toggle_domino_dag_menu_status),
         checkBox=original_status,
@@ -58,35 +58,36 @@ def install(menu_id: str) -> None:
     callback_dag_menu_install()
 
 
-def popup_menu(parent_menu: str, *args, **kwargs) -> None:
+def popup_menu(parent_menu, *args, **kwargs):
     selection = cmds.ls(selection=True)
     maya_dag_menu = False
 
-    if selection:
-        if cmds.objExists(selection[0] + ".is_domino_guide") or cmds.objExists(
-            selection[0] + ".is_domino_guide_root"
+    # 마야가 pSphere1.vtx[0].is_domino_guide 같은것도 true 로 반환한다. fuck
+    if selection and "." not in selection[0]:
+        if cmds.objExists(f"{selection[0]}.is_domino_guide") or cmds.objExists(
+            f"{selection[0]}.is_domino_guide_root"
         ):
             guide_menu(parent_menu)
             maya_dag_menu = True
-        elif cmds.objExists(selection[0] + ".is_domino_rig"):
+        elif cmds.objExists(f"{selection[0]}.is_domino_rig"):
             rig_menu(parent_menu)
             maya_dag_menu = True
-        elif cmds.objExists(selection[0] + ".is_domino_controller"):
+        elif cmds.objExists(f"{selection[0]}.is_domino_controller"):
             controller_menu(
                 parent_menu,
                 (
                     True
-                    if cmds.getAttr(selection[0] + ".component") == "assembly"
+                    if cmds.getAttr(f"{selection[0]}.component") == "assembly"
                     else False
                 ),
-                True if cmds.objExists(selection[0] + ".fkik_command_attr") else False,
+                True if cmds.objExists(f"{selection[0]}.fkik_command_attr") else False,
             )
             maya_dag_menu = True
-        elif cmds.objExists(selection[0] + ".is_domino_skel"):
+        elif cmds.objExists(f"{selection[0]}.is_domino_skel"):
             skel_menu(parent_menu)
             maya_dag_menu = True
     if not maya_dag_menu:
-        mel.eval("buildObjectMenuItemsNow " + parent_menu)
+        mel.eval(f"buildObjectMenuItemsNow {parent_menu}")
 
 
 # endregion
@@ -175,7 +176,7 @@ for root in set(roots):
 
 
 # region GUIDE Menu
-def guide_menu(parent_menu: str) -> None:
+def guide_menu(parent_menu):
     cmds.menu(parent_menu, edit=True, deleteAllItems=True)
 
     cmds.menuItem(
@@ -313,7 +314,7 @@ if cmds.objExists("rig"):
 
 
 # region RIG Menu
-def rig_menu(parent_menu: str) -> None:
+def rig_menu(parent_menu):
     cmds.menu(parent_menu, edit=True, deleteAllItems=True)
 
     cmds.menuItem(
@@ -443,9 +444,7 @@ fkik_switch_command = """"""
 
 
 # region Controller Menu
-def controller_menu(
-    parent_menu: str, is_assembly: bool = False, has_fkik_switch: bool = False
-) -> None:
+def controller_menu(parent_menu, is_assembly=False, has_fkik_switch=False):
     cmds.menu(parent_menu, edit=True, deleteAllItems=True)
     if CONTROLLER_APPLY_CHILDREN_OPTION not in cmds.optionVar(list=True):
         cmds.optionVar(intValue=(CONTROLLER_APPLY_CHILDREN_OPTION, 0))
@@ -606,7 +605,7 @@ cmds.bakeResults(
 
 
 # region Skeleton Menu
-def skel_menu(parent_menu: str) -> None:
+def skel_menu(parent_menu):
     cmds.menu(parent_menu, edit=True, deleteAllItems=True)
     cmds.menuItem(
         parent=parent_menu,
