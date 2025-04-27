@@ -90,7 +90,7 @@ class Rig(component.Rig):
                 for chain_i in range(self["chain_count"]["value"][root_i]):
                     self.add_output(
                         description=f"{root_i}fk{chain_i}",
-                        extension=Name.loc_extension,
+                        extension="output",
                     )
 
     def populate_output_joint(self):
@@ -156,6 +156,23 @@ class Rig(component.Rig):
                 cmds.setAttr(condition + ".colorIfTrueR", -1)
                 cmds.connectAttr(decom_m + ".outputScaleZ", condition + ".firstTerm")
                 cmds.connectAttr(condition + ".outColorR", loc + ".sz")
+
+                ins = Transform(
+                    parent=self.rig_root,
+                    name=name,
+                    side=side,
+                    index=index,
+                    description=f"{root_i}fk{chain_i}",
+                    extension="output",
+                    m=ORIGINMATRIX,
+                )
+                output = ins.create()
+                mult_m = cmds.createNode("multMatrix")
+                cmds.connectAttr(f"{loc}.worldMatrix[0]", f"{mult_m}.matrixIn[0]")
+                cmds.connectAttr(
+                    f"{self.rig_root}.worldInverseMatrix[0]", f"{mult_m}.matrixIn[1]"
+                )
+                cmds.connectAttr(f"{mult_m}.matrixSum", f"{output}.offsetParentMatrix")
 
                 # output
                 self["output"][count].connect()
