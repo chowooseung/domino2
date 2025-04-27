@@ -85,14 +85,8 @@ class Name:
 
     @classmethod
     def create(
-        cls,
-        convention: str,
-        name: str = "null",
-        side: str = "C",
-        index: str | int = 0,
-        description: str = "",
-        extension: str = "",
-    ) -> str:
+        cls, convention, name="null", side="C", index=0, description="", extension=""
+    ):
         """
         Args:
             convention (str): jointNameConvention, controllerNameConvention
@@ -116,9 +110,7 @@ class Name:
         return "_".join([x for x in name.split("_") if x])
 
     @classmethod
-    def create_joint_label(
-        cls, name: str, side: str, index: str, description: str
-    ) -> str:
+    def create_joint_label(cls, name, side, index, description):
         """create joint label
         Args:
             name (str): rig parts
@@ -168,15 +160,15 @@ class Transform:
 
     def __init__(
         self,
-        parent: str = "",
-        name: str = "null",
-        side: str = "C",
-        index: str | int = 0,
-        description: str = "",
-        extension: str = "",
-        node: str = "",
-        m: om.MMatrix | list = ORIGINMATRIX,
-    ) -> None:
+        parent="",
+        name="null",
+        side="C",
+        index=0,
+        description="",
+        extension="",
+        node="",
+        m=ORIGINMATRIX,
+    ):
         """
         Args:
             parent (str, optional): parent node. Defaults to "".
@@ -205,10 +197,10 @@ class Transform:
             assert cmds.objExists(node), f"{node} 가 존재하지 않습니다."
             self._node = node
 
-    def __str__(self) -> str:
+    def __str__(self):
         return self._node
 
-    def create(self) -> str:
+    def create(self):
         """create Transform
 
         Returns:
@@ -225,7 +217,7 @@ class Transform:
         self.set_matrix(self._m)
         return self._node
 
-    def get_parent(self) -> str:
+    def get_parent(self):
         """get parent node
 
         Returns:
@@ -235,7 +227,7 @@ class Transform:
         self._parent = p[0] if p else ""
         return self._parent
 
-    def set_parent(self, parent: str) -> None:
+    def set_parent(self, parent):
         """set parent node
 
         Args:
@@ -248,7 +240,7 @@ class Transform:
         )
         self._parent = parent
 
-    def get_matrix(self) -> om.MMatrix:
+    def get_matrix(self):
         """get worldMatrix
 
         Returns:
@@ -257,7 +249,7 @@ class Transform:
         self._m = cmds.xform(self._node, query=True, matrix=True, worldSpace=True)
         return om.MMatrix(self._m)
 
-    def set_matrix(self, m: om.MMatrix | list) -> None:
+    def set_matrix(self, m):
         """set Matrix
 
         Args:
@@ -267,7 +259,7 @@ class Transform:
         cmds.xform(self._node, matrix=m, worldSpace=True)
 
     @staticmethod
-    def get_mirror_RT(t: list, r: list, mirror_type: int) -> tuple:
+    def get_mirror_RT(t, r, mirror_type):
         """get mirror translate, rotate value
 
         dagmenu 에서 사용합니다.
@@ -287,11 +279,7 @@ class Transform:
         return t, r
 
     @staticmethod
-    def get_mirror_matrix(
-        m: list,
-        mirror_type: int,
-        plane_matrix: om.MMatrix = ORIGINMATRIX,
-    ) -> om.MMatrix:
+    def get_mirror_matrix(m, mirror_type, plane_matrix=ORIGINMATRIX):
         """get mirror matrix
 
         mirror type 으로 mirror matrix 를 구합니다.
@@ -345,16 +333,16 @@ class Joint(Transform):
 
     def __init__(
         self,
-        parent: str = "",
-        name: str = "null",
-        side: str = "C",
-        index: str | int = 0,
-        description: str = "",
-        extension: str = joint_extension,
-        node: str = "",
-        m: om.MMatrix | list = ORIGINMATRIX,
-        use_joint_convention: bool = True,
-    ) -> None:
+        parent="",
+        name="null",
+        side="C",
+        index=0,
+        description="",
+        extension=joint_extension,
+        node="",
+        m=ORIGINMATRIX,
+        use_joint_convention=True,
+    ):
         """
         Args:
             parent (str, optional): parent node. Defaults to "".
@@ -392,7 +380,7 @@ class Joint(Transform):
             assert cmds.objExists(node), f"{node} 가 존재하지 않습니다."
             self._node = node
 
-    def create(self) -> str:
+    def create(self):
         """create joint
 
         Returns:
@@ -409,7 +397,7 @@ class Joint(Transform):
         self.set_label(*self.label_args)
         return self._node
 
-    def set_initialize_matrix(self, m: om.MMatrix | list) -> None:
+    def set_initialize_matrix(self, m):
         """set matrix, set jointOrient
 
         Args:
@@ -420,7 +408,7 @@ class Joint(Transform):
             self._node, apply=True, translate=True, rotate=True, scale=True
         )
 
-    def set_label(self, side: int, label: str) -> None:
+    def set_label(self, side, label):
         """set joint label
 
         Args:
@@ -486,18 +474,18 @@ class Controller(Transform):
 
     def __init__(
         self,
-        parent: str = "",
-        parent_controllers: list = "",
-        name: str = "null",
-        side: str = "C",
-        index: str | int = 0,
-        description: str = "",
-        extension: str = "",
-        node: str = "",
-        m: om.MMatrix | list = ORIGINMATRIX,
-        shape: str | dict = "",
-        color: om.MColor | int = 0,
-    ) -> None:
+        parent="",
+        parent_controllers="",
+        name="null",
+        side="C",
+        index=0,
+        description="",
+        extension="",
+        node="",
+        m=ORIGINMATRIX,
+        shape="",
+        color=0,
+    ):
         """
         Args:
             parent (str, optional): npo 의 parent node. Defaults to "".
@@ -560,13 +548,13 @@ class Controller(Transform):
             self._node = node
 
     @property
-    def root(self) -> str:
+    def root(self):
         return cmds.listConnections(
             self._node + ".message", source=False, destination=True, type="transform"
         )[0]
 
     @property
-    def npo(self) -> str:
+    def npo(self):
         """get npo
 
         Returns:
@@ -579,7 +567,7 @@ class Controller(Transform):
             self._npo = plugs[0]
         return self._npo
 
-    def create(self) -> tuple:
+    def create(self):
         """create npo, ctl, loc
 
         Returns:
@@ -658,7 +646,7 @@ class Controller(Transform):
         [self.add_parent_controller(c) for c in self._parent_controllers]
         return self._npo, self._node
 
-    def get_parent(self) -> str:
+    def get_parent(self):
         """get npo parent
 
         Returns:
@@ -667,7 +655,7 @@ class Controller(Transform):
         p = cmds.listRelatives(self.npo, parent=True)
         return p[0] if p else ""
 
-    def replace_shape(self, shape: str | dict, color: om.MColor | int) -> None:
+    def replace_shape(self, shape, color):
         """replace controller shape
 
         Args:
@@ -686,7 +674,7 @@ class Controller(Transform):
             nurbscurve.replace_shape(crv, self._node)
             cmds.delete(crv)
 
-    def add_parent_controller(self, parent_controller: str) -> None:
+    def add_parent_controller(self, parent_controller):
         """dagmenu 에서 사용하기위해 parent controller 를 추가합니다.
 
         Args:
@@ -709,7 +697,7 @@ class Controller(Transform):
                 self._node + f".parent_controllers[{next_number}]",
             )
 
-    def set_matrix(self, m: om.MMatrix) -> None:
+    def set_matrix(self, m):
         """set matrix npo
 
         Args:
@@ -719,7 +707,7 @@ class Controller(Transform):
         cmds.xform(self._npo, matrix=m, worldSpace=True)
 
     @staticmethod
-    def get_child_controller(node: str) -> list:
+    def get_child_controller(node):
         """get child controller list
 
         dagmenu 에서 사용합니다.
@@ -777,7 +765,7 @@ class Controller(Transform):
         return controllers
 
     @staticmethod
-    def reset(node: str) -> None:
+    def reset(node):
         attrs = [".tx", ".ty", ".tz", ".rx", ".ry", ".rz"]
         for attr in attrs:
             if cmds.getAttr(node + attr, lock=True):
@@ -813,7 +801,7 @@ class Curve:
         >>> newCurve.createFromData()
     """
 
-    def __init__(self, node: str = None, data: dict = None) -> None:
+    def __init__(self, node=None, data=None):
         """
 
         Args:
@@ -828,7 +816,7 @@ class Curve:
             self.data = data
 
     @staticmethod
-    def get_fn_curve(shape: str) -> om.MFnNurbsCurve:
+    def get_fn_curve(shape):
         """get openmaya MFnNurbsCurve
 
         Args:
@@ -842,7 +830,7 @@ class Curve:
         return om.MFnNurbsCurve(selection_list.getDagPath(0))
 
     @property
-    def data(self) -> dict:
+    def data(self):
         """get curve data(dict)
 
         Returns:
@@ -851,7 +839,7 @@ class Curve:
         return self._data
 
     @property
-    def node(self) -> str:
+    def node(self):
         """get node
 
         Returns:
@@ -860,7 +848,7 @@ class Curve:
         return self._node
 
     @data.setter
-    def data(self, d: dict) -> None:
+    def data(self, d):
         """set curve data
 
         Args:
@@ -869,7 +857,7 @@ class Curve:
         self._data = d
 
     @node.setter
-    def node(self, n: str) -> None:
+    def node(self, n):
         """set curve data from node
 
         Args:
@@ -899,7 +887,7 @@ class Curve:
             }
         self._node = n
 
-    def create_from_data(self) -> str:
+    def create_from_data(self):
         """create curve from data
 
         Returns:
@@ -928,14 +916,7 @@ class Curve:
             transform = cmds.parent(transform, self._data["parent_name"])[0]
         return transform
 
-    def create(
-        self,
-        parent: str,
-        name: str,
-        degree: int,
-        point: list,
-        m: om.MMatrix | list = ORIGINMATRIX,
-    ) -> str:
+    def create(self, parent, name, degree, point, m=ORIGINMATRIX):
         """create curve
 
         Args:
@@ -967,7 +948,7 @@ class Curve:
 # region Polygon
 class Polygon:
 
-    def __init__(self, node: str = None, data: dict = None) -> None:
+    def __init__(self, node=None, data=None):
         self._data = {}
         self._node = ""
         if node:
@@ -976,19 +957,19 @@ class Polygon:
             self.data = data
 
     @property
-    def data(self) -> dict:
+    def data(self):
         return self._data
 
     @property
-    def node(self) -> list:
+    def node(self):
         return self._node
 
     @data.setter
-    def data(self, d: dict) -> None:
+    def data(self, d):
         self._data = d
 
     @node.setter
-    def node(self, n: str) -> None:
+    def node(self, n):
         self._node = n
 
 
@@ -1015,7 +996,7 @@ class FCurve:
     time_input = ["animCurveTL", "animCurveTA", "animCurveTT", "animCurveTU"]
     double_input = ["animCurveUL", "animCurveUA", "animCurveUT", "animCurveUU"]
 
-    def __init__(self, attribute: str = None, data: dict = None) -> None:
+    def __init__(self, attribute=None, data=None):
         self._data = {}
         self._nodes = []
         if attribute:
@@ -1024,98 +1005,108 @@ class FCurve:
             self.data = data
 
     @property
-    def data(self) -> dict:
+    def data(self):
         return self._data
 
     @property
-    def attribute(self) -> list:
+    def attribute(self):
         return self._nodes
 
     @data.setter
-    def data(self, d: dict) -> None:
+    def data(self, d):
         self._data = d
 
     @attribute.setter
-    def attribute(self, attribute: str) -> None:
-        source = cmds.listConnections(attribute, source=True, destination=False) or []
-        if not source:
+    def attribute(self, attribute):
+        sources = cmds.listConnections(attribute, source=True, destination=False) or []
+        if not sources:
             return
-        if cmds.nodeType(source[0]) == "blendWeighted":
-            source = (
-                cmds.listConnections(source[0], source=True, destination=False) or []
+        if cmds.nodeType(sources[0]) == "blendWeighted":
+            sources = (
+                cmds.listConnections(sources[0], source=True, destination=False) or []
             )
-        data = {}
-        data["driven"] = attribute
-        for src in source:
-            data["name"] = {}
-            _data = data["name"]
-            _data["type"] = cmds.nodeType(src)
+        data = []
+        for src in sources:
+            fcurve_data = {}
+            fcurve_data["name"] = src
+            fcurve_data["driven"] = attribute
+            fcurve_data["type"] = cmds.nodeType(src)
             if cmds.nodeType(src) in self.time_input:
-                _data["time"] = cmds.keyframe(src, query=True)
+                fcurve_data["time"] = cmds.keyframe(src, query=True)
+                fcurve_data["driver"] = None
             elif cmds.nodeType(src) in self.double_input:
-                _data["driver"] = None
-                _data["float_change"] = cmds.keyframe(src, query=True, floatChange=True)
-            _data["value_change"] = cmds.keyframe(src, query=True, valueChange=True)
-            _data["in_angle"] = cmds.keyframe(src, query=True, inAngle=True)
-            _data["out_angle"] = cmds.keyframe(src, query=True, outAngle=True)
-            _data["in_weight"] = cmds.keyframe(src, query=True, inWeight=True)
-            _data["out_weight"] = cmds.keyframe(src, query=True, outWeight=True)
-            _data["in_tangent_type"] = cmds.keyframe(
+                fcurve_data["driver"] = cmds.listConnections(
+                    src, source=True, destination=False, plugs=True
+                )[0]
+                fcurve_data["float_change"] = cmds.keyframe(
+                    src, query=True, floatChange=True
+                )
+            fcurve_data["value_change"] = cmds.keyframe(
+                src, query=True, valueChange=True
+            )
+            fcurve_data["in_angle"] = cmds.keyTangent(src, query=True, inAngle=True)
+            fcurve_data["out_angle"] = cmds.keyTangent(src, query=True, outAngle=True)
+            fcurve_data["in_weight"] = cmds.keyTangent(src, query=True, inWeight=True)
+            fcurve_data["out_weight"] = cmds.keyTangent(src, query=True, outWeight=True)
+            fcurve_data["in_tangent_type"] = cmds.keyTangent(
                 src, query=True, inTangentType=True
             )
-            _data["out_tangent_type"] = cmds.keyframe(
+            fcurve_data["out_tangent_type"] = cmds.keyTangent(
                 src, query=True, outTangentType=True
             )
-            _data["weighted_tangents"] = cmds.keyframe(
+            fcurve_data["weighted_tangents"] = cmds.keyTangent(
                 src, query=True, weightedTangents=True
             )
-            _data["lock"] = cmds.keyframe(src, query=True, lock=True)
+            fcurve_data["lock"] = cmds.keyTangent(src, query=True, lock=True)
+            data.append(fcurve_data)
         self._data = data
-        self._nodes = source
+        self.nodes = sources
 
-    def create_from_data(self) -> list:
+    def create_from_data(self):
+        if len(self._data) > 1:
+            blend_weighted = cmds.createNode("blendWeighted")
+            cmds.connectAttr(f"{blend_weighted}.output", self._data[0]["driven"])
+            for i, fcurve in enumerate(self._data):
+                fcurve["driven"] = f"{blend_weighted}.weight[{i}]"
+
         keyframes = []
-        for name, data in self._data.items():
-            keyframe = cmds.createNode(data["type"], name=name)
-            if data["type"] in self.time_input:
-                for time, value in zip(data["time"], data["value_change"]):
-                    cmds.setKeyframe(keyframe, edit=True, float=time, value=value)
-            elif data["type"] in self.double_input:
-                for driverValue, value in zip(
-                    data["float_change"], data["value_change"]
-                ):
-                    cmds.setDrivenKeyframe(
-                        keyframe,
-                        edit=True,
-                        driver=data["driver"],
-                        driven=self._data["driven"],
-                        driverValue=driverValue,
-                        value=value,
-                    )
+        for fcurve in self._data:
+            keyframe = cmds.createNode(fcurve["type"], name=fcurve["name"])
+            cmds.connectAttr(f"{keyframe}.output", fcurve["driven"])
+            if fcurve["type"] in self.time_input:
+                driver_values = fcurve["time"]
+            elif fcurve["type"] in self.double_input:
+                driver_values = fcurve["float_change"]
+                cmds.connectAttr(fcurve["driver"], f"{keyframe}.input")
+            for driver_value, value in zip(driver_values, fcurve["value_change"]):
+                cmds.setKeyframe(keyframe, edit=True, float=driver_value, value=value)
+
             cmds.keyTangent(keyframe, edit=True, weightedTangents=True)
-            for i in range(len(data["value_change"])):
+            for i in range(len(fcurve["value_change"])):
                 cmds.keyTangent(keyframe, edit=True, index=(i, i), lock=False)
                 cmds.keyTangent(
-                    keyframe, edit=True, index=(i, i), itt=data["in_tangent_type"][i]
+                    keyframe, edit=True, index=(i, i), itt=fcurve["in_tangent_type"][i]
                 )
                 cmds.keyTangent(
-                    keyframe, edit=True, index=(i, i), ott=data["out_tangent_type"][i]
+                    keyframe, edit=True, index=(i, i), ott=fcurve["out_tangent_type"][i]
                 )
                 cmds.keyTangent(
-                    keyframe, edit=True, index=(i, i), ia=data["in_angle"][i]
+                    keyframe, edit=True, index=(i, i), ia=fcurve["in_angle"][i]
                 )
                 cmds.keyTangent(
-                    keyframe, edit=True, index=(i, i), oa=data["out_angle"][i]
+                    keyframe, edit=True, index=(i, i), oa=fcurve["out_angle"][i]
                 )
                 cmds.keyTangent(
-                    keyframe, edit=True, index=(i, i), iw=data["in_weight"][i]
+                    keyframe, edit=True, index=(i, i), iw=fcurve["in_weight"][i]
                 )
                 cmds.keyTangent(
-                    keyframe, edit=True, index=(i, i), ow=data["out_weight"][i]
+                    keyframe, edit=True, index=(i, i), ow=fcurve["out_weight"][i]
                 )
-                cmds.keyTangent(keyframe, edit=True, index=(i, i), lock=data["lock"][i])
+                cmds.keyTangent(
+                    keyframe, edit=True, index=(i, i), lock=fcurve["lock"][i]
+                )
             cmds.keyTangent(
-                keyframe, edit=True, weightedTangents=data["weighted_tangents"][0]
+                keyframe, edit=True, weightedTangents=fcurve["weighted_tangents"][0]
             )
             keyframes.append(keyframe)
         return keyframes
