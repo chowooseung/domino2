@@ -8,7 +8,7 @@ from maya.app.general.mayaMixin import MayaQWidgetDockableMixin
 
 # domino
 from domino.component import (
-    __all__ as component_list,
+    COMPONENTLIST,
     build,
     serialize,
     save,
@@ -31,7 +31,7 @@ import re
 icon_dir = Path(__file__).parent.parent.parent / "icons"
 
 # comopnent list
-component_list.remove("assembly")
+COMPONENTLIST.remove("assembly")
 
 
 # region maya cb
@@ -387,7 +387,7 @@ QTreeView::branch:open:has-children  {{
         self.rig_tree_model.serialize()
         self.rig_tree_model.populate_model()
         self.component_list_widget.clear()
-        self.component_list_widget.addItems(component_list)
+        self.component_list_widget.addItems(COMPONENTLIST)
 
         if self.rig_tree_model.rig and cmds.objExists(
             self.rig_tree_model.rig.guide_root

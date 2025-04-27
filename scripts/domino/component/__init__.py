@@ -1268,6 +1268,8 @@ class Rig(dict):
 
                 matrices = component.mirror_guide_matrices()
                 duplicate_component["guide_matrix"]["value"] = matrices
+                duplicate_component["output_joint"] = []
+                duplicate_component.populate_output_joint()
                 if apply_to_output:
                     duplicate_component.rig()
                     duplicate_component.attach_guide()
