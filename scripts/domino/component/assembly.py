@@ -149,6 +149,25 @@ class Rig(component.Rig):
             ),
             color=17,
         )
+        cmds.addAttr(
+            origin_ctl,
+            longName="global_scale",
+            attributeType="float",
+            minValue=0,
+            keyable=True,
+            defaultValue=1,
+        )
+        cmds.setAttr(f"{origin_ctl}.sx", lock=False)
+        cmds.setAttr(f"{origin_ctl}.sy", lock=False)
+        cmds.setAttr(f"{origin_ctl}.sz", lock=False)
+        cmds.connectAttr(f"{origin_ctl}.global_scale", f"{origin_ctl}.sx")
+        cmds.connectAttr(f"{origin_ctl}.global_scale", f"{origin_ctl}.sy")
+        cmds.connectAttr(f"{origin_ctl}.global_scale", f"{origin_ctl}.sz")
+        cmds.setAttr(f"{origin_ctl}.sx", lock=True, keyable=False)
+        cmds.setAttr(f"{origin_ctl}.sy", lock=True, keyable=False)
+        cmds.setAttr(f"{origin_ctl}.sz", lock=True, keyable=False)
+        cmds.setAttr(f"{origin_ctl}.rx", lock=True, keyable=False)
+        cmds.setAttr(f"{origin_ctl}.rz", lock=True, keyable=False)
 
         sub_npo, sub_ctl = self["controller"][1].create(
             parent=origin_ctl,

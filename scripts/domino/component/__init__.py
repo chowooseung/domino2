@@ -425,6 +425,10 @@ class Rig(dict):
                 cmds.addAttr(ctl, longName="fkik_command_attr", dataType="message")
                 cmds.connectAttr(fkik_command_attr, f"{ctl}.fkik_command_attr")
             self.node = ctl
+
+            cmds.setAttr(f"{ctl}.sx", lock=True, keyable=False)
+            cmds.setAttr(f"{ctl}.sy", lock=True, keyable=False)
+            cmds.setAttr(f"{ctl}.sz", lock=True, keyable=False)
             return npo, ctl
 
         def __init__(self, description, parent_controllers, rig_instance):
@@ -484,28 +488,28 @@ class Rig(dict):
         def connect(self):
             next_index = len(
                 cmds.listConnections(
-                    self.instance.rig_root + ".output",
+                    f"{self.instance.rig_root}.output",
                     source=True,
                     destination=False,
                 )
                 or []
             )
             cmds.connectAttr(
-                self.name + ".message",
-                self.instance.rig_root + f".output[{next_index}]",
+                f"{self.name}.message",
+                f"{self.instance.rig_root}.output[{next_index}]",
             )
             if "offset_output_rotate_x" in self.instance:
                 cmds.connectAttr(
-                    self.instance.rig_root + ".offset_output_rotate_x",
-                    self.name + ".rx",
+                    f"{self.instance.rig_root}.offset_output_rotate_x",
+                    f"{self.name}.rx",
                 )
                 cmds.connectAttr(
-                    self.instance.rig_root + ".offset_output_rotate_y",
-                    self.name + ".ry",
+                    f"{self.instance.rig_root}.offset_output_rotate_y",
+                    f"{self.name}.ry",
                 )
                 cmds.connectAttr(
-                    self.instance.rig_root + ".offset_output_rotate_z",
-                    self.name + ".rz",
+                    f"{self.instance.rig_root}.offset_output_rotate_z",
+                    f"{self.name}.rz",
                 )
 
         def __init__(self, description, extension, rig_instance):
