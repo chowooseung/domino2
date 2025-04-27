@@ -1,9 +1,7 @@
 # maya
 from maya import cmds
-from maya.api import OpenMaya as om  # type: ignore
+from maya.api import OpenMaya as om
 
-# built-ins
-from typing import Union, Any
 
 ORIGINMATRIX = om.MMatrix()
 
@@ -20,34 +18,34 @@ class Integer(dict):
     attribute_type = "long"
 
     @property
-    def data(self) -> dict:
+    def data(self):
         return self[self._long_name]
 
     @data.setter
-    def data(self, d: dict) -> None:
+    def data(self, d):
         self[self._long_name] = d
 
     @property
-    def long_name(self) -> str:
+    def long_name(self):
         return self._long_name
 
     @long_name.setter
-    def long_name(self, n: str) -> None:
+    def long_name(self, n):
         self._long_name = n
 
     @property
-    def node(self) -> str:
+    def node(self):
         return self.data["node"]
 
     @node.setter
-    def node(self, n: str) -> None:
+    def node(self, n):
         self.data["node"] = n
 
     @property
-    def attribute(self) -> str:
-        return self.node + "." + self.long_name
+    def attribute(self):
+        return f"{self.node}.{self.long_name}"
 
-    def __init__(self, longName: str, **kwargs) -> None:
+    def __init__(self, longName, **kwargs):
         self.long_name = longName
         self.data = {
             "minValue": (
@@ -81,7 +79,7 @@ class Integer(dict):
                 {"value": kwargs["value"] if "value" in kwargs else self.default_value}
             )
 
-    def create(self) -> str:
+    def create(self):
         data = self.data
 
         if "node" not in data:
@@ -141,34 +139,34 @@ class Enum(dict):
     attribute_type = "enum"
 
     @property
-    def data(self) -> dict:
+    def data(self):
         return self[self._long_name]
 
     @data.setter
-    def data(self, d: dict) -> None:
+    def data(self, d):
         self[self._long_name] = d
 
     @property
-    def long_name(self) -> str:
+    def long_name(self):
         return self._long_name
 
     @long_name.setter
-    def long_name(self, n: str) -> None:
+    def long_name(self, n):
         self._long_name = n
 
     @property
-    def node(self) -> str:
+    def node(self):
         return self.data["node"]
 
     @node.setter
-    def node(self, n: str) -> None:
+    def node(self, n):
         self.data["node"] = n
 
     @property
-    def attribute(self) -> str:
-        return self.node + "." + self.long_name
+    def attribute(self):
+        return f"{self.node}.{self.long_name}"
 
-    def __init__(self, longName: str, enumName: list, **kwargs) -> None:
+    def __init__(self, longName, enumName, **kwargs):
         self.long_name = longName
         self.data = {
             "enumName": enumName,
@@ -186,7 +184,7 @@ class Enum(dict):
             "multi": False,
         }
 
-    def create(self) -> str:
+    def create(self):
         data = self.data
 
         if "node" not in data:
@@ -226,34 +224,34 @@ class Bool(dict):
     attribute_type = "bool"
 
     @property
-    def data(self) -> dict:
+    def data(self):
         return self[self._long_name]
 
     @data.setter
-    def data(self, d: dict) -> None:
+    def data(self, d):
         self[self._long_name] = d
 
     @property
-    def long_name(self) -> str:
+    def long_name(self):
         return self._long_name
 
     @long_name.setter
-    def long_name(self, n: str) -> None:
+    def long_name(self, n):
         self._long_name = n
 
     @property
-    def node(self) -> str:
+    def node(self):
         return self.data["node"]
 
     @node.setter
-    def node(self, n: str) -> None:
+    def node(self, n):
         self.data["node"] = n
 
     @property
-    def attribute(self) -> str:
-        return self.node + "." + self.long_name
+    def attribute(self):
+        return f"{self.node}.{self.long_name}"
 
-    def __init__(self, longName: str, **kwargs) -> None:
+    def __init__(self, longName, **kwargs):
         self.long_name = longName
         self.data = {
             "keyable": (
@@ -281,7 +279,7 @@ class Bool(dict):
                 {"value": kwargs["value"] if "value" in kwargs else self.default_value}
             )
 
-    def create(self) -> str:
+    def create(self):
         data = self.data
 
         if "node" not in data:
@@ -318,34 +316,34 @@ class String(dict):
     data_type = "string"
 
     @property
-    def data(self) -> dict:
+    def data(self):
         return self[self._long_name]
 
     @data.setter
-    def data(self, d: dict) -> None:
+    def data(self, d):
         self[self._long_name] = d
 
     @property
-    def long_name(self) -> str:
+    def long_name(self):
         return self._long_name
 
     @long_name.setter
-    def long_name(self, n: str) -> None:
+    def long_name(self, n):
         self._long_name = n
 
     @property
-    def node(self) -> str:
+    def node(self):
         return self.data["node"]
 
     @node.setter
-    def node(self, n: str) -> None:
+    def node(self, n):
         self.data["node"] = n
 
     @property
-    def attribute(self) -> str:
-        return self.node + "." + self.long_name
+    def attribute(self):
+        return f"{self.node}.{self.long_name}"
 
-    def __init__(self, longName: str, **kwargs) -> None:
+    def __init__(self, longName, **kwargs):
         self.long_name = longName
         self.data = {
             "lock": kwargs["lock"] if "lock" in kwargs else self.default_lock,
@@ -365,7 +363,7 @@ class String(dict):
                 {"value": kwargs["value"] if "value" in kwargs else self.default_value}
             )
 
-    def create(self) -> str:
+    def create(self):
         data = self.data
 
         if "node" not in data:
@@ -398,34 +396,34 @@ class Matrix(dict):
     default_multi = False
 
     @property
-    def data(self) -> dict[str, Any]:
+    def data(self):
         return self[self._long_name]
 
     @data.setter
-    def data(self, d: dict) -> None:
+    def data(self, d):
         self[self._long_name] = d
 
     @property
-    def long_name(self) -> str:
+    def long_name(self):
         return self._long_name
 
     @long_name.setter
-    def long_name(self, n: str) -> None:
+    def long_name(self, n):
         self._long_name = n
 
     @property
-    def node(self) -> str:
+    def node(self):
         return self.data["node"]
 
     @node.setter
-    def node(self, n: str) -> None:
+    def node(self, n):
         self.data["node"] = n
 
     @property
-    def attribute(self) -> str:
-        return self.node + "." + self.long_name
+    def attribute(self):
+        return f"{self.node}.{self.long_name}"
 
-    def __init__(self, longName: str, **kwargs) -> None:
+    def __init__(self, longName, **kwargs):
         self.long_name = longName
         self.data = {
             "multi": kwargs["multi"] if "multi" in kwargs else self.default_multi,
@@ -442,7 +440,7 @@ class Matrix(dict):
                 value = [value]
             self.data.update({"value": [float(v) for v in value]})
 
-    def create(self) -> str:
+    def create(self):
         data = self.data
 
         if "node" not in data:
@@ -473,41 +471,41 @@ class Message(dict):
     default_multi = False
 
     @property
-    def data(self) -> dict:
+    def data(self):
         return self[self._long_name]
 
     @data.setter
-    def data(self, d: dict) -> None:
+    def data(self, d):
         self[self._long_name] = d
 
     @property
-    def long_name(self) -> str:
+    def long_name(self):
         return self._long_name
 
     @long_name.setter
-    def long_name(self, n: str) -> None:
+    def long_name(self, n):
         self._long_name = n
 
     @property
-    def node(self) -> str:
+    def node(self):
         return self.data["node"]
 
     @node.setter
-    def node(self, n: str) -> None:
+    def node(self, n):
         self.data["node"] = n
 
     @property
-    def attribute(self) -> str:
-        return self.node + "." + self.long_name
+    def attribute(self):
+        return f"{self.node}.{self.long_name}"
 
-    def __init__(self, longName: str, **kwargs) -> None:
+    def __init__(self, longName, **kwargs):
         self.long_name = longName
         self.data = {
             "multi": kwargs.pop("multi", self.default_multi),
             "attributeType": self.attribute_type,
         }
 
-    def create(self) -> str:
+    def create(self):
         data = self.data
 
         if "node" not in data:

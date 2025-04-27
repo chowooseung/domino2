@@ -959,7 +959,12 @@ class Rig(dict):
             model_sets = cmds.sets(name="model_sets", empty=True)
             skel_sets = cmds.sets(name="skel_sets", empty=True)
             geo_sets = cmds.sets(name="geometry_sets", empty=True)
-            cmds.sets([model_sets, skel_sets, geo_sets], name="rig_sets")
+            controller_sets = cmds.sets(name="controller_sets", empty=True)
+            export_skin_sets = cmds.sets(name="exportSkin_sets", empty=True)
+            cmds.sets(
+                [model_sets, skel_sets, geo_sets, controller_sets, export_skin_sets],
+                name="rig_sets",
+            )
         if not cmds.objExists(SKEL):
             ins = Transform(parent=RIG, name="", side="", index="", extension=SKEL)
             ins.create()
@@ -1462,7 +1467,16 @@ def build(context, component, attach_guide=False):
         # TODO : custom curve data
         # TODO : custom polygon data
 
+        # setup controller sets
+        domino_controllers = [
+            x.split(".")[0] for x in cmds.ls("*.is_domino_controller")
+        ]
+        cmds.sets(domino_controllers, add="controller_sets")
+
         # setup output joint
+        domino_skel = [x.split(".")[0] for x in cmds.ls("*.is_domino_skel")]
+        cmds.sets(domino_skel, add="skel_sets")
+
         output_joints = []
         color_index_list = [12, 14, 17, 18, 19, 21]
         color_index = 0
