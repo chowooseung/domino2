@@ -24,8 +24,7 @@ import logging
 import sys
 
 
-__all__ = ["assembly", "control01", "fk01", "uicontainer01"]
-
+COMPONENTLIST = ["assembly", "control01", "fk01", "uicontainer01", "fkik2jnt01"]
 GUIDE = "guide"
 RIG = "rig"
 SKEL = "skel"

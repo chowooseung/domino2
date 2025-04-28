@@ -57,9 +57,7 @@ class UIGenerator:
 
     # region -    UIGenerator / common settings
     @classmethod
-    def add_common_component_settings(
-        cls, parent: QtWidgets.QWidget, root: str
-    ) -> None:
+    def add_common_component_settings(cls, parent, root):
 
         def edit_name():
             new_name = name_line_edit.text()
@@ -357,9 +355,7 @@ class UIGenerator:
 
     # region -    UIGenerator / ui
     @classmethod
-    def add_line_edit(
-        cls, parent: QtWidgets.QWidget, label: str, attribute: str
-    ) -> QtWidgets.QLineEdit:
+    def add_line_edit(cls, parent, label, attribute):
 
         def change_attribute() -> None:
             text = line_edit.text()
@@ -375,9 +371,7 @@ class UIGenerator:
         return line_edit
 
     @classmethod
-    def add_check_box(
-        cls, parent: QtWidgets.QWidget, label: str, attribute: str
-    ) -> QtWidgets.QCheckBox:
+    def add_check_box(cls, parent, label, attribute):
 
         def toggle_attribute():
             pass
@@ -396,15 +390,7 @@ class UIGenerator:
         return check_box
 
     @classmethod
-    def add_spin_box(
-        cls,
-        parent: QtWidgets.QWidget,
-        label: str,
-        attribute: str,
-        slider: bool,
-        min_value: int,
-        max_value: int,
-    ) -> QtWidgets.QSpinBox:
+    def add_spin_box(cls, parent, label, attribute, slider, min_value, max_value):
 
         def change_attribute():
             value = spin_box.value()
@@ -443,7 +429,30 @@ class UIGenerator:
         return spin_box
 
     @classmethod
-    def add_notes(cls, parent: QtWidgets.QWidget, attribute: str) -> None:
+    def add_combo_box(cls, parent, label, attribute):
+
+        def change_index():
+            value = combo_box.currentIndex()
+            cmds.setAttr(attribute, value)
+
+        combo_box = QtWidgets.QComboBox()
+
+        old_value = cmds.getAttr(attribute)
+        enum_list = cmds.addAttr(attribute, query=True, enumName=True).split(":")
+        combo_box.addItems(enum_list)
+        combo_box.setCurrentIndex(old_value)
+        combo_box.setSizePolicy(
+            QtWidgets.QSizePolicy.Policy.Expanding,
+            QtWidgets.QSizePolicy.Policy.Fixed,
+        )
+        combo_box.currentIndexChanged.connect(change_index)
+
+        parent_layout = parent.layout()
+        parent_layout.addRow(label, combo_box)
+        return combo_box
+
+    @classmethod
+    def add_notes(cls, parent, attribute):
         notes = cmds.getAttr(attribute)
         text_edit = QtWidgets.QTextEdit()
         text_edit.setMarkdown(notes)
@@ -2197,12 +2206,42 @@ class UIContainer01(DynamicWidget):
 # endregion
 
 
+# region Fkik01
+class Fkik2Jnt01(DynamicWidget):
+
+    def __init__(self, parent=None, root=None):
+        super(Fkik2Jnt01, self).__init__(parent=parent, root=root)
+        UIGenerator.add_common_component_settings(self.parent_widget, root)
+
+        UIGenerator.add_check_box(
+            self.parent_widget,
+            "Align last transform to guide",
+            f"{root}.align_last_transform_to_guide",
+        )
+        UIGenerator.add_combo_box(
+            self.parent_widget,
+            "Controller primary axis",
+            f"{root}.controller_primary_axis",
+        )
+        UIGenerator.add_combo_box(
+            self.parent_widget,
+            "Controller secondary axis",
+            f"{root}.controller_secondary_axis",
+        )
+
+        UIGenerator.add_notes(self.parent_widget, f"{root}.notes")
+
+
+# endregion
+
+
 # region Settings
 UITABLE = {
     "assembly": Assembly,
     "control01": Control01,
     "fk01": Fk01,
     "uicontainer01": UIContainer01,
+    "fkik2jnt01": Fkik2Jnt01,
 }
 
 

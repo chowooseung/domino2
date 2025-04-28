@@ -1,25 +1,342 @@
 # maya
 from maya import cmds
-from maya.api import OpenMaya as om  # type: ignore
+from maya.api import OpenMaya as om
 
 # built-ins
 from pathlib import Path
 
 # domino
 from domino.core.utils import logger
+from domino.core import FCurve
+
+
+# region IK
+def ik_sc():
+    pass
+
+
+def ik_2jnt(
+    parent,
+    name,
+    initial_matrix_plugs,
+    joints,
+    ik_pos_driver,
+    ik_driver,
+    pole_vector,
+    scale_attr,
+    slide_attr,
+    soft_ik_attr,
+    max_stretch_attr,
+    attach_pole_vector_attr,
+):
+    decom_m0 = cmds.createNode("decomposeMatrix")
+    decom_m1 = cmds.createNode("decomposeMatrix")
+    decom_m2 = cmds.createNode("decomposeMatrix")
+
+    init_translate1_plug = f"{decom_m1}.outputTranslate"
+    init_translate2_plug = f"{decom_m2}.outputTranslate"
+
+    cmds.connectAttr(initial_matrix_plugs[0], f"{decom_m0}.inputMatrix")
+    cmds.connectAttr(initial_matrix_plugs[1], f"{decom_m1}.inputMatrix")
+    cmds.connectAttr(initial_matrix_plugs[2], f"{decom_m2}.inputMatrix")
+
+    # set initialize joint orient
+    cmds.connectAttr(f"{decom_m0}.outputRotate", f"{joints[0]}.jointOrient")
+    cmds.connectAttr(f"{decom_m1}.outputRotate", f"{joints[1]}.jointOrient")
+    cmds.connectAttr(f"{decom_m2}.outputRotate", f"{joints[2]}.jointOrient")
+
+    # ik scale
+    md1 = cmds.createNode("multiplyDivide")
+    cmds.connectAttr(init_translate1_plug, f"{md1}.input1")
+    cmds.connectAttr(scale_attr, f"{md1}.input2X")
+    cmds.connectAttr(scale_attr, f"{md1}.input2Y")
+    cmds.connectAttr(scale_attr, f"{md1}.input2Z")
+
+    md2 = cmds.createNode("multiplyDivide")
+    cmds.connectAttr(init_translate2_plug, f"{md2}.input1")
+    cmds.connectAttr(scale_attr, f"{md2}.input2X")
+    cmds.connectAttr(scale_attr, f"{md2}.input2Y")
+    cmds.connectAttr(scale_attr, f"{md2}.input2Z")
+
+    length1 = cmds.createNode("length")
+    cmds.connectAttr(f"{md1}.output", f"{length1}.input")
+    scaled_init_distance1_plug = f"{length1}.output"
+
+    length2 = cmds.createNode("length")
+    cmds.connectAttr(f"{md2}.output", f"{length2}.input")
+    scaled_init_distance2_plug = f"{length2}.output"
+
+    pma = cmds.createNode("plusMinusAverage")
+    cmds.connectAttr(scaled_init_distance1_plug, f"{pma}.input1D[0]")
+    cmds.connectAttr(scaled_init_distance2_plug, f"{pma}.input1D[1]")
+    slided_total_distance_plug = f"{pma}.output1D"
+
+    # slide
+    normalize_md = cmds.createNode("multiplyDivide")
+    cmds.setAttr(f"{normalize_md}.operation", 2)
+    cmds.connectAttr(f"{md1}.output", f"{normalize_md}.input1")
+    cmds.connectAttr(scaled_init_distance1_plug, f"{normalize_md}.input2X")
+    cmds.connectAttr(scaled_init_distance1_plug, f"{normalize_md}.input2Y")
+    cmds.connectAttr(scaled_init_distance1_plug, f"{normalize_md}.input2Z")
+
+    slide_max_md = cmds.createNode("multiplyDivide")
+    cmds.connectAttr(f"{normalize_md}.output", f"{slide_max_md}.input1")
+    cmds.connectAttr(slided_total_distance_plug, f"{slide_max_md}.input2X")
+    cmds.connectAttr(slided_total_distance_plug, f"{slide_max_md}.input2Y")
+    cmds.connectAttr(slided_total_distance_plug, f"{slide_max_md}.input2Z")
+
+    minus_remap_value = cmds.createNode("remapValue")
+    cmds.connectAttr(slide_attr, f"{minus_remap_value}.inputValue")
+    cmds.setAttr(f"{minus_remap_value}.inputMax", -1)
+
+    plus_remap_value = cmds.createNode("remapValue")
+    cmds.connectAttr(slide_attr, f"{plus_remap_value}.inputValue")
+
+    compose_mid_m1 = cmds.createNode("composeMatrix")
+    cmds.connectAttr(f"{md1}.output", f"{compose_mid_m1}.inputTranslate")
+    compose_max_m1 = cmds.createNode("composeMatrix")
+    cmds.connectAttr(f"{slide_max_md}.output", f"{compose_max_m1}.inputTranslate")
+
+    bm1 = cmds.createNode("blendMatrix")
+    cmds.connectAttr(f"{compose_mid_m1}.outputMatrix", f"{bm1}.inputMatrix")
+    cmds.connectAttr(f"{compose_max_m1}.outputMatrix", f"{bm1}.target[1].targetMatrix")
+    cmds.connectAttr(f"{minus_remap_value}.outValue", f"{bm1}.target[0].weight")
+    cmds.connectAttr(f"{plus_remap_value}.outValue", f"{bm1}.target[1].weight")
+
+    slide_decom_m1 = cmds.createNode("decomposeMatrix")
+    cmds.connectAttr(f"{bm1}.outputMatrix", f"{slide_decom_m1}.inputMatrix")
+    slided_translate1_plug = f"{slide_decom_m1}.outputTranslate"
+
+    compose_mid_m2 = cmds.createNode("composeMatrix")
+    cmds.connectAttr(f"{md2}.output", f"{compose_mid_m2}.inputTranslate")
+    compose_max_m2 = cmds.createNode("composeMatrix")
+    cmds.connectAttr(f"{slide_max_md}.output", f"{compose_max_m2}.inputTranslate")
+
+    bm2 = cmds.createNode("blendMatrix")
+    cmds.connectAttr(f"{compose_mid_m2}.outputMatrix", f"{bm2}.inputMatrix")
+    cmds.connectAttr(f"{compose_max_m2}.outputMatrix", f"{bm2}.target[1].targetMatrix")
+    cmds.connectAttr(f"{plus_remap_value}.outValue", f"{bm2}.target[0].weight")
+    cmds.connectAttr(f"{minus_remap_value}.outValue", f"{bm2}.target[1].weight")
+
+    slide_decom_m2 = cmds.createNode("decomposeMatrix")
+    cmds.connectAttr(f"{bm2}.outputMatrix", f"{slide_decom_m2}.inputMatrix")
+    slided_translate2_plug = f"{slide_decom_m2}.outputTranslate"
+
+    length3 = cmds.createNode("length")
+    cmds.connectAttr(slided_translate1_plug, f"{length3}.input")
+    length4 = cmds.createNode("length")
+    cmds.connectAttr(slided_translate2_plug, f"{length4}.input")
+
+    slided_init_distance1_plug = f"{length3}.output"
+    slided_init_distance2_plug = f"{length4}.output"
+
+    pma1 = cmds.createNode("plusMinusAverage")
+    cmds.connectAttr(slided_init_distance1_plug, f"{pma1}.input1D[0]")
+    cmds.connectAttr(slided_init_distance2_plug, f"{pma1}.input1D[1]")
+    slided_total_distance_plug = f"{pma1}.output1D"
+
+    # softik
+    ikh = cmds.ikHandle(
+        startJoint=joints[0], endEffector=joints[2], solver="ikRPsolver", name=name
+    )[0]
+    cmds.parent(ikh, parent)
+    cmds.poleVectorConstraint(pole_vector, ikh)
+    cmds.setAttr(f"{ikh}.t", 0, 0, 0)
+    cmds.setAttr(f"{ikh}.r", 0, 0, 0)
+    cmds.setAttr(f"{ikh}.v", 0)
+
+    ik_driver_distance = cmds.createNode("distanceBetween")
+    cmds.connectAttr(
+        f"{ik_pos_driver}.worldMatrix[0]", f"{ik_driver_distance}.inMatrix1"
+    )
+    cmds.connectAttr(f"{ik_driver}.worldMatrix[0]", f"{ik_driver_distance}.inMatrix2")
+
+    cmds.connectAttr(f"{ik_driver_distance}.distance", f"{parent}.tx")
+    clamp0 = cmds.createNode("clamp")
+    cmds.connectAttr(f"{ik_driver_distance}.distance", f"{clamp0}.inputR")
+    cmds.connectAttr(slided_total_distance_plug, f"{clamp0}.maxR")
+
+    divide0 = cmds.createNode("divide")
+    cmds.connectAttr(f"{clamp0}.outputR", f"{divide0}.input1")
+    cmds.connectAttr(slided_total_distance_plug, f"{divide0}.input2")
+
+    multiply0 = cmds.createNode("multiply")
+    cmds.connectAttr(slided_total_distance_plug, f"{multiply0}.input[0]")
+
+    fcurve = FCurve()
+    fcurve.data = [
+        {
+            "name": f"{name}_softIK",
+            "driven": f"{multiply0}.input[1]",
+            "type": "animCurveUU",
+            "driver": f"{divide0}.output",
+            "float_change": [0.0, 0.8, 1.0],
+            "value_change": [0.0, 0.92, 1.0],
+            "in_angle": [0.0, 2.743324488263113, 0.0],
+            "out_angle": [2.743324488263113, 2.6984899950637997, 0.0],
+            "in_weight": [8.0, 6.4073430097384705, 1.0918245871698775],
+            "out_weight": [6.4073430097384705, 1.3704363225806342, 1.0918245871698775],
+            "in_tangent_type": ["linear", "linear", "fixed"],
+            "out_tangent_type": ["linear", "fixed", "fixed"],
+            "weighted_tangents": [True],
+            "lock": [True, False, True],
+        }
+    ]
+    fcurve.create_from_data()
+
+    subtract0 = cmds.createNode("subtract")
+    cmds.connectAttr(f"{multiply0}.output", f"{subtract0}.input1")
+    cmds.connectAttr(f"{clamp0}.outputR", f"{subtract0}.input2")
+
+    bta = cmds.createNode("blendTwoAttr")
+    cmds.setAttr(f"{bta}.input[0]", 0)
+    cmds.connectAttr(f"{subtract0}.output", f"{bta}.input[1]")
+    cmds.connectAttr(soft_ik_attr, f"{bta}.attributesBlender")
+
+    # max stretch
+    multiply1 = cmds.createNode("multiply")
+    cmds.connectAttr(max_stretch_attr, f"{multiply1}.input[0]")
+    cmds.connectAttr(slided_total_distance_plug, f"{multiply1}.input[1]")
+    max_stretch_distance_plug = f"{multiply1}.output"
+
+    clamp1 = cmds.createNode("clamp")
+    cmds.connectAttr(f"{ik_driver_distance}.distance", f"{clamp1}.inputR")
+    cmds.connectAttr(slided_total_distance_plug, f"{clamp1}.minR")
+    cmds.connectAttr(max_stretch_distance_plug, f"{clamp1}.maxR")
+
+    stretched_total_distance_plug = f"{clamp1}.outputR"
+
+    divide3 = cmds.createNode("divide")
+    cmds.connectAttr(stretched_total_distance_plug, f"{divide3}.input1")
+    cmds.connectAttr(slided_total_distance_plug, f"{divide3}.input2")
+
+    stretch_ratio = f"{divide3}.output"
+
+    md3 = cmds.createNode("multiplyDivide")
+    cmds.connectAttr(slided_translate1_plug, f"{md3}.input1")
+    cmds.connectAttr(stretch_ratio, f"{md3}.input2X")
+    cmds.connectAttr(stretch_ratio, f"{md3}.input2Y")
+    cmds.connectAttr(stretch_ratio, f"{md3}.input2Z")
+
+    md4 = cmds.createNode("multiplyDivide")
+    cmds.connectAttr(slided_translate2_plug, f"{md4}.input1")
+    cmds.connectAttr(stretch_ratio, f"{md4}.input2X")
+    cmds.connectAttr(stretch_ratio, f"{md4}.input2Y")
+    cmds.connectAttr(stretch_ratio, f"{md4}.input2Z")
+
+    # attach pole vector
+    ik_pos_decom_m = cmds.createNode("decomposeMatrix")
+    cmds.connectAttr(f"{ik_pos_driver}.worldMatrix[0]", f"{ik_pos_decom_m}.inputMatrix")
+    pole_vector_decom_m = cmds.createNode("decomposeMatrix")
+    cmds.connectAttr(
+        f"{pole_vector}.worldMatrix[0]", f"{pole_vector_decom_m}.inputMatrix"
+    )
+    ik_driver_decom_m = cmds.createNode("decomposeMatrix")
+    cmds.connectAttr(f"{ik_driver}.worldMatrix[0]", f"{ik_driver_decom_m}.inputMatrix")
+
+    pma2 = cmds.createNode("plusMinusAverage")
+    cmds.setAttr(f"{pma2}.operation", 2)
+    cmds.connectAttr(f"{pole_vector_decom_m}.outputTranslate", f"{pma2}.input3D[0]")
+    cmds.connectAttr(f"{ik_pos_decom_m}.outputTranslate", f"{pma2}.input3D[1]")
+
+    length5 = cmds.createNode("length")
+    cmds.connectAttr(f"{pma2}.output3D", f"{length5}.input")
+    attach_pv_distance1_plug = f"{length5}.output"
+
+    pma3 = cmds.createNode("plusMinusAverage")
+    cmds.setAttr(f"{pma3}.operation", 2)
+    cmds.connectAttr(f"{ik_driver_decom_m}.outputTranslate", f"{pma3}.input3D[0]")
+    cmds.connectAttr(f"{pole_vector_decom_m}.outputTranslate", f"{pma3}.input3D[1]")
+
+    length6 = cmds.createNode("length")
+    cmds.connectAttr(f"{pma3}.output3D", f"{length6}.input")
+    attach_pv_distance2_plug = f"{length6}.output"
+
+    length7 = cmds.createNode("length")
+    cmds.connectAttr(f"{md3}.output", f"{length7}.input")
+    stretched_distance1_plug = f"{length7}.output"
+
+    length8 = cmds.createNode("length")
+    cmds.connectAttr(f"{md4}.output", f"{length8}.input")
+    stretched_distance2_plug = f"{length8}.output"
+
+    divide4 = cmds.createNode("divide")
+    cmds.connectAttr(attach_pv_distance1_plug, f"{divide4}.input1")
+    cmds.connectAttr(stretched_distance1_plug, f"{divide4}.input2")
+
+    distance1_multiple = f"{divide4}.output"
+
+    divide5 = cmds.createNode("divide")
+    cmds.connectAttr(attach_pv_distance2_plug, f"{divide5}.input1")
+    cmds.connectAttr(stretched_distance2_plug, f"{divide5}.input2")
+
+    distance2_multiple = f"{divide5}.output"
+
+    md5 = cmds.createNode("multiplyDivide")
+    cmds.connectAttr(f"{md3}.output", f"{md5}.input1")
+    cmds.connectAttr(distance1_multiple, f"{md5}.input2X")
+    cmds.connectAttr(distance1_multiple, f"{md5}.input2Y")
+    cmds.connectAttr(distance1_multiple, f"{md5}.input2Z")
+
+    md6 = cmds.createNode("multiplyDivide")
+    cmds.connectAttr(f"{md4}.output", f"{md6}.input1")
+    cmds.connectAttr(distance2_multiple, f"{md6}.input2X")
+    cmds.connectAttr(distance2_multiple, f"{md6}.input2Y")
+    cmds.connectAttr(distance2_multiple, f"{md6}.input2Z")
+
+    pb1 = cmds.createNode("pairBlend")
+    cmds.connectAttr(attach_pole_vector_attr, f"{pb1}.weight")
+    cmds.connectAttr(f"{md3}.output", f"{pb1}.inTranslate1")
+    cmds.connectAttr(f"{md5}.output", f"{pb1}.inTranslate2")
+
+    pb2 = cmds.createNode("pairBlend")
+    cmds.connectAttr(attach_pole_vector_attr, f"{pb2}.weight")
+    cmds.connectAttr(f"{md4}.output", f"{pb2}.inTranslate1")
+    cmds.connectAttr(f"{md6}.output", f"{pb2}.inTranslate2")
+
+    cmds.connectAttr(f"{pb1}.outTranslate", f"{joints[1]}.t")
+    cmds.connectAttr(f"{pb2}.outTranslate", f"{joints[2]}.t")
+
+    # attach pv on -> soft ik off
+    bta1 = cmds.createNode("blendTwoAttr")
+    cmds.connectAttr(f"{bta}.output", f"{bta1}.input[0]")
+    cmds.setAttr(f"{bta1}.input[1]", 0)
+    cmds.connectAttr(attach_pole_vector_attr, f"{bta1}.attributesBlender")
+
+    cmds.connectAttr(f"{bta1}.output", f"{ikh}.tx")
+
+
+def ik_3jnt(
+    parent,
+    name,
+    joints,
+    pole_vector,
+    scale_attr,
+    slide_attr,
+    soft_ik_attr,
+    max_stretch_attr,
+):
+    pass
+
+
+def ik_spline():
+    pass
+
+
+# endregion
 
 
 # region ribbon
 def create_ribbon_surf(
-    parent: str,
-    name: str,
-    positions: list,
-    width_vector: tuple = (0, 0, 1),
-    width: float = 0.1,
-    degree: int = 3,
-    drivers: list = [],
-    invserse_plugs: list = [],
-) -> str:
+    parent,
+    name,
+    positions,
+    width_vector=(0, 0, 1),
+    width=0.1,
+    degree=3,
+    drivers=[],
+    invserse_plugs=[],
+):
     positions = [om.MVector(p) for p in positions]
     width_vector = om.MVector(width_vector)
     normalize_width_vector = width_vector.normalize()
@@ -57,31 +374,28 @@ def create_ribbon_surf(
         surf = cmds.parent(surf, parent)
     surf = cmds.rename(surf, name)
 
-    sc = cmds.skinCluster(
-        drivers + [surf],
-        name=name + "_sc0",
-        maximumInfluences=len(drivers),
-        normalizeWeights=True,
-        obeyMaxInfluences=False,
-        weightDistribution=1,
-        multi=True,
-    )[0]
-    for i, plug in enumerate(
-        cmds.listConnections(sc + ".matrix", source=True, destination=False)
-    ):
-        cmds.connectAttr(plug + ".matrix", sc + f".matrix[{i}]", force=True)
-    for i, plug in enumerate(invserse_plugs):
-        cmds.connectAttr(plug, sc + f".bindPreMatrix[{i}]")
+    if drivers:
+        sc = cmds.skinCluster(
+            drivers + [surf],
+            name=f"{name}_sc0",
+            maximumInfluences=len(drivers),
+            normalizeWeights=True,
+            obeyMaxInfluences=False,
+            weightDistribution=1,
+            multi=True,
+        )[0]
+        for i, plug in enumerate(
+            cmds.listConnections(f"{sc}.matrix", source=True, destination=False)
+        ):
+            cmds.connectAttr(f"{plug}.matrix", f"{sc}.matrix[{i}]", force=True)
+        for i, plug in enumerate(invserse_plugs):
+            cmds.connectAttr(plug, f"{sc}.bindPreMatrix[{i}]")
     return surf
 
 
 def create_tangent_output(
-    surf: str,
-    name: str,
-    output_u_values: list,
-    primary_axis: str = "x",
-    secondary_axis: str = "-z",
-) -> list:
+    surf, name, output_u_values, primary_axis="x", secondary_axis="-z"
+):
     axis = ["x", "y", "z", "-x", "-y", "-z"]
     primary_axis_index = axis.index(primary_axis)
     secondary_axis_index = axis.index(secondary_axis)
@@ -90,77 +404,91 @@ def create_tangent_output(
     parent = parent[0] if parent else None
 
     uv_pin = cmds.createNode("uvPin")
-    shape, orig = cmds.listRelatives(surf, shapes=True, noIntermediate=False)
-    cmds.connectAttr(orig + ".local", uv_pin + ".originalGeometry")
-    cmds.connectAttr(shape + ".local", uv_pin + ".deformedGeometry")
+    shape = cmds.listRelatives(surf, shapes=True)[0]
+    cmds.connectAttr(f"{shape}.local", f"{uv_pin}.deformedGeometry")
     outputs = []
     for i, u_value in enumerate(output_u_values):
-        cmds.setAttr(uv_pin + f".coordinate[{i}].coordinateU", u_value)
-        cmds.setAttr(uv_pin + f".coordinate[{i}].coordinateV", 0.5)
-        cmds.setAttr(uv_pin + ".tangentAxis", primary_axis_index)
-        cmds.setAttr(uv_pin + ".normalAxis", secondary_axis_index)
+        cmds.setAttr(f"{uv_pin}.coordinate[{i}].coordinateU", u_value)
+        cmds.setAttr(f"{uv_pin}.coordinate[{i}].coordinateV", 0.5)
+        cmds.setAttr(f"{uv_pin}.tangentAxis", primary_axis_index)
+        cmds.setAttr(f"{uv_pin}.normalAxis", secondary_axis_index)
 
         output = cmds.createNode(
-            "transform", parent=parent, name=name + f"_{i}_tangentOutput"
+            "transform", parent=parent, name=f"{name}_{i}_tangentOutput"
         )
-        cmds.connectAttr(uv_pin + f".outputMatrix[{i}]", output + ".offsetParentMatrix")
+        cmds.connectAttr(f"{uv_pin}.outputMatrix[{i}]", f"{output}.offsetParentMatrix")
         outputs.append(output)
     return outputs
 
 
 def create_aim_output(
-    surf: str,
-    name: str,
-    output_u_values: list,
-    up_vector: tuple = (0, 0, 1),
-    primary_vector: tuple = (1, 0, 0),
-    secondary_vector: tuple = (0, 0, 1),
-) -> list:
+    surf,
+    name,
+    output_u_values,
+    up_vector=(0, 0, 1),
+    primary_vector=(1, 0, 0),
+    secondary_vector=(0, 0, 1),
+):
     parent = cmds.listRelatives(surf, parent=True)
     parent = parent[0] if parent else None
 
     uv_pin = cmds.createNode("uvPin")
-    shape, orig = cmds.listRelatives(surf, shapes=True, noIntermediate=False)
-    cmds.connectAttr(orig + ".local", uv_pin + ".originalGeometry")
-    cmds.connectAttr(shape + ".local", uv_pin + ".deformedGeometry")
+    shape = cmds.listRelatives(surf, shapes=True)[0]
+    cmds.connectAttr(f"{shape}.local", f"{uv_pin}.deformedGeometry")
     pos_matrices = []
     up_matrices = []
     for i, u_value in enumerate(output_u_values):
-        cmds.setAttr(uv_pin + f".coordinate[{i}].coordinateU", u_value)
-        cmds.setAttr(uv_pin + f".coordinate[{i}].coordinateV", 0.5)
-        pos_matrices.append(uv_pin + f".outputMatrix[{i}]")
+        cmds.setAttr(f"{uv_pin}.coordinate[{i}].coordinateU", u_value)
+        cmds.setAttr(f"{uv_pin}.coordinate[{i}].coordinateV", 0.5)
+        pos_matrices.append(f"{uv_pin}.outputMatrix[{i}]")
 
         pos_m = om.MTransformationMatrix(
-            om.MMatrix(cmds.getAttr(uv_pin + f".outputMatrix[{i}]"))
+            om.MMatrix(cmds.getAttr(f"{uv_pin}.outputMatrix[{i}]"))
         )
         pos_vector = pos_m.translation(om.MSpace.kWorld)
         up_m = om.MTransformationMatrix()
         up_m.setTranslation(pos_vector + om.MVector(up_vector), om.MSpace.kWorld)
 
         mult_m = cmds.createNode("multMatrix")
-        cmds.setAttr(mult_m + ".matrixIn[0]", up_m.asMatrix(), type="matrix")
-        m = om.MMatrix(cmds.getAttr(uv_pin + f".outputMatrix[{i}]"))
-        cmds.setAttr(mult_m + ".matrixIn[1]", m.inverse(), type="matrix")
-        cmds.connectAttr(uv_pin + f".outputMatrix[{i}]", mult_m + ".matrixIn[2]")
-        up_matrices.append(mult_m + ".matrixSum")
+        cmds.setAttr(f"{mult_m}.matrixIn[0]", up_m.asMatrix(), type="matrix")
+        m = om.MMatrix(cmds.getAttr(f"{uv_pin}.outputMatrix[{i}]"))
+        cmds.setAttr(f"{mult_m}.matrixIn[1]", m.inverse(), type="matrix")
+        cmds.connectAttr(f"{uv_pin}.outputMatrix[{i}]", f"{mult_m}.matrixIn[2]")
+        up_matrices.append(f"{mult_m}.matrixSum")
 
     outputs = []
     for i in range(len(pos_matrices) - 1):
         aim_m = cmds.createNode("aimMatrix")
-        cmds.setAttr(aim_m + ".primaryInputAxis", *primary_vector)
-        cmds.setAttr(aim_m + ".secondaryInputAxis", *secondary_vector)
-        cmds.setAttr(aim_m + ".primaryMode", 1)
-        cmds.setAttr(aim_m + ".secondaryMode", 1)
+        cmds.setAttr(f"{aim_m}.primaryInputAxis", *primary_vector)
+        cmds.setAttr(f"{aim_m}.secondaryInputAxis", *secondary_vector)
+        cmds.setAttr(f"{aim_m}.primaryMode", 1)
+        cmds.setAttr(f"{aim_m}.secondaryMode", 1)
 
-        cmds.connectAttr(pos_matrices[i], aim_m + ".inputMatrix")
-        cmds.connectAttr(pos_matrices[i + 1], aim_m + ".primaryTargetMatrix")
-        cmds.connectAttr(up_matrices[i], aim_m + ".secondaryTargetMatrix")
+        cmds.connectAttr(pos_matrices[i], f"{aim_m}.inputMatrix")
+        cmds.connectAttr(pos_matrices[i + 1], f"{aim_m}.primaryTargetMatrix")
+        cmds.connectAttr(up_matrices[i], f"{aim_m}.secondaryTargetMatrix")
 
         output = cmds.createNode(
-            "transform", parent=parent, name=name + f"_{i}_aimOutput"
+            "transform", parent=parent, name=f"{name}_{i}_aimOutput"
         )
-        cmds.connectAttr(aim_m + f".outputMatrix", output + ".offsetParentMatrix")
+        cmds.connectAttr(f"{aim_m}.outputMatrix", f"{output}.offsetParentMatrix")
         outputs.append(output)
+
+    inverse_primary_vector = om.MVector(primary_vector) * -1
+    aim_m = cmds.createNode("aimMatrix")
+    cmds.setAttr(f"{aim_m}.primaryInputAxis", *inverse_primary_vector)
+    cmds.setAttr(f"{aim_m}.secondaryInputAxis", *secondary_vector)
+    cmds.setAttr(f"{aim_m}.primaryMode", 1)
+    cmds.setAttr(f"{aim_m}.secondaryMode", 1)
+
+    cmds.connectAttr(pos_matrices[i + 1], f"{aim_m}.inputMatrix")
+    cmds.connectAttr(pos_matrices[i], f"{aim_m}.primaryTargetMatrix")
+    cmds.connectAttr(up_matrices[i + 1], f"{aim_m}.secondaryTargetMatrix")
+    output = cmds.createNode(
+        "transform", parent=parent, name=f"{name}_{i + 1}_aimOutput"
+    )
+    cmds.connectAttr(f"{aim_m}.outputMatrix", f"{output}.offsetParentMatrix")
+    outputs.append(output)
     return outputs
 
 
@@ -176,9 +504,7 @@ def create_aim_output(
 
 
 # region blendshape transfer / import / export
-def transfer_blendshape(
-    source: str, destination: str, bs: str, smooth: int = 0
-) -> None:
+def transfer_blendshape(source, destination, bs, smooth=0):
     check = False
     if not cmds.objExists(source):
         cmds.warning(f"{source} 가 존재하지 않습니다.")
@@ -201,14 +527,14 @@ def transfer_blendshape(
     # wrap
     p_wrap = cmds.proximityWrap(interface_mesh)[0]
     cmds.proximityWrap(p_wrap, edit=True, addDrivers=source)
-    cmds.setAttr(p_wrap + ".wrapMode", 0)
-    cmds.setAttr(p_wrap + ".smoothInfluences", smooth)
+    cmds.setAttr(f"{p_wrap}.wrapMode", 0)
+    cmds.setAttr(f"{p_wrap}.smoothInfluences", smooth)
 
     # rename
     transferred_bs = cmds.blendShape(destination)[0]
     cmds.rename(bs, "TEMPBLENDSHAPE")
     transferred_bs = cmds.rename(transferred_bs, bs)
-    bs = cmds.rename("TEMPBLENDSHAPE", bs + "_transferred")
+    bs = cmds.rename("TEMPBLENDSHAPE", f"{bs}_transferred")
 
     # inbetween attributes
     attrs = [
@@ -228,7 +554,7 @@ def transfer_blendshape(
         previous_index = index
 
     # input disconnect
-    weight_attrs = cmds.listAttr(bs + ".weight", multi=True)
+    weight_attrs = cmds.listAttr(f"{bs}.weight", multi=True)
     destination_source = []
     for attr in weight_attrs:
         plugs = (
@@ -260,7 +586,7 @@ def transfer_blendshape(
         )
         cmds.aliasAttr(attr, f"{transferred_bs}.w[{i}]")
         connections = cmds.listConnections(
-            interface_mesh + "Shape.worldMesh[0]", connections=True, plugs=True
+            f"{interface_mesh}Shape.worldMesh[0]", connections=True, plugs=True
         )
         cmds.disconnectAttr(connections[0], connections[1])
         for inbetween_attr in inbetween_attrs[i]:
@@ -274,7 +600,7 @@ def transfer_blendshape(
                 target=(destination, i, interface_mesh, value),
             )
             connections = cmds.listConnections(
-                interface_mesh + "Shape.worldMesh[0]", connections=True, plugs=True
+                f"{interface_mesh}Shape.worldMesh[0]", connections=True, plugs=True
             )
             cmds.disconnectAttr(connections[0], connections[1])
         cmds.setAttr(f"{bs}.{attr}", 0)
@@ -289,11 +615,11 @@ def transfer_blendshape(
         driver = cmds.listConnections(f"{bs}.{attr}", source=True, destination=False)
         if driver:
             if cmds.nodeType(driver[0]) == "combinationShape":
-                method = cmds.getAttr(driver[0] + ".combinationMethod")
+                method = cmds.getAttr(f"{driver[0]}.combinationMethod")
                 combination_shape = cmds.createNode("combinationShape")
-                cmds.setAttr(combination_shape + ".combinationMethod", method)
+                cmds.setAttr(f"{combination_shape}.combinationMethod", method)
                 connections = cmds.listConnections(
-                    driver[0] + ".inputWeight",
+                    f"{driver[0]}.inputWeight",
                     source=True,
                     destination=False,
                     plugs=True,
@@ -307,7 +633,7 @@ def transfer_blendshape(
                         f"{combination_shape}.{destination_attr}",
                     )
                 connections = cmds.listConnections(
-                    driver[0] + ".outputWeight",
+                    f"{driver[0]}.outputWeight",
                     source=False,
                     destination=True,
                     plugs=True,
@@ -330,22 +656,22 @@ def transfer_blendshape(
     cmds.delete(interface_mesh)
 
 
-def export_blendshape(directory: str, bs: str) -> None:
+def export_blendshape(directory, bs):
     directory_path = Path(directory)
     mesh = cmds.deformer(bs, geometry=True, query=True)[0]
 
-    plug = cmds.listConnections(bs + ".originalGeometry[0]", plugs=True)[0]
+    plug = cmds.listConnections(f"{bs}.originalGeometry[0]", plugs=True)[0]
     shape = plug.split(".")[0]
     new_transform = cmds.duplicate(shape)
     shape = cmds.listRelatives(new_transform, shapes=True, noIntermediate=True)
     if shape:
         cmds.delete(shape)
     orig_shape = cmds.ls(new_transform, dagObjects=True, intermediateObjects=True)[0]
-    cmds.setAttr(orig_shape + ".intermediateObject", 0)
+    cmds.setAttr(f"{orig_shape}.intermediateObject", 0)
 
     new_transform = cmds.rename(new_transform, f"{bs}_shp")
     new_shape = cmds.listRelatives(new_transform, shapes=True)[0]
-    new_shape = cmds.rename(new_shape, new_transform + "Shape")
+    new_shape = cmds.rename(new_shape, f"{new_transform}Shape")
 
     original_obj_path = directory_path / f"{mesh}__{bs}.obj"
     cmds.select(new_transform)
@@ -364,7 +690,7 @@ def export_blendshape(directory: str, bs: str) -> None:
     logger.indo(f"Exported blendShape(.shp) to `{shp_path}`")
 
 
-def import_blendshape(directory: str) -> None:
+def import_blendshape(directory):
     directory_path = Path(directory)
 
     obj_files = directory_path.glob("*__*.obj")
@@ -387,12 +713,12 @@ def import_blendshape(directory: str) -> None:
 FILETYPE = {"xml": "XML", "json": "JSON"}
 
 
-def export_weights(directory: str, geometries: list, file_type: str = "xml") -> None:
-    for geo in geometries:
-        deformers = cmds.findDeformers(geo) or []
+def export_weights(directory, objs, file_type="xml"):
+    for obj in objs:
+        deformers = cmds.findDeformers(obj) or []
         for deformer in deformers:
             cmds.deformerWeights(
-                f"{geo}__{deformer}.{file_type}",
+                f"{obj}__{deformer}.{file_type}",
                 export=True,
                 deformer=deformer,
                 format=FILETYPE[file_type],
@@ -400,7 +726,7 @@ def export_weights(directory: str, geometries: list, file_type: str = "xml") -> 
             )
 
 
-def import_weights(directory: str) -> None:
+def import_weights(directory):
     path = Path(directory)
 
     for f in path.iterdir():
@@ -428,11 +754,11 @@ def import_weights(directory: str) -> None:
 
 
 # region deformerChain
-def get_deformer_chain(geometry: str) -> list:
+def get_deformer_chain(geometry):
     return cmds.deformableShape(geometry, chain=True) or []
 
 
-def set_deformer_chain(geometry: str, chain: list) -> None:
+def set_deformer_chain(geometry, chain):
     new_chain = get_deformer_chain(geometry)
 
     check = False
