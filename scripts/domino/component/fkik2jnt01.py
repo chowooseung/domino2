@@ -81,6 +81,7 @@ DATA = [
         longName="controller_secondary_axis", enumName=["x", "y", "z"], value=1
     ),
     attribute.Bool(longName="align_last_transform_to_guide", defaultValue=0),
+    attribute.Bool(longName="unlock_last_scale", defaultValue=0),
 ]
 
 description = """## fkik01
@@ -161,7 +162,6 @@ class Rig(component.Rig):
             side=side,
             index=index,
             description="fk0Length",
-            extension="grp",
             m=ORIGINMATRIX,
         )
         fk0_length_grp = ins.create()
@@ -201,7 +201,6 @@ class Rig(component.Rig):
             side=side,
             index=index,
             description="fk1Length",
-            extension="grp",
             m=ORIGINMATRIX,
         )
         fk1_length_grp = ins.create()
@@ -373,6 +372,7 @@ class Rig(component.Rig):
         )
         cmds.setAttr(f"{ik_local_ctl}.mirror_type", 1)
         cmds.orientConstraint(ik_local_ctl, ik2_jnt)
+        cmds.scaleConstraint(ik_local_ctl, ik2_jnt)
 
         host_npo, host_ctl = self["controller"][7].create(
             parent=self.rig_root,
@@ -453,41 +453,118 @@ class Rig(component.Rig):
             max_stretch_attr=f"{ik_ctl}.max_stretch",
         )
 
-        blend_m0 = cmds.createNode("blendMatrix")
-        cmds.connectAttr(f"{host_ctl}.fkik", f"{blend_m0}.target[0].weight")
+        ins = Joint(
+            parent=self.rig_root,
+            name=name,
+            side=side,
+            index=index,
+            description="blend0",
+            extension=Name.joint_extension,
+            m=cmds.xform(fk0_ctl, query=True, matrix=True, worldSpace=True),
+            use_joint_convention=False,
+        )
+        blend0_jnt = ins.create()
+        plug = cmds.listConnections(
+            f"{ik0_jnt}.jointOrient", source=True, destination=False, plugs=True
+        )[0]
+        cmds.connectAttr(plug, f"{blend0_jnt}.jointOrient")
+
+        ins = Joint(
+            parent=blend0_jnt,
+            name=name,
+            side=side,
+            index=index,
+            description="blend1",
+            extension=Name.joint_extension,
+            m=cmds.xform(fk1_ctl, query=True, matrix=True, worldSpace=True),
+            use_joint_convention=False,
+        )
+        blend1_jnt = ins.create()
+        plug = cmds.listConnections(
+            f"{ik1_jnt}.jointOrient", source=True, destination=False, plugs=True
+        )[0]
+        cmds.connectAttr(plug, f"{blend1_jnt}.jointOrient")
+
+        ins = Joint(
+            parent=blend1_jnt,
+            name=name,
+            side=side,
+            index=index,
+            description="blend2",
+            extension=Name.joint_extension,
+            m=cmds.xform(fk2_ctl, query=True, matrix=True, worldSpace=True),
+            use_joint_convention=False,
+        )
+        blend2_jnt = ins.create()
+        plug = cmds.listConnections(
+            f"{ik2_jnt}.jointOrient", source=True, destination=False, plugs=True
+        )[0]
+        cmds.connectAttr(plug, f"{blend2_jnt}.jointOrient")
+
+        pair_b = cmds.createNode("pairBlend")
+        cmds.setAttr(f"{pair_b}.rotInterpolation", 1)
         mult_m = cmds.createNode("multMatrix")
         cmds.connectAttr(f"{fk0_ctl}.worldMatrix[0]", f"{mult_m}.matrixIn[0]")
         cmds.connectAttr(
             f"{self.rig_root}.worldInverseMatrix[0]", f"{mult_m}.matrixIn[1]"
         )
-        cmds.connectAttr(f"{mult_m}.matrixSum", f"{blend_m0}.inputMatrix")
-        cmds.connectAttr(
-            f"{ik0_jnt}.worldMatrix[0]", f"{blend_m0}.target[0].targetMatrix"
-        )
+        decom_m = cmds.createNode("decomposeMatrix")
+        cmds.connectAttr(f"{mult_m}.matrixSum", f"{decom_m}.inputMatrix")
+        cmds.connectAttr(f"{decom_m}.outputTranslate", f"{pair_b}.inTranslate1")
+        cmds.connectAttr(f"{fk0_ctl}.r", f"{pair_b}.inRotate1")
+        cmds.connectAttr(f"{ik0_jnt}.t", f"{pair_b}.inTranslate2")
+        cmds.connectAttr(f"{ik0_jnt}.r", f"{pair_b}.inRotate2")
+        cmds.connectAttr(f"{host_ctl}.fkik", f"{pair_b}.weight")
+        cmds.connectAttr(f"{pair_b}.outTranslate", f"{blend0_jnt}.t")
+        cmds.connectAttr(f"{pair_b}.outRotate", f"{blend0_jnt}.r")
+        blend0_jnt_input_matrix = f"{blend0_jnt}.dagLocalMatrix"
 
-        blend_m1 = cmds.createNode("blendMatrix")
-        cmds.connectAttr(f"{host_ctl}.fkik", f"{blend_m1}.target[0].weight")
+        pair_b = cmds.createNode("pairBlend")
+        cmds.setAttr(f"{pair_b}.rotInterpolation", 1)
         mult_m = cmds.createNode("multMatrix")
         cmds.connectAttr(f"{fk1_ctl}.worldMatrix[0]", f"{mult_m}.matrixIn[0]")
+        cmds.connectAttr(f"{fk0_ctl}.worldInverseMatrix[0]", f"{mult_m}.matrixIn[1]")
+        decom_m = cmds.createNode("decomposeMatrix")
+        cmds.connectAttr(f"{mult_m}.matrixSum", f"{decom_m}.inputMatrix")
+        cmds.connectAttr(f"{decom_m}.outputTranslate", f"{pair_b}.inTranslate1")
+        cmds.connectAttr(f"{fk1_ctl}.r", f"{pair_b}.inRotate1")
+        cmds.connectAttr(f"{ik1_jnt}.t", f"{pair_b}.inTranslate2")
+        cmds.connectAttr(f"{ik1_jnt}.r", f"{pair_b}.inRotate2")
+        cmds.connectAttr(f"{host_ctl}.fkik", f"{pair_b}.weight")
+        cmds.connectAttr(f"{pair_b}.outTranslate", f"{blend1_jnt}.t")
+        cmds.connectAttr(f"{pair_b}.outRotate", f"{blend1_jnt}.r")
+        mult_m = cmds.createNode("multMatrix")
+        cmds.connectAttr(f"{blend1_jnt}.worldMatrix[0]", f"{mult_m}.matrixIn[0]")
         cmds.connectAttr(
             f"{self.rig_root}.worldInverseMatrix[0]", f"{mult_m}.matrixIn[1]"
         )
-        cmds.connectAttr(f"{mult_m}.matrixSum", f"{blend_m1}.inputMatrix")
-        cmds.connectAttr(
-            f"{ik1_jnt}.worldMatrix[0]", f"{blend_m1}.target[0].targetMatrix"
-        )
+        blend1_jnt_input_matrix = f"{mult_m}.matrixSum"
 
-        blend_m2 = cmds.createNode("blendMatrix")
-        cmds.connectAttr(f"{host_ctl}.fkik", f"{blend_m2}.target[0].weight")
+        pair_b = cmds.createNode("pairBlend")
+        cmds.setAttr(f"{pair_b}.rotInterpolation", 1)
         mult_m = cmds.createNode("multMatrix")
         cmds.connectAttr(f"{fk2_ctl}.worldMatrix[0]", f"{mult_m}.matrixIn[0]")
+        cmds.connectAttr(f"{fk1_ctl}.worldInverseMatrix[0]", f"{mult_m}.matrixIn[1]")
+        decom_m = cmds.createNode("decomposeMatrix")
+        cmds.connectAttr(f"{mult_m}.matrixSum", f"{decom_m}.inputMatrix")
+        cmds.connectAttr(f"{decom_m}.outputTranslate", f"{pair_b}.inTranslate1")
+        cmds.connectAttr(f"{fk2_ctl}.r", f"{pair_b}.inRotate1")
+        cmds.connectAttr(f"{ik2_jnt}.t", f"{pair_b}.inTranslate2")
+        cmds.connectAttr(f"{ik2_jnt}.r", f"{pair_b}.inRotate2")
+        cmds.connectAttr(f"{host_ctl}.fkik", f"{pair_b}.weight")
+        cmds.connectAttr(f"{pair_b}.outTranslate", f"{blend2_jnt}.t")
+        cmds.connectAttr(f"{pair_b}.outRotate", f"{blend2_jnt}.r")
+        blend_color = cmds.createNode("blendColors")
+        cmds.connectAttr(f"{ik2_jnt}.s", f"{blend_color}.color1")
+        cmds.connectAttr(f"{fk2_ctl}.s", f"{blend_color}.color2")
+        cmds.connectAttr(f"{host_ctl}.fkik", f"{blend_color}.blender")
+        cmds.connectAttr(f"{blend_color}.output", f"{blend2_jnt}.s")
+        mult_m = cmds.createNode("multMatrix")
+        cmds.connectAttr(f"{blend2_jnt}.worldMatrix[0]", f"{mult_m}.matrixIn[0]")
         cmds.connectAttr(
             f"{self.rig_root}.worldInverseMatrix[0]", f"{mult_m}.matrixIn[1]"
         )
-        cmds.connectAttr(f"{mult_m}.matrixSum", f"{blend_m2}.inputMatrix")
-        cmds.connectAttr(
-            f"{ik2_jnt}.worldMatrix[0]", f"{blend_m2}.target[0].targetMatrix"
-        )
+        blend2_jnt_input_matrix = f"{mult_m}.matrixSum"
 
         # output
         ins = Transform(
@@ -501,7 +578,7 @@ class Rig(component.Rig):
         )
         fkik0_loc = ins.create()
         self["output"][0].connect()
-        cmds.connectAttr(f"{blend_m0}.outputMatrix", f"{fkik0_loc}.offsetParentMatrix")
+        cmds.connectAttr(blend0_jnt_input_matrix, f"{fkik0_loc}.offsetParentMatrix")
         cmds.setAttr(f"{fkik0_loc}.t", 0, 0, 0)
 
         ins = Transform(
@@ -515,7 +592,7 @@ class Rig(component.Rig):
         )
         fkik1_loc = ins.create()
         self["output"][1].connect()
-        cmds.connectAttr(f"{blend_m1}.outputMatrix", f"{fkik1_loc}.offsetParentMatrix")
+        cmds.connectAttr(blend1_jnt_input_matrix, f"{fkik1_loc}.offsetParentMatrix")
         cmds.setAttr(f"{fkik1_loc}.t", 0, 0, 0)
 
         ins = Transform(
@@ -529,7 +606,7 @@ class Rig(component.Rig):
         )
         fkik2_loc = ins.create()
         self["output"][2].connect()
-        cmds.connectAttr(f"{blend_m2}.outputMatrix", f"{fkik2_loc}.offsetParentMatrix")
+        cmds.connectAttr(blend2_jnt_input_matrix, f"{fkik2_loc}.offsetParentMatrix")
         cmds.setAttr(f"{fkik2_loc}.t", 0, 0, 0)
 
         # output joint

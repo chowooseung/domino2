@@ -93,25 +93,8 @@ def popup_menu(parent_menu, *args, **kwargs):
 # endregion
 
 # region GUIDE Commands
-settings_command = """from maya import cmds, mel
-
-selected = cmds.ls(selection=True)
-if cmds.objExists(selected[0] + ".is_domino_guide_root"):
-    cmds.AttributeEditor()
-    mel.eval('setLocalView "Rigging" "" 1;')
-if cmds.objExists(selected[0] + ".is_domino_guide"):
-    cmds.select(
-        cmds.listConnections(
-            selected[0] + ".worldMatrix[0]",
-            source=False,
-            destination=True,
-            type="transform",
-        )
-    )
-    cmds.AttributeEditor()
-    mel.eval('setLocalView "Rigging" "" 1;')"""
-
 matchTR_command = """from maya import cmds
+
 selected = cmds.ls(selection=True)
 if len(selected) > 1:
     cmds.matchTransform(selected[:-1], selected[-1], position=True, rotation=True)"""
@@ -178,14 +161,6 @@ for root in set(roots):
 # region GUIDE Menu
 def guide_menu(parent_menu):
     cmds.menu(parent_menu, edit=True, deleteAllItems=True)
-
-    cmds.menuItem(
-        parent=parent_menu,
-        label="Settings",
-        radialPosition="N",
-        command=settings_command,
-        image="advancedSettings.png",
-    )
 
     cmds.menuItem(
         parent=parent_menu,
