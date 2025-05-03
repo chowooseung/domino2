@@ -5,11 +5,11 @@
             "libraryVersion": "1.0.0",
             "jsonLibs": [
                 {
-                    "path": "components",
+                    "path": "bifrost/components",
                     "files": []
                 },
                 {
-                    "path": "compounds",
+                    "path": "bifrost/compounds",
                     "files": []
                 }
             ]
