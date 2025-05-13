@@ -1,6 +1,6 @@
 # domino
 from domino import component
-from domino.core import attribute, Name, Transform
+from domino.core import attribute, Name, Transform, Joint
 from domino.core.utils import build_log
 
 # maya
@@ -132,7 +132,24 @@ class Rig(component.Rig):
             cmds.connectAttr(f"{condition}.outColorR", f"{loc}.sz")
 
             # output
+            ins = Joint(
+                self.rig_root,
+                name=name,
+                side=side,
+                index=index,
+                description=i,
+                extension="output",
+                m=ORIGINMATRIX,
+            )
+            output = ins.create()
             self["output"][i].connect()
+            mult_m = cmds.createNode("multMatrix")
+            cmds.connectAttr(f"{loc}.worldMatrix[0]", f"{mult_m}.matrixIn[0]")
+            cmds.connectAttr(
+                f"{self.rig_root}.worldInverseMatrix[0]", f"{mult_m}.matrixIn[1]"
+            )
+            cmds.connectAttr(f"{mult_m}.matrixSum", f"{output}.offsetParentMatrix")
+            cmds.hide(output)
 
             # output joint
             if self["create_output_joint"]["value"]:

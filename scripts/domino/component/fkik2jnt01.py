@@ -383,6 +383,13 @@ class Rig(component.Rig):
             ),
             color=12,
         )
+        cmds.setAttr(f"{host_ctl}.tx", lock=True, keyable=False)
+        cmds.setAttr(f"{host_ctl}.ty", lock=True, keyable=False)
+        cmds.setAttr(f"{host_ctl}.tz", lock=True, keyable=False)
+        cmds.setAttr(f"{host_ctl}.rx", lock=True, keyable=False)
+        cmds.setAttr(f"{host_ctl}.ry", lock=True, keyable=False)
+        cmds.setAttr(f"{host_ctl}.rz", lock=True, keyable=False)
+        cmds.setAttr(f"{host_ctl}.rotateOrder", channelBox=False)
         cmds.setAttr(f"{host_ctl}.mirror_type", 1)
         cmds.addAttr(
             host_ctl,
@@ -567,7 +574,7 @@ class Rig(component.Rig):
         blend2_jnt_input_matrix = f"{mult_m}.matrixSum"
 
         # output
-        ins = Transform(
+        ins = Joint(
             parent=self.rig_root,
             name=name,
             side=side,
@@ -581,7 +588,7 @@ class Rig(component.Rig):
         cmds.connectAttr(blend0_jnt_input_matrix, f"{fkik0_loc}.offsetParentMatrix")
         cmds.setAttr(f"{fkik0_loc}.t", 0, 0, 0)
 
-        ins = Transform(
+        ins = Joint(
             parent=self.rig_root,
             name=name,
             side=side,
@@ -595,7 +602,7 @@ class Rig(component.Rig):
         cmds.connectAttr(blend1_jnt_input_matrix, f"{fkik1_loc}.offsetParentMatrix")
         cmds.setAttr(f"{fkik1_loc}.t", 0, 0, 0)
 
-        ins = Transform(
+        ins = Joint(
             parent=self.rig_root,
             name=name,
             side=side,
@@ -605,6 +612,7 @@ class Rig(component.Rig):
             m=cmds.xform(fk2_ctl, query=True, matrix=True, worldSpace=True),
         )
         fkik2_loc = ins.create()
+        cmds.hide(fkik0_loc, fkik1_loc, fkik2_loc)
         self["output"][2].connect()
         cmds.connectAttr(blend2_jnt_input_matrix, f"{fkik2_loc}.offsetParentMatrix")
         cmds.setAttr(f"{fkik2_loc}.t", 0, 0, 0)
