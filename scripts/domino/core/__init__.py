@@ -211,9 +211,9 @@ class Transform:
                 "transform", parent=self._parent, name=self._node
             )
             cmds.addAttr(self._node, longName="description", dataType="string")
-            cmds.setAttr(self._node + ".description", self._description, type="string")
+            cmds.setAttr(f"{self._node}.description", self._description, type="string")
             cmds.addAttr(self._node, longName="extension", dataType="string")
-            cmds.setAttr(self._node + ".extension", self._extension, type="string")
+            cmds.setAttr(f"{self._node}.extension", self._extension, type="string")
         self.set_matrix(self._m)
         return self._node
 
@@ -389,11 +389,11 @@ class Joint(Transform):
         if not cmds.objExists(self._node):
             self._node = cmds.createNode("joint", parent=self._parent, name=self._node)
             cmds.addAttr(self._node, longName="description", dataType="string")
-            cmds.setAttr(self._node + ".description", self._description, type="string")
+            cmds.setAttr(f"{self._node}.description", self._description, type="string")
             cmds.addAttr(self._node, longName="extension", dataType="string")
-            cmds.setAttr(self._node + ".extension", self._extension, type="string")
+            cmds.setAttr(f"{self._node}.extension", self._extension, type="string")
         self.set_initialize_matrix(self._m)
-        cmds.setAttr(self._node + ".segmentScaleCompensate", 0)
+        cmds.setAttr(f"{self._node}.segmentScaleCompensate", 0)
         self.set_label(*self.label_args)
         return self._node
 
@@ -422,9 +422,9 @@ class Joint(Transform):
             case 2:
             >>> joint.setLabel(0, "arm_C0_0_jnt")
         """
-        cmds.setAttr(self._node + ".type", 18)
-        cmds.setAttr(self._node + ".side", side)
-        cmds.setAttr(self._node + ".otherType", label, type="string")
+        cmds.setAttr(f"{self._node}.type", 18)
+        cmds.setAttr(f"{self._node}.side", side)
+        cmds.setAttr(f"{self._node}.otherType", label, type="string")
 
 
 # endregion
@@ -550,7 +550,7 @@ class Controller(Transform):
     @property
     def root(self):
         return cmds.listConnections(
-            self._node + ".message", source=False, destination=True, type="transform"
+            f"{self._node}.message", source=False, destination=True, type="transform"
         )[0]
 
     @property
@@ -561,7 +561,7 @@ class Controller(Transform):
             str: npo node
         """
         plugs = cmds.listConnections(
-            self._node + ".npo", source=True, destination=False
+            f"{self._node}.npo", source=True, destination=False
         )
         if plugs:
             self._npo = plugs[0]
@@ -595,7 +595,7 @@ class Controller(Transform):
                 m=ORIGINMATRIX,
             )
             self._node = ins.create()
-            cmds.setAttr(self._node + ".v", keyable=False)
+            cmds.setAttr(f"{self._node}.v", keyable=False)
             self.replace_shape(shape=self._shape, color=self._color)
             cmds.addAttr(
                 self._node,
@@ -609,7 +609,7 @@ class Controller(Transform):
                 dataType="string",
             )
             cmds.setAttr(
-                self._node + ".mirror_controller_name",
+                f"{self._node}.mirror_controller_name",
                 self._mirror_controller,
                 type="string",
             )
@@ -622,27 +622,28 @@ class Controller(Transform):
                 defaultValue=1,
             )
             cmds.addAttr(self._node, longName="npo", attributeType="message")
+            cmds.setAttr(f"{self._node}.rotateOrder", channelBox=True)
 
         self.set_matrix(self._m)
 
         if not cmds.listConnections(
-            self._node + ".npo", source=True, destination=False
+            f"{self._node}.npo", source=True, destination=False
         ):
-            cmds.connectAttr(self._npo + ".message", self._node + ".npo")
+            cmds.connectAttr(f"{self._npo}.message", f"{self._node}.npo")
 
-        if not cmds.objExists(self._node + ".parent_controllers"):
+        if not cmds.objExists(f"{self._node}.parent_controllers"):
             cmds.addAttr(
                 self._node,
                 longName="parent_controllers",
                 attributeType="message",
                 multi=True,
             )
-        if not cmds.objExists(self._node + ".child_controllers"):
+        if not cmds.objExists(f"{self._node}.child_controllers"):
             cmds.addAttr(
                 self._node, longName="child_controllers", attributeType="message"
             )
         cmds.controller(self._node)
-        cmds.setAttr(self._node + "_tag.isHistoricallyInteresting", 0)
+        cmds.setAttr(f"{self._node}_tag.isHistoricallyInteresting", 0)
         [self.add_parent_controller(c) for c in self._parent_controllers]
         return self._npo, self._node
 
@@ -681,11 +682,11 @@ class Controller(Transform):
             parentController (str): domino controller node
         """
         assert cmds.objExists(
-            parent_controller + ".is_domino_controller"
+            f"{parent_controller}.is_domino_controller"
         ), f"{parent_controller} 는 domino controller 가 아닙니다."
         plugs = (
             cmds.listConnections(
-                self._node + ".parent_controllers", source=True, destination=False
+                f"{self._node}.parent_controllers", source=True, destination=False
             )
             or []
         )
@@ -693,8 +694,8 @@ class Controller(Transform):
         if parent_controller not in plugs:
             next_number = len(plugs)
             cmds.connectAttr(
-                parent_controller + ".child_controllers",
-                self._node + f".parent_controllers[{next_number}]",
+                f"{parent_controller}.child_controllers",
+                f"{self._node}.parent_controllers[{next_number}]",
             )
 
     def set_matrix(self, m):
@@ -723,7 +724,7 @@ class Controller(Transform):
         def get_child(_node):
             children_node = (
                 cmds.listConnections(
-                    _node + ".child_controllers", source=False, destination=True
+                    f"{_node}.child_controllers", source=False, destination=True
                 )
                 or []
             )
@@ -737,14 +738,14 @@ class Controller(Transform):
         controller_root = [
             x
             for x in cmds.listConnections(
-                node + ".message", source=False, destination=True
+                f"{node}.message", source=False, destination=True
             )
-            if cmds.objExists(x + ".is_domino_rig_root")
+            if cmds.objExists(f"{x}.is_domino_rig_root")
         ][0]
         stack = []
         stack.extend(
             cmds.listConnections(
-                controller_root + ".children", source=False, destination=True
+                f"{controller_root}.children", source=False, destination=True
             )
             or []
         )
@@ -753,13 +754,13 @@ class Controller(Transform):
 
             controllers.extend(
                 cmds.listConnections(
-                    root + ".controller", source=True, destination=False
+                    f"{root}.controller", source=True, destination=False
                 )
                 or []
             )
 
             stack.extend(
-                cmds.listConnections(root + ".children", source=False, destination=True)
+                cmds.listConnections(f"{root}.children", source=False, destination=True)
                 or []
             )
         return controllers
@@ -768,20 +769,20 @@ class Controller(Transform):
     def reset(node):
         attrs = [".tx", ".ty", ".tz", ".rx", ".ry", ".rz"]
         for attr in attrs:
-            if cmds.getAttr(node + attr, lock=True):
+            if cmds.getAttr(f"{node}{attr}", lock=True):
                 continue
-            cmds.setAttr(node + attr, 0)
+            cmds.setAttr(f"{node}{attr}", 0)
         attrs = [".sx", ".sy", ".sz"]
         for attr in attrs:
-            if cmds.getAttr(node + attr, lock=True):
+            if cmds.getAttr(f"{node}{attr}", lock=True):
                 continue
-            cmds.setAttr(node + attr, 1)
+            cmds.setAttr(f"{node}{attr}", 1)
         attrs = [
             "." + x for x in cmds.listAttr(node, userDefined=True, keyable=True) or []
         ]
         for attr in attrs:
-            default_value = cmds.addAttr(node + attr, query=True, defaultValue=True)
-            cmds.setAttr(node + attr, default_value)
+            default_value = cmds.addAttr(f"{node}{attr}", query=True, defaultValue=True)
+            cmds.setAttr(f"{node}{attr}", default_value)
 
 
 # endregion
@@ -880,10 +881,10 @@ class Curve:
                 "point": [
                     list(x)[:-1] for x in fn_curve.cvPositions(om.MSpace.kObject)
                 ],
-                "override": cmds.getAttr(shape + ".overrideEnabled"),
-                "use_rgb": cmds.getAttr(shape + ".overrideRGBColors"),
-                "color_rgb": cmds.getAttr(shape + ".overrideColorRGB")[0],
-                "color_index": cmds.getAttr(shape + ".overrideColor"),
+                "override": cmds.getAttr(f"{shape}.overrideEnabled"),
+                "use_rgb": cmds.getAttr(f"{shape}.overrideRGBColors"),
+                "color_rgb": cmds.getAttr(f"{shape}.overrideColorRGB")[0],
+                "color_index": cmds.getAttr(f"{shape}.overrideColor"),
             }
         self._node = n
 
@@ -904,11 +905,11 @@ class Curve:
                 knot=data["knots"],
             )
             shape = cmds.listRelatives(shape_transform, shapes=True, fullPath=True)[0]
-            cmds.setAttr(shape + ".overrideEnabled", data["override"])
-            cmds.setAttr(shape + ".overrideRGBColors", data["use_rgb"])
-            cmds.setAttr(shape + ".overrideColorRGB", *data["color_rgb"])
-            cmds.setAttr(shape + ".overrideColor", data["color_index"])
-            shape = cmds.rename(shape, transform.split("|")[-1] + "Shape")
+            cmds.setAttr(f"{shape}.overrideEnabled", data["override"])
+            cmds.setAttr(f"{shape}.overrideRGBColors", data["use_rgb"])
+            cmds.setAttr(f"{shape}.overrideColorRGB", *data["color_rgb"])
+            cmds.setAttr(f"{shape}.overrideColor", data["color_index"])
+            shape = cmds.rename(shape, f"{transform.split('|')[-1]}Shape")
             cmds.parent(shape, transform, relative=True, shape=True)
             cmds.delete(shape_transform)
         cmds.xform(transform, matrix=[float(x) for x in self._data["curve_matrix"]])
@@ -933,13 +934,88 @@ class Curve:
 
         curve = cmds.curve(**args)
         curve = cmds.rename(curve, name)
-        cmds.rename(cmds.listRelatives(curve, shapes=True)[0], curve + "Shape")
+        cmds.rename(cmds.listRelatives(curve, shapes=True)[0], f"{curve}Shape")
         if parent:
             curve = cmds.parent(curve, parent)[0]
 
         cmds.xform(curve, matrix=m, worldSpace=True)
         self.node = curve
         return curve
+
+
+# endregion
+
+
+# region Surface
+class Surface:
+
+    def __init__(self, node=None, data=None):
+        self._data = {}
+        self._node = ""
+        if node:
+            self.node = node
+        elif data:
+            self.data = data
+
+    @staticmethod
+    def get_fn_surface(shape):
+        selection_list = om.MSelectionList()
+        selection_list.add(shape)
+        return om.MFnNurbsSurface(selection_list.getDagPath(0))
+
+    @property
+    def data(self):
+        return self._data
+
+    @property
+    def node(self):
+        return self._node
+
+    @data.setter
+    def data(self, d):
+        self._data = d
+
+    @node.setter
+    def node(self, n):
+        parent = cmds.listRelatives(n, parent=True)
+        self._data = {
+            "parent_name": parent[0] if parent else "",
+            "surface_name": n,
+            "surface_matrix": cmds.xform(n, query=True, matrix=True, worldSpace=True),
+        }
+        shape = cmds.listRelatives(n, shapes=True, fullPath=True)[0]
+        fn_surface = self.get_fn_surface(shape)
+        self._data["surface"] = {
+            "form_u": fn_surface.formInU - 1,
+            "form_v": fn_surface.formInV - 1,
+            "knot_u": list(fn_surface.knotsInU()),
+            "knot_v": list(fn_surface.knotsInV()),
+            "degree_u": fn_surface.degreeInU,
+            "degree_v": fn_surface.degreeInV,
+            "cvs": [tuple(x) for x in fn_surface.cvPositions(om.MSpace.kObject)],
+        }
+        self._node = n
+
+    def create_from_data(self):
+        form = ["open", "closed", "periodic"]
+
+        data = self._data["surface"]
+        shape = cmds.surface(
+            degreeU=data["degree_u"],
+            degreeV=data["degree_v"],
+            knotU=data["knot_u"],
+            knotV=data["knot_v"],
+            formU=form[data["form_u"]],
+            formV=form[data["form_v"]],
+            pointWeight=data["cvs"],
+        )
+        transform = cmds.listRelatives(shape, parent=True)[0]
+        transform = cmds.rename(transform, self._data["surface_name"])
+        cmds.xform(transform, matrix=[float(x) for x in self._data["surface_matrix"]])
+        if self._data["parent_name"] and cmds.objExists(self._data["parent_name"]):
+            transform = cmds.parent(transform, self._data["parent_name"])[0]
+        cmds.sets(transform, edit=True, addElement="initialShadingGroup")
+        return transform
 
 
 # endregion
@@ -956,6 +1032,12 @@ class Polygon:
         elif data:
             self.data = data
 
+    @staticmethod
+    def get_fn_mesh(shape):
+        selection_list = om.MSelectionList()
+        selection_list.add(shape)
+        return om.MFnMesh(selection_list.getDagPath(0))
+
     @property
     def data(self):
         return self._data
@@ -971,6 +1053,56 @@ class Polygon:
     @node.setter
     def node(self, n):
         self._node = n
+
+    @node.setter
+    def node(self, n):
+        parent = cmds.listRelatives(n, parent=True)
+        self._data = {
+            "parent_name": parent[0] if parent else "",
+            "mesh_name": n,
+            "mesh_matrix": cmds.xform(n, query=True, matrix=True, worldSpace=True),
+        }
+        shape = cmds.listRelatives(n, shapes=True, fullPath=True)[0]
+        fn_mesh = self.get_fn_mesh(shape)
+        # 꼭짓점 좌표
+        vertices = [list(x) for x in fn_mesh.getPoints(space=om.MSpace.kObject)]
+
+        # face 정의
+        polygon_counts, polygon_connects = fn_mesh.getVertices()
+
+        # UV 좌표 (각 index 별 uvs)
+        u_array, v_array = fn_mesh.getUVs()
+        uv_counts, uv_ids = fn_mesh.getAssignedUVs()
+
+        self._data["mesh"] = {
+            "vertices": vertices,
+            "polygon_counts": list(polygon_counts),
+            "polygon_connects": list(polygon_connects),
+            "u_array": list(u_array),
+            "v_array": list(v_array),
+            "uv_counts": list(uv_counts),
+            "uv_ids": list(uv_ids),
+        }
+        self._node = n
+
+    def create_from_data(self):
+        data = self._data["mesh"]
+        fn_mesh = om.MFnMesh()
+        fn_mesh.create(
+            om.MPointArray(data["vertices"]),
+            data["polygon_counts"],
+            data["polygon_connects"],
+        )
+        fn_mesh.setUVs(data["u_array"], data["v_array"])
+        fn_mesh.assignUVs(data["uv_counts"], data["uv_ids"])
+
+        transform = om.MFnDagNode(fn_mesh.parent(0)).name()
+        transform = cmds.rename(transform, self._data["mesh_name"])
+        cmds.xform(transform, matrix=[float(x) for x in self._data["mesh_matrix"]])
+        if self._data["parent_name"] and cmds.objExists(self._data["parent_name"]):
+            transform = cmds.parent(transform, self._data["parent_name"])[0]
+        cmds.sets(transform, edit=True, addElement="initialShadingGroup")
+        return transform
 
 
 # endregion

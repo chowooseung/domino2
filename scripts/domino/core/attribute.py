@@ -2,6 +2,9 @@
 from maya import cmds
 from maya.api import OpenMaya as om
 
+# domino
+from domino.core import Curve, Surface, Polygon
+
 
 ORIGINMATRIX = om.MMatrix()
 
@@ -525,6 +528,198 @@ class Message(dict):
         return self.attribute
 
 
+class NurbsCurve(dict):
+
+    data_type = "nurbsCurve"
+
+    @property
+    def data(self):
+        return self[self._long_name]
+
+    @data.setter
+    def data(self, d):
+        self[self._long_name] = d
+
+    @property
+    def long_name(self):
+        return self._long_name
+
+    @long_name.setter
+    def long_name(self, n):
+        self._long_name = n
+
+    @property
+    def node(self):
+        return self.data["node"]
+
+    @node.setter
+    def node(self, n):
+        self.data["node"] = n
+
+    @property
+    def attribute(self):
+        return f"{self.node}.{self.long_name}"
+
+    def __init__(self, longName, **kwargs):
+        self.long_name = longName
+        self.data = {
+            "dataType": self.data_type,
+            "value": kwargs["value"],
+            "multi": False,
+        }
+
+    def create(self):
+        data = self.data
+
+        if "node" not in data:
+            return ""
+
+        try:
+            cmds.addAttr(
+                self.node,
+                longName=self.long_name,
+                shortName=self.long_name,
+                dataType=self.data_type,
+            )
+            if "value" in self.data:
+                ins = Curve(data=self.data["value"])
+                crv = ins.create_from_data()
+                cmds.connectAttr(f"{crv}.local", f"{self.node}.{self.long_name}")
+                cmds.delete(crv)
+        except:
+            ...
+
+        return self.attribute
+
+
+class NurbsSurface(dict):
+
+    data_type = "nurbsSurface"
+
+    @property
+    def data(self):
+        return self[self._long_name]
+
+    @data.setter
+    def data(self, d):
+        self[self._long_name] = d
+
+    @property
+    def long_name(self):
+        return self._long_name
+
+    @long_name.setter
+    def long_name(self, n):
+        self._long_name = n
+
+    @property
+    def node(self):
+        return self.data["node"]
+
+    @node.setter
+    def node(self, n):
+        self.data["node"] = n
+
+    @property
+    def attribute(self):
+        return f"{self.node}.{self.long_name}"
+
+    def __init__(self, longName, **kwargs):
+        self.long_name = longName
+        self.data = {
+            "dataType": self.data_type,
+            "value": kwargs["value"],
+            "multi": False,
+        }
+
+    def create(self):
+        data = self.data
+
+        if "node" not in data:
+            return ""
+
+        try:
+            cmds.addAttr(
+                self.node,
+                longName=self.long_name,
+                shortName=self.long_name,
+                dataType=self.data_type,
+            )
+            if "value" in self.data:
+                ins = Surface(data=self.data["value"])
+                surface = ins.create_from_data()
+                cmds.connectAttr(f"{surface}.local", f"{self.node}.{self.long_name}")
+                cmds.delete(surface)
+        except:
+            ...
+
+        return self.attribute
+
+
+class Polygon(dict):
+
+    data_type = "mesh"
+
+    @property
+    def data(self):
+        return self[self._long_name]
+
+    @data.setter
+    def data(self, d):
+        self[self._long_name] = d
+
+    @property
+    def long_name(self):
+        return self._long_name
+
+    @long_name.setter
+    def long_name(self, n):
+        self._long_name = n
+
+    @property
+    def node(self):
+        return self.data["node"]
+
+    @node.setter
+    def node(self, n):
+        self.data["node"] = n
+
+    @property
+    def attribute(self):
+        return f"{self.node}.{self.long_name}"
+
+    def __init__(self, longName, **kwargs):
+        self.long_name = longName
+        self.data = {
+            "dataType": self.data_type,
+            "value": kwargs["value"],
+            "multi": False,
+        }
+
+    def create(self):
+        data = self.data
+
+        if "node" not in data:
+            return ""
+
+        try:
+            cmds.addAttr(
+                self.node,
+                longName=self.long_name,
+                shortName=self.long_name,
+                dataType=self.data_type,
+            )
+            if "value" in self.data:
+                ins = Polygon(data=self.data["value"])
+                mesh = ins.create_from_data()
+                cmds.connectAttr(f"{mesh}.outMesh", f"{self.node}.{self.long_name}")
+                cmds.delete(mesh)
+        except:
+            ...
+
+        return self.attribute
+
+
 TYPETABLE = {
     "long": Integer,
     "float": Float,
@@ -534,4 +729,7 @@ TYPETABLE = {
     "matrix": Matrix,
     "message": Message,
     "doubleAngle": DoubleAngle,
+    "nurbsCurve": NurbsCurve,
+    "nurbsSurface": NurbsSurface,
+    "polygon": Polygon,
 }

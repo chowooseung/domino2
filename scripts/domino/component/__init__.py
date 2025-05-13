@@ -5,6 +5,8 @@ from domino.core import (
     Joint,
     Controller,
     Curve,
+    Surface,
+    Polygon,
     attribute,
     nurbscurve,
 )
@@ -952,6 +954,21 @@ class Rig(dict):
             ins = Transform(parent=None, name="", side="", index="", extension=RIG)
             rig = ins.create()
             cmds.addAttr(rig, longName="is_domino_rig", attributeType="bool")
+            cmds.addAttr(
+                "rig", longName="custom_curve_data", attributeType="message", multi=True
+            )
+            cmds.addAttr(
+                "rig",
+                longName="custom_surface_data",
+                attributeType="message",
+                multi=True,
+            )
+            cmds.addAttr(
+                "rig",
+                longName="custom_polygon_data",
+                attributeType="message",
+                multi=True,
+            )
             for attr in attrs:
                 cmds.setAttr(f"{RIG}{attr}", lock=True, keyable=False)
 
@@ -1350,6 +1367,38 @@ class Rig(dict):
             # attribute
             attribute_data = module.DATA
             for attr in attribute_data.copy():
+                if hasattr(attr, "data_type") and attr.data_type == "nurbsCurve":
+                    temp_crv = cmds.circle(name="temp1", constructionHistory=False)[0]
+                    cmds.connectAttr(
+                        f"{component.rig_root}.{attr.long_name}", f"{temp_crv}.create"
+                    )
+                    ins = Curve(node=temp_crv)
+                    component[attr.long_name]["value"] = ins.data
+                    cmds.delete(temp_crv)
+                    continue
+                elif hasattr(attr, "data_type") and attr.data_type == "nurbsSurface":
+                    temp_surface = cmds.nurbsPlane(
+                        name="temp1", constructionHistory=False
+                    )[0]
+                    cmds.connectAttr(
+                        f"{component.rig_root}.{attr.long_name}",
+                        f"{temp_surface}.create",
+                    )
+                    ins = Surface(node=temp_surface)
+                    component[attr.long_name]["value"] = ins.data
+                    cmds.delete(temp_surface)
+                    continue
+                elif hasattr(attr, "data_type") and attr.data_type == "mesh":
+                    temp_mesh = cmds.polySphere(
+                        name="temp1", constructionHistory=False
+                    )[0]
+                    cmds.connectAttr(
+                        f"{component.rig_root}.{attr.long_name}", f"{temp_mesh}.inMesh"
+                    )
+                    ins = Polygon(node=temp_mesh)
+                    component[attr.long_name]["value"] = ins.data
+                    cmds.delete(temp_mesh)
+                    continue
                 if attr[attr.long_name]["multi"]:
                     value = []
                     for a in (
@@ -1465,8 +1514,22 @@ def build(context, component, attach_guide=False):
             }
             stack.extend(c["children"])
 
-        # TODO : custom curve data
-        # TODO : custom polygon data
+        # custom data
+        if "custom_curve_data" in component:
+            for i, data in enumerate(component["custom_curve_data"]):
+                ins = Curve(data=data)
+                crv = ins.create_from_data()
+                cmds.connectAttr(f"{crv}.message", f"rig.custom_curve_data[{i}]")
+        if "custom_surface_data" in component:
+            for data in component["custom_surface_data"]:
+                ins = Surface(data=data)
+                surface = ins.create_from_data()
+                cmds.connectAttr(f"{surface}.message", f"rig.custom_surface_data[{i}]")
+        if "custom_polygon_data" in component:
+            for data in component["custom_polygon_data"]:
+                ins = Polygon(data=data)
+                polygon = ins.create_from_data()
+                cmds.connectAttr(f"{polygon}.message", f"rig.custom_polygon_data[{i}]")
 
         # setup controller sets
         domino_controllers = [
@@ -1571,6 +1634,7 @@ def serialize():
             and cmds.getAttr(f"{n}.component") == "assembly"
         ):
             assembly_node = n
+            break
 
     if not assembly_node:
         return
@@ -1585,6 +1649,29 @@ def serialize():
 
         attribute_data = module.DATA
         for attr in attribute_data.copy():
+            if hasattr(attr, "data_type") and attr.data_type == "nurbsCurve":
+                temp_crv = cmds.circle(name="temp1", constructionHistory=False)[0]
+                cmds.connectAttr(f"{node}.{attr.long_name}", f"{temp_crv}.create")
+                ins = Curve(node=temp_crv)
+                component[attr.long_name]["value"] = ins.data
+                cmds.delete(temp_crv)
+                continue
+            elif hasattr(attr, "data_type") and attr.data_type == "nurbsSurface":
+                temp_surface = cmds.nurbsPlane(name="temp1", constructionHistory=False)[
+                    0
+                ]
+                cmds.connectAttr(f"{node}.{attr.long_name}", f"{temp_surface}.create")
+                ins = Surface(node=temp_surface)
+                component[attr.long_name]["value"] = ins.data
+                cmds.delete(temp_surface)
+                continue
+            elif hasattr(attr, "data_type") and attr.data_type == "mesh":
+                temp_mesh = cmds.polySphere(name="temp1", constructionHistory=False)[0]
+                cmds.connectAttr(f"{node}.{attr.long_name}", f"{temp_mesh}.inMesh")
+                ins = Polygon(node=temp_mesh)
+                component[attr.long_name]["value"] = ins.data
+                cmds.delete(temp_mesh)
+                continue
             if attr[attr.long_name]["multi"]:
                 value = []
                 for a in cmds.listAttr(f"{node}.{attr.long_name}", multi=True) or []:
@@ -1652,11 +1739,27 @@ def serialize():
             content += f.read()
         rig["post_custom_scripts_str"]["value"].append(content)
 
-    # TODO : pose manager
-    # TODO : space manager
-    # TODO : sdk manager
-    # TODO : custom curve data
-    # TODO : custom polygon data
+    rig["custom_curve_data"] = []
+    rig["custom_surface_data"] = []
+    rig["custom_polygon_data"] = []
+    for n in (
+        cmds.listConnections("rig.custom_curve_data", source=True, destination=False)
+        or []
+    ):
+        ins = Curve(node=n)
+        rig["custom_curve_data"].append(ins.data)
+    for n in (
+        cmds.listConnections("rig.custom_surface_data", source=True, destination=False)
+        or []
+    ):
+        ins = Surface(node=n)
+        rig["custom_surface_data"].append(ins.data)
+    for n in (
+        cmds.listConnections("rig.custom_polygon_data", source=True, destination=False)
+        or []
+    ):
+        ins = Polygon(node=n)
+        rig["custom_polygon_data"].append(ins.data)
     return rig
 
 
@@ -1697,6 +1800,10 @@ def deserialize(data, create=True):
         stack.extend([child, component] for child in component_data["children"])
         if module_name == "assembly":
             rig = component
+
+    rig["custom_curve_data"] = data["custom_curve_data"]
+    rig["custom_surface_data"] = data["custom_surface_data"]
+    rig["custom_polygon_data"] = data["custom_polygon_data"]
 
     if create:
         build({}, component=rig)

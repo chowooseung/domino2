@@ -127,7 +127,7 @@ elif len(selected) == 3:
     cmds.select(selected)"""
 
 detach_guide_command = """from maya import cmds
-import importlib
+from domino import serialize
 
 roots = []
 for sel in cmds.ls(selection=True):
@@ -139,22 +139,12 @@ for sel in cmds.ls(selection=True):
         )
     elif cmds.objExists(sel + ".is_domino_guide_root"):
         roots.append(sel)
-for root in set(roots):
-    if not cmds.objExists(root.replace("rigRoot", "guideRoot")):
-        continue
-    component = cmds.getAttr(root + ".component")
-    module = importlib.import_module("domino.component." + component)
-    rig = module.Rig()
-    attribute_data = module.DATA
-    for attr in attribute_data.copy():
-        if attr[attr.long_name]["multi"]:
-            value = []
-            for a in cmds.listAttr(root + "." + attr.long_name, multi=True) or []:
-                value.append(cmds.getAttr(root + "." + a))
-        else:
-            value = cmds.getAttr(root + "." + attr.long_name)
-        rig[attr.long_name]["value"] = value
-    rig.detach_guide()"""
+stack = [rig]
+while stack:
+    component = stack.pop(0)
+    if component.guide_root in roots and cmds.objExists(component.guide_root):
+        component.detach_guide()
+    stack.extend(component["children"])"""
 # endregion
 
 
@@ -247,17 +237,12 @@ if (
 cmds.select(selected)"""
 
 add_data_command = """from maya import cmds
+from maya import OpenMayaUI as omui
+from shiboken6 import wrapInstance
+from PySide6 import QtWidgets
 
 selected = cmds.ls(selection=True)
 if cmds.objExists("rig"):
-    if not cmds.objExists("rig.custom_curve_data"):
-        cmds.addAttr(
-            "rig", longName="custom_curve_data", attributeType="message", multi=True
-        )
-    if not cmds.objExists("rig.custom_polygon_data"):
-        cmds.addAttr(
-            "rig", longName="custom_polygon_data", attributeType="message", multi=True
-        )
     for sel in selected[1:]:
         shapes = cmds.listRelatives(sel, shapes=True)
         if not shapes:
@@ -273,6 +258,17 @@ if cmds.objExists("rig"):
                 or []
             )
             cmds.connectAttr(sel + ".message", f"rig.custom_curve_data[{next_index}]")
+        elif cmds.nodeType(shapes[0]) == "nurbsSurface":
+            cmds.parent(sel, "rig")
+            next_index = len(
+                cmds.listConnections(
+                    "rig.custom_surface_data",
+                    source=True,
+                    destination=False,
+                )
+                or []
+            )
+            cmds.connectAttr(sel + ".message", f"rig.custom_surface_data[{next_index}]")
         elif cmds.nodeType(shapes[0]) == "mesh":
             cmds.parent(sel, "rig")
             next_index = len(
@@ -284,7 +280,12 @@ if cmds.objExists("rig"):
                 or []
             )
             cmds.connectAttr(sel + ".message", f"rig.custom_polygon_data[{next_index}]")
-    cmds.select(selected)"""
+    cmds.select(selected)
+    main_window_ptr = omui.MQtUtil.mainWindow()
+    main_window_widget = wrapInstance(int(main_window_ptr), QtWidgets.QWidget)
+    domino_manager_ui = main_window_widget.findChild(QtWidgets.QWidget, "domino_manager_ui")
+    if domino_manager_ui:
+        domino_manager_ui.refresh()"""
 # endregion
 
 
