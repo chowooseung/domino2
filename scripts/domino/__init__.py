@@ -8,13 +8,13 @@ from domino.core import dagmenu
 place_a_locator_average_position_command = """from maya import cmds
 import numpy as np
 
-selected = cmds.ls(selection=True, flatten=True)
+selected = cmds.ls(orderedSelection=True, flatten=True)
 if selected:
     positions = []
     if cmds.nodeType(selected[0]) == "mesh":
         vertices = cmds.polyListComponentConversion(selected, toVertex=True)
         cmds.select(vertices)
-        vertices = cmds.ls(selection=True, flatten=True)
+        vertices = cmds.ls(orderedSelection=True, flatten=True)
         for vertex in vertices:
             positions.append(
                 cmds.xform(vertex, query=True, translation=True, worldSpace=True)
@@ -29,7 +29,7 @@ if selected:
     cmds.setAttr(loc + ".t", *result)"""
 
 place_locators_each_position_command = """from maya import cmds
-selected = cmds.ls(selection=True, flatten=True)
+selected = cmds.ls(orderedSelection=True, flatten=True)
 if selected:
     for sel in selected:
         t = cmds.xform(sel, query=True, translation=True, worldSpace=True)
@@ -79,7 +79,7 @@ from maya.api import OpenMaya as om
 
 positions = [
     cmds.xform(x, query=True, translation=True, worldSpace=True)
-    for x in cmds.ls(selection=True)
+    for x in cmds.ls(orderedSelection=True)
 ]
 meshes = []
 v1 = om.MVector((0.1, 0, -0.1))
@@ -102,7 +102,7 @@ if len(meshes) > 1:
     cmds.polyAutoProjection(constructionHistory=False, percentageSpace=5, layout=2)"""
 
 extract_select_polygon_face_command = """from maya import cmds
-faces = [x for x in cmds.ls(selection=True) if ".f" in x]
+faces = [x for x in cmds.ls(orderedSelection=True) if ".f" in x]
 if faces:
     mesh = faces[0].split(".")[0]
     mesh = cmds.duplicate(mesh)[0]
@@ -113,6 +113,17 @@ if faces:
     )
     extract_mesh = cmds.rename(extract_mesh, "extract_mesh")
     cmds.delete(mesh)"""
+
+copy_paste_vertex_weight_command = """from maya import cmds
+from maya import mel
+
+selected = cmds.ls(orderedSelection=True, flatten=True)
+vertices = [x for x in selected if "vtx" in x]
+cmds.select(vertices[0])
+mel.eval('doCopyVertexWeightsArgList 1 { "1" };')
+cmds.select(vertices[1:])
+mel.eval('doPasteVertexWeightsArgList 1 { "1" };')
+cmds.select(selected)"""
 
 
 def install_rig_commands_menu(menu_id):
@@ -148,6 +159,11 @@ def install_rig_commands_menu(menu_id):
         parent=sub_menu,
         label="Print channelBox status",
         command=print_channel_box_status_command,
+    )
+    cmds.menuItem(
+        parent=sub_menu,
+        label="Copy / Paste vertex weight",
+        command=copy_paste_vertex_weight_command,
     )
 
 
