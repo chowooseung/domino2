@@ -26,7 +26,15 @@ import logging
 import sys
 
 
-COMPONENTLIST = ["assembly", "control01", "fk01", "uicontainer01", "fkik2jnt01"]
+COMPONENTLIST = [
+    "assembly",
+    "cog01",
+    "control01",
+    "fk01",
+    "uicontainer01",
+    "fkik2jnt01",
+    "humanspine01",
+]
 GUIDE = "guide"
 RIG = "rig"
 SKEL = "skel"
@@ -976,7 +984,8 @@ class Rig(dict):
             skel_sets = cmds.sets(name="skel_sets", empty=True)
             geo_sets = cmds.sets(name="geometry_sets", empty=True)
             controller_sets = cmds.sets(name="controller_sets", empty=True)
-            export_skin_sets = cmds.sets(name="exportSkin_sets", empty=True)
+            export_skin_sets = cmds.sets(name="_exportSkin_sets", empty=True)
+            cmds.setAttr(f"{export_skin_sets}.hiddenInOutliner", 1)
             cmds.sets(
                 [model_sets, skel_sets, geo_sets, controller_sets, export_skin_sets],
                 name="rig_sets",

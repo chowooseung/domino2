@@ -528,6 +528,10 @@ QTreeView::branch:open:has-children  {{
             except ModuleNotFoundError:
                 return
             component = module.Rig()
+            if hasattr(component, "input_data"):
+                result = component.input_data()
+                if not result:
+                    return
             # endregion
 
             # region 이미 존재하는 리그가 없다면 assembly 생성.
@@ -613,7 +617,7 @@ QTreeView::branch:open:has-children  {{
             for index in indexes:
                 item = self.rig_tree_model.itemFromIndex(index)
                 item.component.duplicate_component(True)
-            self.rig_tree_model.populate_model()
+            self.refresh()
         finally:
             cmds.undoInfo(closeChunk=True)
 
@@ -628,7 +632,7 @@ QTreeView::branch:open:has-children  {{
             for index in indexes:
                 item = self.rig_tree_model.itemFromIndex(index)
                 item.component.mirror_component(reuse_exists, True)
-            self.rig_tree_model.populate_model()
+            self.refresh()
         finally:
             cmds.undoInfo(closeChunk=True)
 
@@ -643,7 +647,7 @@ QTreeView::branch:open:has-children  {{
             for index in indexes:
                 item = self.rig_tree_model.itemFromIndex(index)
                 item.component.remove_component()
-            self.rig_tree_model.populate_model()
+            self.refresh()
         finally:
             cmds.undoInfo(closeChunk=True)
 
@@ -664,7 +668,7 @@ QTreeView::branch:open:has-children  {{
                 component.rename_component(
                     component["name"]["value"], side, index, True
                 )
-            self.rig_tree_model.populate_model()
+            self.refresh()
         finally:
             cmds.undoInfo(closeChunk=True)
 

@@ -104,7 +104,7 @@ class UIGenerator:
                 f"Rename Component {old_name}_{old_side_str}{old_index} -> {new_name}_{old_side_str}{old_index}"
             )
             # manager ui refresh
-            manager_ui.rig_tree_model.populate_model()
+            manager_ui.refresh()
             # settings ui refresh
             Settings.get_instance().refresh()
 
@@ -138,7 +138,7 @@ class UIGenerator:
                 f"Rename Component {old_name}_{old_side_str}{old_index} -> {old_name}_{new_side_str}{old_index}"
             )
             # manager ui refresh
-            manager_ui.rig_tree_model.populate_model()
+            manager_ui.refresh()
             # settings ui refresh
             Settings.get_instance().refresh()
 
@@ -166,7 +166,7 @@ class UIGenerator:
                 f"Rename Component {old_name}_{old_side_str}{old_index} -> {old_name}_{old_side_str}{index}"
             )
             # manager ui refresh
-            manager_ui.rig_tree_model.populate_model()
+            manager_ui.refresh()
             # settings ui refresh
             Settings.get_instance().refresh()
 
@@ -205,7 +205,7 @@ class UIGenerator:
                 cmds.undoInfo(closeChunk=True)
             logger.info(f"Reparent rig root {old_parent} -> {outputs[output_index]}")
             # manager ui refresh
-            manager_ui.rig_tree_model.populate_model()
+            manager_ui.refresh()
             # settings ui refresh
             Settings.get_instance().refresh()
 
@@ -235,6 +235,7 @@ class UIGenerator:
 
                 joints = []
                 if not output_joints and state:
+                    current_component.populate_output_joint()
                     for output_joint in current_component["output_joint"]:
                         joints.append(output_joint.create())
                     current_component.setup_skel(joints)
@@ -246,7 +247,7 @@ class UIGenerator:
             finally:
                 cmds.undoInfo(closeChunk=True)
             # manager ui refresh
-            manager_ui.rig_tree_model.populate_model()
+            manager_ui.refresh()
             # settings ui refresh
             Settings.get_instance().refresh()
 
@@ -254,7 +255,7 @@ class UIGenerator:
             manager_ui = get_manager_ui()
             cmds.setAttr(f"{root}.{attr}", spin_box.value())
             # manager ui refresh
-            manager_ui.rig_tree_model.populate_model()
+            manager_ui.refresh()
             # settings ui refresh
 
         old_name = cmds.getAttr(f"{root}.name")
@@ -354,6 +355,51 @@ class UIGenerator:
     # endregion
 
     # region -    UIGenerator / ui
+    @classmethod
+    def add_ribbon_settings(cls, parent, attribute):
+
+        def change_output_index():
+            index = combo_box.currentIndex()
+            slider.setValue(int(u_values[index] * 100))
+
+        def edit_u_value():
+            index = combo_box.currentIndex()
+            value = slider.value()
+            cmds.setAttr(f"{attribute}[{index}]", value / 100)
+
+        frame = QtWidgets.QFrame()
+        frame.setFrameShape(QtWidgets.QFrame.Shape.Box)
+
+        layout = QtWidgets.QFormLayout(frame)
+
+        combo_box = QtWidgets.QComboBox()
+        combo_box.setSizePolicy(
+            QtWidgets.QSizePolicy.Policy.Expanding,
+            QtWidgets.QSizePolicy.Policy.Fixed,
+        )
+        layout.addRow("Ribbon Output Index", combo_box)
+        u_values = cmds.getAttr(attribute)[0]
+        for i in range(len(u_values)):
+            combo_box.addItem(str(i))
+
+        horizontal_layout = QtWidgets.QHBoxLayout()
+        slider = QtWidgets.QSlider(QtCore.Qt.Horizontal)
+        slider.setRange(0, 100)
+        horizontal_layout.addWidget(slider)
+        spin_box = QtWidgets.QSpinBox()
+        spin_box.setRange(0, 100)
+        horizontal_layout.addWidget(spin_box)
+        layout.addRow(horizontal_layout)
+
+        slider.valueChanged.connect(spin_box.setValue)
+        spin_box.valueChanged.connect(slider.setValue)
+
+        slider.valueChanged.connect(edit_u_value)
+        combo_box.currentIndexChanged.connect(change_output_index)
+
+        parent_layout = parent.layout()
+        parent_layout.addRow(frame)
+
     @classmethod
     def add_line_edit(cls, parent, label, attribute):
 
@@ -1120,7 +1166,7 @@ class Control01(DynamicWidget):
                 current_component.setup_skel(output_joints)
 
                 cmds.select(current_component.guide_root)
-                manager_ui.rig_tree_model.populate_model()
+                manager_ui.refresh()
                 Settings.get_instance().refresh()
             finally:
                 cmds.undoInfo(closeChunk=True)
@@ -1273,7 +1319,7 @@ class Fk01(DynamicWidget):
                 current_component.setup_skel(output_joints)
 
                 cmds.select(current_component.guide_root)
-                manager_ui.rig_tree_model.populate_model()
+                manager_ui.refresh()
                 Settings.get_instance().refresh()
             finally:
                 cmds.undoInfo(closeChunk=True)
@@ -2264,6 +2310,19 @@ class Fkik2Jnt01(DynamicWidget):
 # endregion
 
 
+# region HumanSpine01
+class HumanSpine01(DynamicWidget):
+
+    def __init__(self, parent=None, root=None):
+        super(HumanSpine01, self).__init__(parent=parent, root=root)
+        UIGenerator.add_common_component_settings(self.parent_widget, root)
+        UIGenerator.add_ribbon_settings(self.parent_widget, f"{root}.output_u_values")
+        UIGenerator.add_notes(self.parent_widget, f"{root}.notes")
+
+
+# endregion
+
+
 # region Settings
 UITABLE = {
     "assembly": Assembly,
@@ -2271,6 +2330,7 @@ UITABLE = {
     "fk01": Fk01,
     "uicontainer01": UIContainer01,
     "fkik2jnt01": Fkik2Jnt01,
+    "humanspine01": HumanSpine01,
 }
 
 

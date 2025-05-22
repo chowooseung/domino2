@@ -327,6 +327,502 @@ def ik_spline():
 
 
 # region ribbon
+def ribbon_spline_ik(
+    parent,
+    driver_joints,
+    driver_inverse_plugs,
+    surface,
+    main_ik_joints,
+    up_ik_joints,
+    stretch_squash_attr,
+    uniform_attr,
+    volume_attr,
+    volume_multiple,
+    output_u_values,
+    negate_plug=None,
+):
+    surface = cmds.parent(surface, parent)[0]
+
+    # initialize skincluster
+    temp = cmds.duplicate(surface, name="copyskindummy")[0]
+
+    temp_sc = cmds.skinCluster(
+        driver_joints + [temp],
+        normalizeWeights=True,
+        obeyMaxInfluences=False,
+        weightDistribution=1,
+        multi=True,
+    )[0]
+
+    sc = cmds.deformer(
+        surface, type="skinCluster", deformerTools=True, name=f"{surface}0_sc"
+    )[0]
+    cmds.setAttr(f"{sc}.relativeSpaceMode", 1)
+    cmds.setAttr(f"{sc}.weightDistribution", 1)
+
+    c = 0
+    for driver_jnt, inverse_plug in zip(driver_joints, driver_inverse_plugs):
+        cmds.connectAttr(f"{driver_jnt}.worldMatrix", f"{sc}.matrix[{c}]", force=1)
+        cmds.connectAttr(inverse_plug, f"{sc}.bindPreMatrix[{c}]", force=1)
+        c += 1
+    cmds.copySkinWeights(
+        sourceSkin=temp_sc,
+        destinationSkin=sc,
+        noMirror=True,
+        surfaceAssociation="closestPoint",
+        influenceAssociation="closestJoint",
+    )
+    cmds.delete(temp)
+
+    shape, orig = cmds.listRelatives(surface, shapes=True)
+
+    # spline ik curve
+    main_crv, main_offset_crv = cmds.offsetCurve(
+        f"{surface}.v[1]",
+        name=f"{surface}_mainIkCrv",
+        constructionHistory=True,
+        rn=False,
+        connectBreaks=2,
+        stitch=True,
+        cutLoop=True,
+        cutRadius=0,
+        distance=0,
+        tolerance=0.01,
+        subdivisionDensity=5,
+        useGivenNormal=False,
+    )
+    main_crv = cmds.parent(main_crv, parent)[0]
+    curve_from_surface = cmds.listConnections(
+        f"{main_offset_crv}.inputCurve", source=True, destination=False
+    )[0]
+    cmds.connectAttr(f"{shape}.local", f"{curve_from_surface}.inputSurface", force=1)
+    up_crv, up_offset_crv = cmds.offsetCurve(
+        f"{surface}.v[0]",
+        name=f"{surface}_upIkCrv",
+        constructionHistory=True,
+        rn=False,
+        connectBreaks=2,
+        stitch=True,
+        cutLoop=True,
+        cutRadius=0,
+        distance=0,
+        tolerance=0.01,
+        subdivisionDensity=5,
+        useGivenNormal=False,
+    )
+    up_crv = cmds.parent(up_crv, parent)[0]
+    curve_from_surface = cmds.listConnections(
+        f"{up_offset_crv}.inputCurve", source=True, destination=False
+    )[0]
+    cmds.connectAttr(f"{shape}.local", f"{curve_from_surface}.inputSurface", force=1)
+
+    # initialize spline ik distance
+    uvpin = cmds.createNode("uvPin")
+    cmds.setAttr(f"{uvpin}.relativeSpaceMode", 1)
+    cmds.connectAttr(f"{orig}.local", f"{uvpin}.deformedGeometry")
+
+    main_orig_output_plugs = []
+    c = 0
+    for plug in output_u_values:
+        cmds.connectAttr(plug, f"{uvpin}.coordinate[{c}].coordinateU")
+        cmds.setAttr(f"{uvpin}.coordinate[{c}].coordinateV", 0.5)
+        main_orig_output_plugs.append(f"{uvpin}.outputMatrix[{c}]")
+        c += 1
+
+    up_orig_output_plugs = []
+    for plug in output_u_values:
+        cmds.connectAttr(plug, f"{uvpin}.coordinate[{c}].coordinateU")
+        up_orig_output_plugs.append(f"{uvpin}.outputMatrix[{c}]")
+        c += 1
+
+    for c in range(len(main_orig_output_plugs)):
+        if c == len(main_orig_output_plugs) - 1:
+            break
+        db = cmds.createNode("distanceBetween")
+        cmds.connectAttr(main_orig_output_plugs[c], f"{db}.inMatrix1")
+        cmds.connectAttr(main_orig_output_plugs[c + 1], f"{db}.inMatrix2")
+        cmds.connectAttr(f"{db}.distance", f"{main_ik_joints[c + 1]}.tx")
+        db = cmds.createNode("distanceBetween")
+        cmds.connectAttr(up_orig_output_plugs[c], f"{db}.inMatrix1")
+        cmds.connectAttr(up_orig_output_plugs[c + 1], f"{db}.inMatrix2")
+        cmds.connectAttr(f"{db}.distance", f"{up_ik_joints[c + 1]}.tx")
+
+    main_ikh, effector = cmds.ikHandle(
+        startJoint=main_ik_joints[0],
+        endEffector=main_ik_joints[-1],
+        solver="ikSplineSolver",
+        name=f"{surface}_mainIkh",
+        curve=main_crv,
+        createCurve=False,
+    )
+    main_ikh = cmds.parent(main_ikh, parent)[0]
+    up_ikh, effector = cmds.ikHandle(
+        startJoint=up_ik_joints[0],
+        endEffector=up_ik_joints[-1],
+        solver="ikSplineSolver",
+        name=f"{surface}_upIkh",
+        curve=up_crv,
+        createCurve=False,
+    )
+    up_ikh = cmds.parent(up_ikh, parent)[0]
+
+    # deformed uvpin
+    uvpin = cmds.createNode("uvPin")
+    cmds.connectAttr(f"{orig}.local", f"{uvpin}.originalGeometry")
+    cmds.connectAttr(f"{shape}.worldSpace[0]", f"{uvpin}.deformedGeometry")
+
+    main_output_plugs = []
+    c = 0
+    for plug in output_u_values:
+        cmds.connectAttr(plug, f"{uvpin}.coordinate[{c}].coordinateU")
+        cmds.setAttr(f"{uvpin}.coordinate[{c}].coordinateV", 0.5)
+        main_output_plugs.append(f"{uvpin}.outputMatrix[{c}]")
+        c += 1
+
+    up_output_plugs = []
+    for plug in output_u_values:
+        cmds.connectAttr(plug, f"{uvpin}.coordinate[{c}].coordinateU")
+        up_output_plugs.append(f"{uvpin}.outputMatrix[{c}]")
+        c += 1
+
+    # initialize uniform curve uvalue
+    main_orig_uniform_crv, main_orig_uniform_offset_crv = cmds.offsetCurve(
+        f"{orig}.v[1]",
+        name=f"{surface}_uniformMainCrvOrig",
+        constructionHistory=True,
+        rn=False,
+        connectBreaks=2,
+        stitch=True,
+        cutLoop=True,
+        cutRadius=0,
+        distance=0,
+        tolerance=0.01,
+        subdivisionDensity=5,
+        useGivenNormal=False,
+    )
+    main_orig_uniform_crv = cmds.parent(main_orig_uniform_crv, parent)[0]
+    curve_from_surface = cmds.listConnections(
+        f"{main_orig_uniform_offset_crv}.inputCurve", source=True, destination=False
+    )[0]
+    cmds.connectAttr(f"{orig}.local", f"{curve_from_surface}.inputSurface", force=1)
+    main_orig_rebuild_curve = cmds.createNode("rebuildCurve")
+    cmds.connectAttr(
+        f"{curve_from_surface}.outputCurve", f"{main_orig_rebuild_curve}.inputCurve"
+    )
+    cmds.connectAttr(
+        f"{main_orig_rebuild_curve}.outputCurve",
+        f"{main_orig_uniform_crv}.create",
+        force=True,
+    )
+    cmds.delete(main_orig_uniform_offset_crv)
+    up_orig_uniform_crv, up_orig_uniform_offset_crv = cmds.offsetCurve(
+        f"{orig}.v[0]",
+        name=f"{surface}_uniformUpCrvOrig",
+        constructionHistory=True,
+        rn=False,
+        connectBreaks=2,
+        stitch=True,
+        cutLoop=True,
+        cutRadius=0,
+        distance=0,
+        tolerance=0.01,
+        subdivisionDensity=5,
+        useGivenNormal=False,
+    )
+    up_orig_uniform_crv = cmds.parent(up_orig_uniform_crv, parent)[0]
+    curve_from_surface = cmds.listConnections(
+        f"{up_orig_uniform_offset_crv}.inputCurve", source=True, destination=False
+    )[0]
+    cmds.connectAttr(f"{orig}.local", f"{curve_from_surface}.inputSurface", force=1)
+    up_orig_rebuild_curve = cmds.createNode("rebuildCurve")
+    cmds.connectAttr(
+        f"{curve_from_surface}.outputCurve", f"{up_orig_rebuild_curve}.inputCurve"
+    )
+    cmds.connectAttr(
+        f"{up_orig_rebuild_curve}.outputCurve",
+        f"{up_orig_uniform_crv}.create",
+        force=True,
+    )
+    cmds.delete(up_orig_uniform_offset_crv)
+
+    main_orig_uniform_parameter_plugs = []
+    for orig_output in main_orig_output_plugs:
+        decom_m = cmds.createNode("decomposeMatrix")
+        cmds.connectAttr(orig_output, f"{decom_m}.inputMatrix")
+        npoc = cmds.createNode("nearestPointOnCurve")
+        cmds.connectAttr(f"{main_orig_uniform_crv}.local", f"{npoc}.inputCurve")
+        cmds.connectAttr(f"{decom_m}.outputTranslate", f"{npoc}.inPosition")
+        main_orig_uniform_parameter_plugs.append(f"{npoc}.parameter")
+
+    up_orig_uniform_parameter_plugs = []
+    for orig_output in up_orig_output_plugs:
+        decom_m = cmds.createNode("decomposeMatrix")
+        cmds.connectAttr(orig_output, f"{decom_m}.inputMatrix")
+        npoc = cmds.createNode("nearestPointOnCurve")
+        cmds.connectAttr(f"{up_orig_uniform_crv}.local", f"{npoc}.inputCurve")
+        cmds.connectAttr(f"{decom_m}.outputTranslate", f"{npoc}.inPosition")
+        up_orig_uniform_parameter_plugs.append(f"{npoc}.parameter")
+
+    # uniform curve
+    main_rebuild_curve = cmds.createNode("rebuildCurve")
+    plug = cmds.listConnections(
+        f"{main_offset_crv}.inputCurve", source=True, destination=False, plugs=True
+    )[0]
+    cmds.connectAttr(plug, f"{main_rebuild_curve}.inputCurve")
+    main_uniform_crv = cmds.circle(
+        name=f"{surface}_uniformMainCrv", constructionHistory=False
+    )
+    main_uniform_crv = cmds.parent(main_uniform_crv, parent)[0]
+    cmds.connectAttr(f"{main_rebuild_curve}.outputCurve", f"{main_uniform_crv}.create")
+
+    up_rebuild_curve = cmds.createNode("rebuildCurve")
+    plug = cmds.listConnections(
+        f"{up_offset_crv}.inputCurve", source=True, destination=False, plugs=True
+    )[0]
+    cmds.connectAttr(plug, f"{up_rebuild_curve}.inputCurve")
+    up_uniform_crv = cmds.circle(
+        name=f"{surface}_uniformUpCrv", constructionHistory=False
+    )
+    up_uniform_crv = cmds.parent(up_uniform_crv, parent)[0]
+    cmds.connectAttr(f"{up_rebuild_curve}.outputCurve", f"{up_uniform_crv}.create")
+
+    main_uniform_output_plugs = []
+    for plug in main_orig_uniform_parameter_plugs:
+        poci = cmds.createNode("pointOnCurveInfo")
+        cmds.connectAttr(plug, f"{poci}.parameter")
+        cmds.connectAttr(f"{main_uniform_crv}.worldSpace[0]", f"{poci}.inputCurve")
+        com_m = cmds.createNode("composeMatrix")
+        cmds.connectAttr(f"{poci}.position", f"{com_m}.inputTranslate")
+        main_uniform_output_plugs.append(f"{com_m}.outputMatrix")
+    up_uniform_output_plugs = []
+    for plug in up_orig_uniform_parameter_plugs:
+        poci = cmds.createNode("pointOnCurveInfo")
+        cmds.connectAttr(plug, f"{poci}.parameter")
+        cmds.connectAttr(f"{up_uniform_crv}.worldSpace[0]", f"{poci}.inputCurve")
+        com_m = cmds.createNode("composeMatrix")
+        cmds.connectAttr(f"{poci}.position", f"{com_m}.inputTranslate")
+        up_uniform_output_plugs.append(f"{com_m}.outputMatrix")
+
+    # splineIK - ribbon - uniform curve
+    main_ik_joints  # splineik
+    up_ik_joints  # splineik
+    main_output_plugs  # ribbon
+    up_output_plugs  # ribbon
+    main_uniform_output_plugs  # uniform
+    up_uniform_output_plugs  # uniform
+
+    spline_ik_outs = []
+    uv_outs = []
+    uniform_outs = []
+    result_parent = parent
+    c = 0
+    last_index = len(main_ik_joints) - 1
+    md = cmds.createNode("multiplyDivide")
+    cmds.setAttr(f"{md}.input1", 1, 0, 0)
+    cmds.connectAttr(negate_plug, f"{md}.input2X")
+    cmds.connectAttr(negate_plug, f"{md}.input2Y")
+    cmds.connectAttr(negate_plug, f"{md}.input2Z")
+    negate_primary_vector_plug = f"{md}.output"
+    md = cmds.createNode("multiplyDivide")
+    cmds.setAttr(f"{md}.input1", -1, 0, 0)
+    cmds.connectAttr(negate_plug, f"{md}.input2X")
+    cmds.connectAttr(negate_plug, f"{md}.input2Y")
+    cmds.connectAttr(negate_plug, f"{md}.input2Z")
+    negate_primary_last_vector_plug = f"{md}.output"
+    for main_j, up_j in zip(main_ik_joints, up_ik_joints):
+        if c == last_index:
+            next_index = last_index - 1
+            primary_vector_plug = negate_primary_last_vector_plug
+        else:
+            next_index = c + 1
+            primary_vector_plug = negate_primary_vector_plug
+
+        t = cmds.createNode(
+            "transform", parent=result_parent, name=f"{surface}_splineIKOut{c}"
+        )
+        aim_m = cmds.createNode("aimMatrix")
+        cmds.connectAttr(primary_vector_plug, f"{aim_m}.primaryInputAxis")
+        cmds.setAttr(f"{aim_m}.secondaryInputAxis", 0, 1, 0)
+        cmds.setAttr(f"{aim_m}.primaryMode", 1)
+        cmds.setAttr(f"{aim_m}.secondaryMode", 1)
+        cmds.connectAttr(f"{main_j}.worldMatrix[0]", f"{aim_m}.inputMatrix")
+        cmds.connectAttr(
+            f"{main_ik_joints[next_index]}.worldMatrix[0]",
+            f"{aim_m}.primaryTargetMatrix",
+        )
+        cmds.connectAttr(f"{up_j}.worldMatrix[0]", f"{aim_m}.secondaryTargetMatrix")
+
+        mult_m = cmds.createNode("multMatrix")
+        cmds.connectAttr(f"{aim_m}.outputMatrix", f"{mult_m}.matrixIn[0]")
+        cmds.connectAttr(
+            f"{result_parent}.worldInverseMatrix[0]", f"{mult_m}.matrixIn[1]"
+        )
+        decom_m = cmds.createNode("decomposeMatrix")
+        cmds.connectAttr(f"{mult_m}.matrixSum", f"{decom_m}.inputMatrix")
+        cmds.connectAttr(f"{decom_m}.outputTranslate", f"{t}.t")
+        cmds.connectAttr(f"{decom_m}.outputRotate", f"{t}.r")
+        c += 1
+        result_parent = t
+        spline_ik_outs.append(t)
+
+    c = 0
+    result_parent = parent
+    for main_ribbon_output, up_ribbon_output in zip(main_output_plugs, up_output_plugs):
+        if c == last_index:
+            next_index = last_index - 1
+            primary_vector_plug = negate_primary_last_vector_plug
+        else:
+            next_index = c + 1
+            primary_vector_plug = negate_primary_vector_plug
+
+        t = cmds.createNode(
+            "transform", parent=result_parent, name=f"{surface}_uvOut{c}"
+        )
+        aim_m = cmds.createNode("aimMatrix")
+        cmds.connectAttr(primary_vector_plug, f"{aim_m}.primaryInputAxis")
+        cmds.setAttr(f"{aim_m}.secondaryInputAxis", 0, 1, 0)
+        cmds.setAttr(f"{aim_m}.primaryMode", 1)
+        cmds.setAttr(f"{aim_m}.secondaryMode", 1)
+        cmds.connectAttr(main_ribbon_output, f"{aim_m}.inputMatrix")
+        cmds.connectAttr(
+            main_output_plugs[next_index],
+            f"{aim_m}.primaryTargetMatrix",
+        )
+        cmds.connectAttr(up_ribbon_output, f"{aim_m}.secondaryTargetMatrix")
+
+        mult_m = cmds.createNode("multMatrix")
+        cmds.connectAttr(f"{aim_m}.outputMatrix", f"{mult_m}.matrixIn[0]")
+        cmds.connectAttr(
+            f"{result_parent}.worldInverseMatrix[0]", f"{mult_m}.matrixIn[1]"
+        )
+        decom_m = cmds.createNode("decomposeMatrix")
+        cmds.connectAttr(f"{mult_m}.matrixSum", f"{decom_m}.inputMatrix")
+        cmds.connectAttr(f"{decom_m}.outputTranslate", f"{t}.t")
+        cmds.connectAttr(f"{decom_m}.outputRotate", f"{t}.r")
+        c += 1
+        result_parent = t
+        uv_outs.append(t)
+
+    c = 0
+    result_parent = parent
+    for main_uniform_output, up_uniform_output in zip(
+        main_uniform_output_plugs, up_uniform_output_plugs
+    ):
+        if c == last_index:
+            next_index = last_index - 1
+            primary_vector_plug = negate_primary_last_vector_plug
+        else:
+            next_index = c + 1
+            primary_vector_plug = negate_primary_vector_plug
+
+        t = cmds.createNode(
+            "transform", parent=result_parent, name=f"{surface}_uniformOut{c}"
+        )
+        aim_m = cmds.createNode("aimMatrix")
+        cmds.connectAttr(primary_vector_plug, f"{aim_m}.primaryInputAxis")
+        cmds.setAttr(f"{aim_m}.secondaryInputAxis", 0, 1, 0)
+        cmds.setAttr(f"{aim_m}.primaryMode", 1)
+        cmds.setAttr(f"{aim_m}.secondaryMode", 1)
+        cmds.connectAttr(main_uniform_output, f"{aim_m}.inputMatrix")
+        cmds.connectAttr(
+            main_uniform_output_plugs[next_index],
+            f"{aim_m}.primaryTargetMatrix",
+        )
+        cmds.connectAttr(up_uniform_output, f"{aim_m}.secondaryTargetMatrix")
+
+        mult_m = cmds.createNode("multMatrix")
+        cmds.connectAttr(f"{aim_m}.outputMatrix", f"{mult_m}.matrixIn[0]")
+        cmds.connectAttr(
+            f"{result_parent}.worldInverseMatrix[0]", f"{mult_m}.matrixIn[1]"
+        )
+        decom_m = cmds.createNode("decomposeMatrix")
+        cmds.connectAttr(f"{mult_m}.matrixSum", f"{decom_m}.inputMatrix")
+        cmds.connectAttr(f"{decom_m}.outputTranslate", f"{t}.t")
+        cmds.connectAttr(f"{decom_m}.outputRotate", f"{t}.r")
+        c += 1
+        result_parent = t
+        uniform_outs.append(t)
+
+    uv_uniform_pbs = []
+    for uv_out, uniform_out in zip(uv_outs, uniform_outs):
+        pb = cmds.createNode("pairBlend")
+        cmds.setAttr(f"{pb}.rotInterpolation", 1)
+        cmds.connectAttr(f"{uv_out}.t", f"{pb}.inTranslate1")
+        cmds.connectAttr(f"{uv_out}.r", f"{pb}.inRotate1")
+        cmds.connectAttr(f"{uniform_out}.t", f"{pb}.inTranslate2")
+        cmds.connectAttr(f"{uniform_out}.r", f"{pb}.inRotate2")
+        cmds.connectAttr(uniform_attr, f"{pb}.weight")
+        uv_uniform_pbs.append(pb)
+
+    pos_parent = parent
+    pos_list = []
+    c = 0
+    for ik_out, uv_uniform_pb in zip(spline_ik_outs, uv_uniform_pbs):
+        pb = cmds.createNode("pairBlend")
+        cmds.setAttr(f"{pb}.rotInterpolation", 1)
+        cmds.connectAttr(f"{ik_out}.t", f"{pb}.inTranslate1")
+        cmds.connectAttr(f"{ik_out}.r", f"{pb}.inRotate1")
+        cmds.connectAttr(f"{uv_uniform_pb}.outTranslate", f"{pb}.inTranslate2")
+        cmds.connectAttr(f"{uv_uniform_pb}.outRotate", f"{pb}.inRotate2")
+        cmds.connectAttr(stretch_squash_attr, f"{pb}.weight")
+
+        pos = cmds.createNode("transform", name=f"{surface}_pos{c}", parent=pos_parent)
+        cmds.connectAttr(f"{pb}.outTranslate", f"{pos}.t")
+        cmds.connectAttr(f"{pb}.outRotate", f"{pos}.r")
+
+        c += 1
+        pos_parent = pos
+        pos_list.append(pos)
+
+    outputs = []
+    for i in range(len(output_u_values)):
+        output = cmds.createNode(
+            "transform", name=f"{surface}_output{i}", parent=parent
+        )
+        cmds.parentConstraint(pos_list[i], output)
+        outputs.append(output)
+
+    # volume
+    curve_info = cmds.createNode("curveInfo")
+    cmds.connectAttr(f"{main_orig_uniform_crv}.local", f"{curve_info}.inputCurve")
+    original_length_attr = f"{curve_info}.arcLength"
+    curve_info = cmds.createNode("curveInfo")
+    cmds.connectAttr(f"{main_uniform_crv}.local", f"{curve_info}.inputCurve")
+    deformed_length_attr = f"{curve_info}.arcLength"
+
+    divide = cmds.createNode("divide")
+    cmds.connectAttr(original_length_attr, f"{divide}.input1")
+    cmds.connectAttr(deformed_length_attr, f"{divide}.input2")
+
+    pma = cmds.createNode("plusMinusAverage")
+    cmds.setAttr(f"{pma}.operation", 2)
+    cmds.setAttr(f"{pma}.input1D[0]", 1)
+    cmds.connectAttr(f"{divide}.output", f"{pma}.input1D[1]")
+    volume_ratio_attr = f"{pma}.output1D"
+
+    for multiple, output in zip(volume_multiple, outputs):
+        cmds.addAttr(
+            output, longName="volume_multiple", attributeType="float", keyable=True
+        )
+        cmds.setAttr(f"{output}.volume_multiple", multiple)
+        multiply = cmds.createNode("multiply")
+        cmds.connectAttr(f"{output}.volume_multiple", f"{multiply}.input[0]")
+        cmds.connectAttr(volume_ratio_attr, f"{multiply}.input[1]")
+        cmds.connectAttr(volume_attr, f"{multiply}.input[2]")
+        cmds.connectAttr(stretch_squash_attr, f"{multiply}.input[3]")
+
+        pma = cmds.createNode("plusMinusAverage")
+        cmds.setAttr(f"{pma}.operation", 2)
+        cmds.setAttr(f"{pma}.input1D[0]", 1)
+        cmds.connectAttr(f"{multiply}.output", f"{pma}.input1D[1]")
+
+        cmds.connectAttr(f"{pma}.output1D", f"{output}.sx")
+        cmds.connectAttr(f"{pma}.output1D", f"{output}.sy")
+        cmds.connectAttr(f"{pma}.output1D", f"{output}.sz")
+
+    return surface, outputs
+
+
 def create_ribbon_surf(
     parent,
     name,
