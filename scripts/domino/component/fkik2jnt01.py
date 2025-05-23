@@ -101,8 +101,12 @@ class Rig(component.Rig):
 
     def populate_controller(self):
         if not self["controller"]:
+            self.add_controller(
+                description="host",
+                parent_controllers=[],
+            )
             fk_descriptions = ["fk0", "fk1", "fk2"]
-            parent_controllers = []
+            parent_controllers = [(self.identifier, "host")]
             for description in fk_descriptions:
                 self.add_controller(
                     description=description,
@@ -118,10 +122,6 @@ class Rig(component.Rig):
                     parent_controllers=parent_controllers,
                 )
                 parent_controllers = [(self.identifier, description)]
-            self.add_controller(
-                description="host",
-                parent_controllers=[],
-            )
 
     def populate_output(self):
         if not self["output"]:
@@ -145,11 +145,37 @@ class Rig(component.Rig):
         name, side, index = self.identifier
 
         # controller
-        fk0_npo, fk0_ctl = self["controller"][0].create(
+        host_npo, host_ctl = self["controller"][0].create(
             parent=self.rig_root,
             shape=(
                 self["controller"][0]["shape"]
                 if "shape" in self["controller"][0]
+                else "cube"
+            ),
+            color=12,
+        )
+        cmds.setAttr(f"{host_ctl}.tx", lock=True, keyable=False)
+        cmds.setAttr(f"{host_ctl}.ty", lock=True, keyable=False)
+        cmds.setAttr(f"{host_ctl}.tz", lock=True, keyable=False)
+        cmds.setAttr(f"{host_ctl}.rx", lock=True, keyable=False)
+        cmds.setAttr(f"{host_ctl}.ry", lock=True, keyable=False)
+        cmds.setAttr(f"{host_ctl}.rz", lock=True, keyable=False)
+        cmds.setAttr(f"{host_ctl}.rotateOrder", channelBox=False)
+        cmds.setAttr(f"{host_ctl}.mirror_type", 1)
+        cmds.addAttr(
+            host_ctl,
+            longName="fkik",
+            attributeType="float",
+            minValue=0,
+            maxValue=1,
+            defaultValue=0,
+            keyable=True,
+        )
+        fk0_npo, fk0_ctl = self["controller"][1].create(
+            parent=self.rig_root,
+            shape=(
+                self["controller"][1]["shape"]
+                if "shape" in self["controller"][1]
                 else "cube"
             ),
             color=12,
@@ -184,11 +210,11 @@ class Rig(component.Rig):
         cmds.connectAttr(f"{condition0}.outColorR", f"{multiply0}.input[1]")
         cmds.connectAttr(f"{multiply0}.output", f"{fk0_length_grp}.tx")
 
-        fk1_npo, fk1_ctl = self["controller"][1].create(
+        fk1_npo, fk1_ctl = self["controller"][2].create(
             parent=fk0_length_grp,
             shape=(
-                self["controller"][1]["shape"]
-                if "shape" in self["controller"][1]
+                self["controller"][2]["shape"]
+                if "shape" in self["controller"][2]
                 else "cube"
             ),
             color=12,
@@ -223,11 +249,11 @@ class Rig(component.Rig):
         cmds.connectAttr(f"{condition0}.outColorR", f"{multiply0}.input[1]")
         cmds.connectAttr(f"{multiply0}.output", f"{fk1_length_grp}.tx")
 
-        fk2_npo, fk2_ctl = self["controller"][2].create(
+        fk2_npo, fk2_ctl = self["controller"][3].create(
             parent=fk1_length_grp,
             shape=(
-                self["controller"][2]["shape"]
-                if "shape" in self["controller"][2]
+                self["controller"][3]["shape"]
+                if "shape" in self["controller"][3]
                 else "cube"
             ),
             color=12,
@@ -235,11 +261,11 @@ class Rig(component.Rig):
         )
         cmds.setAttr(f"{fk2_ctl}.mirror_type", 1)
 
-        ik_pos_npo, ik_pos_ctl = self["controller"][3].create(
+        ik_pos_npo, ik_pos_ctl = self["controller"][4].create(
             parent=self.rig_root,
             shape=(
-                self["controller"][3]["shape"]
-                if "shape" in self["controller"][3]
+                self["controller"][4]["shape"]
+                if "shape" in self["controller"][4]
                 else "cube"
             ),
             color=12,
@@ -250,11 +276,11 @@ class Rig(component.Rig):
         cmds.setAttr(f"{ik_pos_ctl}.rz", lock=True, keyable=False)
         cmds.setAttr(f"{ik_pos_ctl}.mirror_type", 2)
 
-        pole_vec_npo, pole_vec_ctl = self["controller"][4].create(
+        pole_vec_npo, pole_vec_ctl = self["controller"][5].create(
             parent=self.rig_root,
             shape=(
-                self["controller"][4]["shape"]
-                if "shape" in self["controller"][4]
+                self["controller"][5]["shape"]
+                if "shape" in self["controller"][5]
                 else "cube"
             ),
             color=12,
@@ -305,11 +331,11 @@ class Rig(component.Rig):
         cmds.pointConstraint(ik_pos_ctl, ik0_jnt, maintainOffset=False)
         cmds.hide(ik0_jnt)
 
-        ik_npo, ik_ctl = self["controller"][5].create(
+        ik_npo, ik_ctl = self["controller"][6].create(
             parent=self.rig_root,
             shape=(
-                self["controller"][5]["shape"]
-                if "shape" in self["controller"][5]
+                self["controller"][6]["shape"]
+                if "shape" in self["controller"][6]
                 else "cube"
             ),
             color=12,
@@ -360,11 +386,11 @@ class Rig(component.Rig):
             keyable=True,
         )
 
-        ik_local_npo, ik_local_ctl = self["controller"][6].create(
+        ik_local_npo, ik_local_ctl = self["controller"][7].create(
             parent=ik_ctl,
             shape=(
-                self["controller"][6]["shape"]
-                if "shape" in self["controller"][6]
+                self["controller"][7]["shape"]
+                if "shape" in self["controller"][7]
                 else "cube"
             ),
             color=12,
@@ -374,32 +400,6 @@ class Rig(component.Rig):
         cmds.orientConstraint(ik_local_ctl, ik2_jnt)
         cmds.scaleConstraint(ik_local_ctl, ik2_jnt)
 
-        host_npo, host_ctl = self["controller"][7].create(
-            parent=self.rig_root,
-            shape=(
-                self["controller"][7]["shape"]
-                if "shape" in self["controller"][7]
-                else "cube"
-            ),
-            color=12,
-        )
-        cmds.setAttr(f"{host_ctl}.tx", lock=True, keyable=False)
-        cmds.setAttr(f"{host_ctl}.ty", lock=True, keyable=False)
-        cmds.setAttr(f"{host_ctl}.tz", lock=True, keyable=False)
-        cmds.setAttr(f"{host_ctl}.rx", lock=True, keyable=False)
-        cmds.setAttr(f"{host_ctl}.ry", lock=True, keyable=False)
-        cmds.setAttr(f"{host_ctl}.rz", lock=True, keyable=False)
-        cmds.setAttr(f"{host_ctl}.rotateOrder", channelBox=False)
-        cmds.setAttr(f"{host_ctl}.mirror_type", 1)
-        cmds.addAttr(
-            host_ctl,
-            longName="fkik",
-            attributeType="float",
-            minValue=0,
-            maxValue=1,
-            defaultValue=0,
-            keyable=True,
-        )
         cmds.connectAttr(f"{host_ctl}.fkik", f"{ik_pos_npo}.v")
         cmds.connectAttr(f"{host_ctl}.fkik", f"{pole_vec_npo}.v")
         cmds.connectAttr(f"{host_ctl}.fkik", f"{ik_npo}.v")
