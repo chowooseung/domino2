@@ -127,7 +127,7 @@ elif len(selected) == 3:
     cmds.select(selected)"""
 
 detach_guide_command = """from maya import cmds
-from domino import serialize
+from domino.component import serialize
 
 roots = []
 for sel in cmds.ls(selection=True):
@@ -139,6 +139,7 @@ for sel in cmds.ls(selection=True):
         )
     elif cmds.objExists(sel + ".is_domino_guide_root"):
         roots.append(sel)
+rig = serialize()
 stack = [rig]
 while stack:
     component = stack.pop(0)
