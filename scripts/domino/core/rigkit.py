@@ -7,7 +7,7 @@ from pathlib import Path
 
 # domino
 from domino.core.utils import logger
-from domino.core import FCurve
+from domino.core import FCurve, Transform
 
 
 # region IK
@@ -319,10 +319,6 @@ def ik_3jnt(
     pass
 
 
-def ik_spline():
-    pass
-
-
 # endregion
 
 
@@ -338,7 +334,7 @@ def ribbon_spline_ik(
     uniform_attr,
     volume_attr,
     volume_multiple,
-    output_u_values,
+    output_u_value_plugs,
     negate_plug=None,
 ):
     surface = cmds.parent(surface, parent)[0]
@@ -423,14 +419,14 @@ def ribbon_spline_ik(
 
     main_orig_output_plugs = []
     c = 0
-    for plug in output_u_values:
+    for plug in output_u_value_plugs:
         cmds.connectAttr(plug, f"{uvpin}.coordinate[{c}].coordinateU")
         cmds.setAttr(f"{uvpin}.coordinate[{c}].coordinateV", 0.5)
         main_orig_output_plugs.append(f"{uvpin}.outputMatrix[{c}]")
         c += 1
 
     up_orig_output_plugs = []
-    for plug in output_u_values:
+    for plug in output_u_value_plugs:
         cmds.connectAttr(plug, f"{uvpin}.coordinate[{c}].coordinateU")
         up_orig_output_plugs.append(f"{uvpin}.outputMatrix[{c}]")
         c += 1
@@ -473,14 +469,14 @@ def ribbon_spline_ik(
 
     main_output_plugs = []
     c = 0
-    for plug in output_u_values:
+    for plug in output_u_value_plugs:
         cmds.connectAttr(plug, f"{uvpin}.coordinate[{c}].coordinateU")
         cmds.setAttr(f"{uvpin}.coordinate[{c}].coordinateV", 0.5)
         main_output_plugs.append(f"{uvpin}.outputMatrix[{c}]")
         c += 1
 
     up_output_plugs = []
-    for plug in output_u_values:
+    for plug in output_u_value_plugs:
         cmds.connectAttr(plug, f"{uvpin}.coordinate[{c}].coordinateU")
         up_output_plugs.append(f"{uvpin}.outputMatrix[{c}]")
         c += 1
@@ -775,7 +771,7 @@ def ribbon_spline_ik(
         pos_list.append(pos)
 
     outputs = []
-    for i in range(len(output_u_values)):
+    for i in range(len(output_u_value_plugs)):
         output = cmds.createNode(
             "transform", name=f"{surface}_output{i}", parent=parent
         )
@@ -821,171 +817,6 @@ def ribbon_spline_ik(
         cmds.connectAttr(f"{pma}.output1D", f"{output}.sz")
 
     return surface, outputs
-
-
-def create_ribbon_surf(
-    parent,
-    name,
-    positions,
-    width_vector=(0, 0, 1),
-    width=0.1,
-    degree=3,
-    drivers=[],
-    invserse_plugs=[],
-):
-    positions = [om.MVector(p) for p in positions]
-    width_vector = om.MVector(width_vector)
-    normalize_width_vector = width_vector.normalize()
-    offset_vector = normalize_width_vector * width
-
-    crv0_positions = []
-    crv1_positions = []
-    crv2_positions = []
-    for p in positions:
-        crv0_positions.append(p - (offset_vector / 2))
-        crv1_positions.append(p)
-        crv2_positions.append(p + (offset_vector / 2))
-    crv0 = cmds.curve(point=crv0_positions, degree=degree)
-    crv1 = cmds.curve(point=crv1_positions, degree=degree)
-    crv2 = cmds.curve(point=crv2_positions, degree=degree)
-
-    surf = cmds.loft(
-        crv0,
-        crv1,
-        crv2,
-        name=name,
-        constructionHistory=0,
-        uniform=1,
-        close=0,
-        reverse=0,
-        degree=1,
-        sectionSpans=1,
-        rn=0,
-        polygon=0,
-        reverseSurfaceNormals=True,
-    )
-    cmds.delete(crv0, crv1, crv2)
-
-    if parent:
-        surf = cmds.parent(surf, parent)
-    surf = cmds.rename(surf, name)
-
-    if drivers:
-        sc = cmds.skinCluster(
-            drivers + [surf],
-            name=f"{name}_sc0",
-            maximumInfluences=len(drivers),
-            normalizeWeights=True,
-            obeyMaxInfluences=False,
-            weightDistribution=1,
-            multi=True,
-        )[0]
-        for i, plug in enumerate(
-            cmds.listConnections(f"{sc}.matrix", source=True, destination=False)
-        ):
-            cmds.connectAttr(f"{plug}.matrix", f"{sc}.matrix[{i}]", force=True)
-        for i, plug in enumerate(invserse_plugs):
-            cmds.connectAttr(plug, f"{sc}.bindPreMatrix[{i}]")
-    return surf
-
-
-def create_tangent_output(
-    surf, name, output_u_values, primary_axis="x", secondary_axis="-z"
-):
-    axis = ["x", "y", "z", "-x", "-y", "-z"]
-    primary_axis_index = axis.index(primary_axis)
-    secondary_axis_index = axis.index(secondary_axis)
-
-    parent = cmds.listRelatives(surf, parent=True)
-    parent = parent[0] if parent else None
-
-    uv_pin = cmds.createNode("uvPin")
-    shape = cmds.listRelatives(surf, shapes=True)[0]
-    cmds.connectAttr(f"{shape}.local", f"{uv_pin}.deformedGeometry")
-    outputs = []
-    for i, u_value in enumerate(output_u_values):
-        cmds.setAttr(f"{uv_pin}.coordinate[{i}].coordinateU", u_value)
-        cmds.setAttr(f"{uv_pin}.coordinate[{i}].coordinateV", 0.5)
-        cmds.setAttr(f"{uv_pin}.tangentAxis", primary_axis_index)
-        cmds.setAttr(f"{uv_pin}.normalAxis", secondary_axis_index)
-
-        output = cmds.createNode(
-            "transform", parent=parent, name=f"{name}_{i}_tangentOutput"
-        )
-        cmds.connectAttr(f"{uv_pin}.outputMatrix[{i}]", f"{output}.offsetParentMatrix")
-        outputs.append(output)
-    return outputs
-
-
-def create_aim_output(
-    surf,
-    name,
-    output_u_values,
-    up_vector=(0, 0, 1),
-    primary_vector=(1, 0, 0),
-    secondary_vector=(0, 0, 1),
-):
-    parent = cmds.listRelatives(surf, parent=True)
-    parent = parent[0] if parent else None
-
-    uv_pin = cmds.createNode("uvPin")
-    shape = cmds.listRelatives(surf, shapes=True)[0]
-    cmds.connectAttr(f"{shape}.local", f"{uv_pin}.deformedGeometry")
-    pos_matrices = []
-    up_matrices = []
-    for i, u_value in enumerate(output_u_values):
-        cmds.setAttr(f"{uv_pin}.coordinate[{i}].coordinateU", u_value)
-        cmds.setAttr(f"{uv_pin}.coordinate[{i}].coordinateV", 0.5)
-        pos_matrices.append(f"{uv_pin}.outputMatrix[{i}]")
-
-        pos_m = om.MTransformationMatrix(
-            om.MMatrix(cmds.getAttr(f"{uv_pin}.outputMatrix[{i}]"))
-        )
-        pos_vector = pos_m.translation(om.MSpace.kWorld)
-        up_m = om.MTransformationMatrix()
-        up_m.setTranslation(pos_vector + om.MVector(up_vector), om.MSpace.kWorld)
-
-        mult_m = cmds.createNode("multMatrix")
-        cmds.setAttr(f"{mult_m}.matrixIn[0]", up_m.asMatrix(), type="matrix")
-        m = om.MMatrix(cmds.getAttr(f"{uv_pin}.outputMatrix[{i}]"))
-        cmds.setAttr(f"{mult_m}.matrixIn[1]", m.inverse(), type="matrix")
-        cmds.connectAttr(f"{uv_pin}.outputMatrix[{i}]", f"{mult_m}.matrixIn[2]")
-        up_matrices.append(f"{mult_m}.matrixSum")
-
-    outputs = []
-    for i in range(len(pos_matrices) - 1):
-        aim_m = cmds.createNode("aimMatrix")
-        cmds.setAttr(f"{aim_m}.primaryInputAxis", *primary_vector)
-        cmds.setAttr(f"{aim_m}.secondaryInputAxis", *secondary_vector)
-        cmds.setAttr(f"{aim_m}.primaryMode", 1)
-        cmds.setAttr(f"{aim_m}.secondaryMode", 1)
-
-        cmds.connectAttr(pos_matrices[i], f"{aim_m}.inputMatrix")
-        cmds.connectAttr(pos_matrices[i + 1], f"{aim_m}.primaryTargetMatrix")
-        cmds.connectAttr(up_matrices[i], f"{aim_m}.secondaryTargetMatrix")
-
-        output = cmds.createNode(
-            "transform", parent=parent, name=f"{name}_{i}_aimOutput"
-        )
-        cmds.connectAttr(f"{aim_m}.outputMatrix", f"{output}.offsetParentMatrix")
-        outputs.append(output)
-
-    inverse_primary_vector = om.MVector(primary_vector) * -1
-    aim_m = cmds.createNode("aimMatrix")
-    cmds.setAttr(f"{aim_m}.primaryInputAxis", *inverse_primary_vector)
-    cmds.setAttr(f"{aim_m}.secondaryInputAxis", *secondary_vector)
-    cmds.setAttr(f"{aim_m}.primaryMode", 1)
-    cmds.setAttr(f"{aim_m}.secondaryMode", 1)
-
-    cmds.connectAttr(pos_matrices[i + 1], f"{aim_m}.inputMatrix")
-    cmds.connectAttr(pos_matrices[i], f"{aim_m}.primaryTargetMatrix")
-    cmds.connectAttr(up_matrices[i + 1], f"{aim_m}.secondaryTargetMatrix")
-    output = cmds.createNode(
-        "transform", parent=parent, name=f"{name}_{i + 1}_aimOutput"
-    )
-    cmds.connectAttr(f"{aim_m}.outputMatrix", f"{output}.offsetParentMatrix")
-    outputs.append(output)
-    return outputs
 
 
 # endregion

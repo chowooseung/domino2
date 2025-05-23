@@ -587,7 +587,7 @@ class Rig(component.Rig):
             uniform_attr=f"{host_ctl}.uniform",
             volume_attr=f"{host_ctl}.volume",
             volume_multiple=volume_multiple,
-            output_u_values=[
+            output_u_value_plugs=[
                 f"{self.rig_root}.output_u_values[{i}]"
                 for i in range(self["output_count"]["value"])
             ],
