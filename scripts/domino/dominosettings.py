@@ -1088,6 +1088,19 @@ class Assembly(DynamicWidget):
 # endregion
 
 
+# region COG01
+class COG01(DynamicWidget):
+
+    def __init__(self, parent=None, root=None):
+        super(COG01, self).__init__(parent=parent, root=root)
+        UIGenerator.add_common_component_settings(self.parent_widget, root)
+
+        UIGenerator.add_notes(self.parent_widget, f"{root}.notes")
+
+
+# endregion
+
+
 # region Control01
 class Control01(DynamicWidget):
 
@@ -2326,6 +2339,7 @@ class HumanSpine01(DynamicWidget):
 # region Settings
 UITABLE = {
     "assembly": Assembly,
+    "cog01": COG01,
     "control01": Control01,
     "fk01": Fk01,
     "uicontainer01": UIContainer01,

@@ -3,7 +3,6 @@ from domino import component
 from domino.core import (
     attribute,
     Name,
-    Transform,
     controller_extension,
     joint_extension,
     center,
@@ -22,7 +21,7 @@ import logging
 
 # region Initialize Settings
 ORIGINMATRIX = om.MMatrix()
-matrices = [list(ORIGINMATRIX) for _ in range(2)]
+matrices = [list(ORIGINMATRIX)]
 DATA = [
     attribute.String(longName="component", value="assembly"),
     attribute.String(longName="side_c_str", value=center),
@@ -30,8 +29,8 @@ DATA = [
     attribute.String(longName="side_r_str", value=right),
     attribute.String(longName="controller_extension", value=controller_extension),
     attribute.String(longName="joint_extension", value=joint_extension),
-    attribute.Matrix(longName="guide_matrix", multi=True, value=[list(ORIGINMATRIX)]),
-    attribute.Matrix(longName="npo_matrix", multi=True, value=[list(ORIGINMATRIX)]),
+    attribute.Matrix(longName="guide_matrix", multi=True, value=matrices),
+    attribute.Matrix(longName="npo_matrix", multi=True, value=matrices),
     attribute.Matrix(
         longName="initialize_output_matrix",
         multi=True,
@@ -72,23 +71,14 @@ description = """## assembly
 최상위 component.   
 
 #### Guide
-- COG 는 무게중심점입니다.
+> guide 는 controller 를 조절하지 않습니다. 다른 guide를 drive하거나 할 때 사용됩니다.
+
 
 #### Settings
 - Modeling  
 > build 시 먼저 modeling 을 불러옵니다.
 - Dummy  
 > build 시 먼저 dummy 를 불러옵니다.
-- Blendshape Manager
-> build 시 blendshape manager 를 로드합니다.
-- Pose Manager
-> build 시 pose manager 를 로드합니다.
-- SDK Manager
-> build 시 sdk manager 를 로드합니다.
-- Space Manager
-> build 시 space manager 를 로드합니다.
-- Deformer Weights Manager
-> build 시 deformer weights manager 를 로드합니다.
 - Custom Scripts  
 > build 시 같이 실행되는 pre, post script 를 관리합니다.
 > Manager 에서 domino path 를 버전업 하게되면 script 또한 버전업 되어서 저장됩니다."""
@@ -111,19 +101,14 @@ class Rig(component.Rig):
             self.add_controller(
                 description="sub", parent_controllers=[(self.identifier, "")]
             )
-            self.add_controller(
-                description="COG", parent_controllers=[(self.identifier, "sub")]
-            )
 
     def populate_output(self):
         if not self["output"]:
             self.add_output(description="sub", extension=Name.controller_extension)
-            self.add_output(description="", extension="output")
 
     def populate_output_joint(self):
         if not self["output_joint"]:
             self.add_output_joint(parent_description=None, description="")
-            self.add_output_joint(parent_description="", description="COG")
 
     # region RIG
     @build_log(logging.INFO)
@@ -178,34 +163,11 @@ class Rig(component.Rig):
             ),
             color=21,
         )
-        self["output"][0].connect()
-
-        COG_npo, COG_ctl = self["controller"][2].create(
-            parent=sub_ctl,
-            shape=(
-                self["controller"][2]["shape"]
-                if "shape" in self["controller"][2]
-                else "cylinder"
-            ),
-            color=17,
-            npo_matrix_index=0,
-        )
-
         # output
-        ins = Transform(
-            parent=COG_ctl,
-            name=name,
-            side=side,
-            index=index,
-            extension="output",
-            m=cmds.xform(COG_ctl, query=True, matrix=True, worldSpace=True),
-        )
-        output = ins.create()
-        self["output"][1].connect()
+        self["output"][0].connect()
 
         # output joint
         self["output_joint"][0].create()
-        self["output_joint"][1].create()
 
     # endregion
 
@@ -216,25 +178,30 @@ class Rig(component.Rig):
         m = cmds.getAttr(f"{self.rig_root}.guide_matrix[0]")
         guide = self.add_guide(
             parent=self.guide_root,
-            description="COG",
+            description="",
             m=m,
             mirror_type=self["guide_mirror_type"]["value"][0],
         )
+        cmds.setAttr(f"{guide}.sx", lock=False, keyable=True)
+        cmds.setAttr(f"{guide}.sy", lock=False, keyable=True)
+        cmds.setAttr(f"{guide}.sz", lock=False, keyable=True)
         pick_m = cmds.createNode("pickMatrix")
+        cmds.setAttr(f"{pick_m}.useTranslate", 0)
+        cmds.setAttr(f"{pick_m}.useRotate", 0)
         cmds.setAttr(f"{pick_m}.useScale", 0)
         cmds.setAttr(f"{pick_m}.useShear", 0)
         cmds.connectAttr(f"{guide}.worldMatrix[0]", f"{pick_m}.inputMatrix")
         cmds.connectAttr(f"{pick_m}.outputMatrix", f"{self.guide_root}.npo_matrix[0]")
         cmds.connectAttr(
             f"{pick_m}.outputMatrix",
-            f"{self.guide_root}.initialize_output_matrix[1]",
+            f"{self.guide_root}.initialize_output_matrix[0]",
         )
 
         inv_m = cmds.createNode("inverseMatrix")
         cmds.connectAttr(f"{pick_m}.outputMatrix", f"{inv_m}.inputMatrix")
         cmds.connectAttr(
             f"{inv_m}.outputMatrix",
-            f"{self.guide_root}.initialize_output_inverse_matrix[1]",
+            f"{self.guide_root}.initialize_output_inverse_matrix[0]",
         )
 
     # endregion
