@@ -1,13 +1,12 @@
 # maya
 from maya import cmds
-from maya.api import OpenMaya as om
 
 # built-ins
 from pathlib import Path
 
 # domino
 from domino.core.utils import logger
-from domino.core import FCurve, Transform
+from domino.core import FCurve
 
 
 # region IK
