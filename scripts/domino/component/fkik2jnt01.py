@@ -114,7 +114,7 @@ class Rig(component.Rig):
                 )
                 parent_controllers = [(self.identifier, description)]
 
-            parent_controllers = []
+            parent_controllers = [(self.identifier, "host")]
             ik_descriptions = ["ikPos", "poleVec", "ik", "ikLocal"]
             for description in ik_descriptions:
                 self.add_controller(
@@ -168,6 +168,13 @@ class Rig(component.Rig):
             attributeType="float",
             minValue=0,
             maxValue=1,
+            defaultValue=0,
+            keyable=True,
+        )
+        cmds.addAttr(
+            host_ctl,
+            longName="armpit_roll",
+            attributeType="float",
             defaultValue=0,
             keyable=True,
         )
@@ -292,6 +299,20 @@ class Rig(component.Rig):
         cmds.connectAttr(
             f"{self.rig_root}.pole_vector_matrix", f"{pole_vec_npo}.offsetParentMatrix"
         )
+        guideline = cmds.curve(point=((0, 0, 0), (0, 0, 0)), degree=1)
+        guideline = cmds.rename(
+            guideline,
+            Name.create(
+                convention=Name.controller_name_convention,
+                name=name,
+                side=side,
+                index=index,
+                extension="guideline",
+            ),
+        )
+        guideline = cmds.parent(guideline, self.rig_root)[0]
+        cmds.setAttr(f"{guideline}.overrideEnabled", 1)
+        cmds.setAttr(f"{guideline}.overrideDisplayType", 1)
 
         ins = Joint(
             parent=self.rig_root,
@@ -316,6 +337,22 @@ class Rig(component.Rig):
             use_joint_convention=False,
         )
         ik1_jnt = ins.create()
+        mult_m = cmds.createNode("multMatrix")
+        cmds.connectAttr(f"{pole_vec_ctl}.worldMatrix[0]", f"{mult_m}.matrixIn[0]")
+        cmds.connectAttr(
+            f"{self.rig_root}.worldInverseMatrix[0]", f"{mult_m}.matrixIn[1]"
+        )
+        decom_m = cmds.createNode("decomposeMatrix")
+        cmds.connectAttr(f"{mult_m}.matrixSum", f"{decom_m}.inputMatrix")
+        cmds.connectAttr(f"{decom_m}.outputTranslate", f"{guideline}.cv[0]")
+        mult_m = cmds.createNode("multMatrix")
+        cmds.connectAttr(f"{ik1_jnt}.worldMatrix[0]", f"{mult_m}.matrixIn[0]")
+        cmds.connectAttr(
+            f"{self.rig_root}.worldInverseMatrix[0]", f"{mult_m}.matrixIn[1]"
+        )
+        decom_m = cmds.createNode("decomposeMatrix")
+        cmds.connectAttr(f"{mult_m}.matrixSum", f"{decom_m}.inputMatrix")
+        cmds.connectAttr(f"{decom_m}.outputTranslate", f"{guideline}.cv[1]")
 
         ins = Joint(
             parent=ik1_jnt,
@@ -403,6 +440,7 @@ class Rig(component.Rig):
         cmds.connectAttr(f"{host_ctl}.fkik", f"{ik_pos_npo}.v")
         cmds.connectAttr(f"{host_ctl}.fkik", f"{pole_vec_npo}.v")
         cmds.connectAttr(f"{host_ctl}.fkik", f"{ik_npo}.v")
+        cmds.connectAttr(f"{host_ctl}.fkik", f"{guideline}.v")
 
         rev = cmds.createNode("reverse")
         cmds.connectAttr(f"{host_ctl}.fkik", f"{rev}.inputX")
@@ -476,6 +514,19 @@ class Rig(component.Rig):
         )[0]
         cmds.connectAttr(plug, f"{blend0_jnt}.jointOrient")
 
+        armpit_roll = cmds.createNode(
+            "transform",
+            name=Name.create(
+                Name.controller_name_convention,
+                name=name,
+                side=side,
+                index=index,
+                extension="armpitRoll",
+            ),
+            parent=blend0_jnt,
+        )
+        cmds.connectAttr(f"{host_ctl}.armpit_roll", f"{armpit_roll}.rx")
+
         ins = Joint(
             parent=blend0_jnt,
             name=name,
@@ -524,7 +575,12 @@ class Rig(component.Rig):
         cmds.connectAttr(f"{host_ctl}.fkik", f"{pair_b}.weight")
         cmds.connectAttr(f"{pair_b}.outTranslate", f"{blend0_jnt}.t")
         cmds.connectAttr(f"{pair_b}.outRotate", f"{blend0_jnt}.r")
-        blend0_jnt_input_matrix = f"{blend0_jnt}.dagLocalMatrix"
+        mult_m = cmds.createNode("multMatrix")
+        cmds.connectAttr(f"{armpit_roll}.worldMatrix[0]", f"{mult_m}.matrixIn[0]")
+        cmds.connectAttr(
+            f"{self.rig_root}.worldInverseMatrix[0]", f"{mult_m}.matrixIn[1]"
+        )
+        blend0_jnt_input_matrix = f"{mult_m}.matrixSum"
 
         pair_b = cmds.createNode("pairBlend")
         cmds.setAttr(f"{pair_b}.rotInterpolation", 1)
@@ -581,12 +637,11 @@ class Rig(component.Rig):
             index=index,
             description=0,
             extension="output",
-            m=cmds.xform(fk0_ctl, query=True, matrix=True, worldSpace=True),
+            m=ORIGINMATRIX,
         )
         fkik0_loc = ins.create()
         self["output"][0].connect()
         cmds.connectAttr(blend0_jnt_input_matrix, f"{fkik0_loc}.offsetParentMatrix")
-        cmds.setAttr(f"{fkik0_loc}.t", 0, 0, 0)
 
         ins = Joint(
             parent=self.rig_root,
@@ -595,12 +650,11 @@ class Rig(component.Rig):
             index=index,
             description=1,
             extension="output",
-            m=cmds.xform(fk1_ctl, query=True, matrix=True, worldSpace=True),
+            m=ORIGINMATRIX,
         )
         fkik1_loc = ins.create()
         self["output"][1].connect()
         cmds.connectAttr(blend1_jnt_input_matrix, f"{fkik1_loc}.offsetParentMatrix")
-        cmds.setAttr(f"{fkik1_loc}.t", 0, 0, 0)
 
         ins = Joint(
             parent=self.rig_root,
@@ -609,13 +663,12 @@ class Rig(component.Rig):
             index=index,
             description=2,
             extension="output",
-            m=cmds.xform(fk2_ctl, query=True, matrix=True, worldSpace=True),
+            m=ORIGINMATRIX,
         )
         fkik2_loc = ins.create()
         cmds.hide(fkik0_loc, fkik1_loc, fkik2_loc)
         self["output"][2].connect()
         cmds.connectAttr(blend2_jnt_input_matrix, f"{fkik2_loc}.offsetParentMatrix")
-        cmds.setAttr(f"{fkik2_loc}.t", 0, 0, 0)
 
         # output joint
         if self["create_output_joint"]["value"]:
