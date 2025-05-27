@@ -1572,10 +1572,12 @@ def build(context, component, attach_guide=False):
                     description=output_joint["description"],
                     extension=Name.joint_extension,
                 )
-                if "name" in output_joint and cmds.objExists(joint_name):
+                if output_joint["name"] != joint_name and cmds.objExists(joint_name):
                     joint_name = cmds.rename(joint_name, output_joint["name"])
-                parent = cmds.listRelatives(joint_name, parent=True)[0]
-                if "parent" in output_joint and parent != output_joint["parent"]:
+                parent = cmds.listRelatives(joint_name, parent=True) or []
+                if parent:
+                    parent = parent[0]
+                if parent != output_joint["parent"]:
                     cmds.parent(joint_name, output_joint["parent"])
                 cmds.setAttr(f"{joint_name}.radius", output_joint["radius"])
                 cmds.setAttr(f"{joint_name}.drawStyle", output_joint["draw_style"])
