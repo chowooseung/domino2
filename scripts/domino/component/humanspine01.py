@@ -127,7 +127,7 @@ DATA = [
         longName="ribbon_surface",
         value={
             "parent_name": "",
-            "surface_name": "TEMPSURFACE1",
+            "surface_name": "tempRibbonSurface",
             "surface_matrix": [
                 1.0,
                 0.0,
@@ -149,71 +149,26 @@ DATA = [
             "surface": {
                 "form_u": 0,
                 "form_v": 0,
-                "knot_u": [0.0, 0.0, 0.0, 0.503134891131019, 1.0, 1.0, 1.0],
-                "knot_v": [0.0, 0.0, 0.0, 1.0, 1.0, 2.0, 2.0, 2.0],
-                "degree_u": 3,
+                "knot_u": [0.0, 0.5, 1.0],
+                "knot_v": [0.0, 0.0, 0.0, 1.0, 2.0, 2.0, 2.0],
+                "degree_u": 1,
                 "degree_v": 3,
                 "cvs": [
-                    (0.3239349977974598, 9.539842961812562, 0.11921144369687384, 1.0),
-                    (0.21595666519830684, 9.539842961812562, 0.11921144369687384, 1.0),
-                    (0.10797833259915342, 9.539842961812562, 0.11921144369687384, 1.0),
-                    (-0.10797833259915342, 9.539842961812562, 0.11921144369687384, 1.0),
-                    (-0.21595666519830684, 9.539842961812562, 0.11921144369687384, 1.0),
-                    (-0.3239349977974598, 9.539842961812562, 0.11921144369687384, 1.0),
-                    (0.3239349977974598, 10.573100161618045, 0.18489343620790258, 1.0),
-                    (0.21595666519830684, 10.573100161618045, 0.18489343620790258, 1.0),
-                    (0.10797833259915342, 10.573100161618045, 0.18489343620790258, 1.0),
-                    (
-                        -0.10797833259915342,
-                        10.573100161618045,
-                        0.18489343620790258,
-                        1.0,
-                    ),
-                    (
-                        -0.21595666519830684,
-                        10.573100161618045,
-                        0.18489343620790258,
-                        1.0,
-                    ),
-                    (-0.3239349977974598, 10.573100161618045, 0.18489343620790258, 1.0),
-                    (0.3239349977974598, 11.719689394827327, 0.26006561392223204, 1.0),
-                    (0.21595666519830684, 11.719689394827327, 0.26006561392223204, 1.0),
-                    (0.10797833259915342, 11.719689394827327, 0.26006561392223204, 1.0),
-                    (
-                        -0.10797833259915342,
-                        11.719689394827327,
-                        0.26006561392223204,
-                        1.0,
-                    ),
-                    (
-                        -0.21595666519830684,
-                        11.719689394827327,
-                        0.26006561392223204,
-                        1.0,
-                    ),
-                    (-0.3239349977974598, 11.719689394827327, 0.26006561392223204, 1.0),
-                    (0.3239349977974598, 12.829869253705038, -0.5030749444208195, 1.0),
-                    (0.21595666519830684, 12.829869253705038, -0.5030749444208195, 1.0),
-                    (0.10797833259915342, 12.829869253705038, -0.5030749444208195, 1.0),
-                    (
-                        -0.10797833259915342,
-                        12.829869253705038,
-                        -0.5030749444208195,
-                        1.0,
-                    ),
-                    (
-                        -0.21595666519830684,
-                        12.829869253705038,
-                        -0.5030749444208195,
-                        1.0,
-                    ),
-                    (-0.3239349977974598, 12.829869253705038, -0.5030749444208195, 1.0),
-                    (0.3239349977974598, 13.8634163012923, -0.5030737846956718, 1.0),
-                    (0.21595666519830684, 13.8634163012923, -0.5030737846956718, 1.0),
-                    (0.10797833259915342, 13.8634163012923, -0.5030737846956718, 1.0),
-                    (-0.10797833259915342, 13.8634163012923, -0.5030737846956718, 1.0),
-                    (-0.21595666519830684, 13.8634163012923, -0.5030737846956718, 1.0),
-                    (-0.3239349977974598, 13.8634163012923, -0.5030737846956718, 1.0),
+                    (0.3239349977974598, 9.539842605590822, 0.11921144276857373, 1.0),
+                    (0.3239349977974598, 10.573100090026857, 0.18489342927932736, 1.0),
+                    (0.3239349977974598, 11.719689369201655, 0.26006561517715476, 1.0),
+                    (0.3239349977974598, 12.829869270324705, -0.5030749440193175, 1.0),
+                    (0.3239349977974598, 13.863416671752928, -0.5030738115310668, 1.0),
+                    (0.0, 9.53984260559082, 0.11921144276857382, 1.0),
+                    (0.0, 10.573100090026855, 0.1848934292793279, 1.0),
+                    (0.0, 11.719689369201667, 0.2600656151771543, 1.0),
+                    (0.0, 12.829869270324709, -0.5030749440193177, 1.0),
+                    (0.0, 13.86341667175293, -0.503073811531067, 1.0),
+                    (-0.3239349977974598, 9.539842605590822, 0.11921144276857373, 1.0),
+                    (-0.3239349977974598, 10.573100090026857, 0.18489342927932736, 1.0),
+                    (-0.3239349977974598, 11.719689369201655, 0.26006561517715476, 1.0),
+                    (-0.3239349977974598, 12.829869270324705, -0.5030749440193175, 1.0),
+                    (-0.3239349977974598, 13.863416671752928, -0.5030738115310668, 1.0),
                 ],
             },
         },
@@ -357,10 +312,46 @@ class Rig(component.Rig):
         )
         cmds.addAttr(
             host_ctl,
-            longName="volume",
+            longName="auto_volume",
             attributeType="float",
             minValue=0,
-            maxValue=2,
+            maxValue=1,
+            defaultValue=0,
+            keyable=True,
+        )
+        cmds.addAttr(
+            host_ctl,
+            longName="volume",
+            attributeType="float",
+            minValue=-1,
+            maxValue=10,
+            defaultValue=0,
+            keyable=True,
+        )
+        cmds.addAttr(
+            host_ctl,
+            longName="volume_high_bound",
+            attributeType="float",
+            minValue=0,
+            maxValue=1,
+            defaultValue=1,
+            keyable=True,
+        )
+        cmds.addAttr(
+            host_ctl,
+            longName="volume_position",
+            attributeType="float",
+            minValue=0,
+            maxValue=1,
+            defaultValue=0.5,
+            keyable=True,
+        )
+        cmds.addAttr(
+            host_ctl,
+            longName="volume_low_bound",
+            attributeType="float",
+            minValue=0,
+            maxValue=1,
             defaultValue=0,
             keyable=True,
         )
@@ -559,11 +550,11 @@ class Rig(component.Rig):
         if len(output_u_values) % 2 == 1:
             value = 1 / (len(half_list))
             half_list = [x * value for x in range(len(half_list))]
-            volume_multiple = half_list + [1] + list(reversed(half_list))
+            auto_volume_multiple = half_list + [1] + list(reversed(half_list))
         else:
             value = 1 / (len(half_list) - 1)
             half_list = [x * value for x in range(len(half_list))]
-            volume_multiple = half_list + list(reversed(half_list))
+            auto_volume_multiple = half_list + list(reversed(half_list))
 
         condition = cmds.createNode("condition")
         cmds.connectAttr(f"{self.rig_root}.side", f"{condition}.firstTerm")
@@ -585,8 +576,12 @@ class Rig(component.Rig):
             up_ik_joints=up_ik_joints,
             stretch_squash_attr=f"{host_ctl}.enable_stretch_squash",
             uniform_attr=f"{host_ctl}.uniform",
+            auto_volume_attr=f"{host_ctl}.auto_volume",
+            auto_volume_multiple=auto_volume_multiple,
             volume_attr=f"{host_ctl}.volume",
-            volume_multiple=volume_multiple,
+            volume_position_attr=f"{host_ctl}.volume_position",
+            volume_high_bound_attr=f"{host_ctl}.volume_high_bound",
+            volume_low_bound_attr=f"{host_ctl}.volume_low_bound",
             output_u_value_plugs=[
                 f"{self.rig_root}.output_u_values[{i}]"
                 for i in range(self["output_count"]["value"])
@@ -601,16 +596,16 @@ class Rig(component.Rig):
         cmds.hide(ribbon_grp, ribbon0_jnt, ribbon1_jnt, ribbon2_jnt, ribbon3_jnt)
         sc = cmds.findDeformers(ribbon_surface)[0]
         cmds.skinPercent(
-            sc, f"{ribbon_surface}.cv[0][*]", transformValue=[ribbon0_jnt, 1]
+            sc, f"{ribbon_surface}.cv[*][0]", transformValue=[ribbon0_jnt, 1]
         )
         cmds.skinPercent(
             sc,
-            f"{ribbon_surface}.cv[1][*]",
+            f"{ribbon_surface}.cv[*][1]",
             transformValue=[(ribbon0_jnt, 0.65), (ribbon1_jnt, 0.35)],
         )
         cmds.skinPercent(
             sc,
-            f"{ribbon_surface}.cv[2][*]",
+            f"{ribbon_surface}.cv[*][2]",
             transformValue=[
                 (ribbon0_jnt, 0.25),
                 (ribbon1_jnt, 0.55),
@@ -618,10 +613,10 @@ class Rig(component.Rig):
             ],
         )
         cmds.skinPercent(
-            sc, f"{ribbon_surface}.cv[3][*]", transformValue=[ribbon2_jnt, 1]
+            sc, f"{ribbon_surface}.cv[*][3]", transformValue=[ribbon2_jnt, 1]
         )
         cmds.skinPercent(
-            sc, f"{ribbon_surface}.cv[4][*]", transformValue=[ribbon3_jnt, 1]
+            sc, f"{ribbon_surface}.cv[*][4]", transformValue=[ribbon3_jnt, 1]
         )
         ins = Transform(
             ribbon_outputs[-1],
@@ -659,16 +654,22 @@ class Rig(component.Rig):
             cmds.setAttr(f"{output_npo}.t", 0, 0, 0)
             cmds.setAttr(f"{output_npo}.r", 0, 0, 0)
             ins = Joint(
-                output_ctl,
+                self.rig_root,
                 name=name,
                 side=side,
                 index=index,
                 description=i,
                 extension="output",
-                m=cmds.xform(output_ctl, query=True, matrix=True, worldSpace=True),
+                m=ORIGINMATRIX,
             )
             output = ins.create()
-            cmds.hide(output)
+            cmds.setAttr(f"{output}.drawStyle", 2)
+            mult_m = cmds.createNode("multMatrix")
+            cmds.connectAttr(f"{output_ctl}.worldMatrix[0]", f"{mult_m}.matrixIn[0]")
+            cmds.connectAttr(
+                f"{self.rig_root}.worldInverseMatrix[0]", f"{mult_m}.matrixIn[1]"
+            )
+            cmds.connectAttr(f"{mult_m}.matrixSum", f"{output}.offsetParentMatrix")
             outputs.append(output)
             self["output"][i].connect()
 
@@ -835,9 +836,8 @@ class Rig(component.Rig):
         for i, u_value in enumerate(self["output_u_values"]["value"]):
             cmds.connectAttr(
                 f"{self.guide_root}.output_u_values[{i}]",
-                f"{uvpin}.coordinate[{c}].coordinateU",
+                f"{uvpin}.coordinate[{c}].coordinateV",
             )
-            cmds.setAttr(f"{uvpin}.coordinate[{c}].coordinateV", 0.5)
             cmds.connectAttr(
                 f"{uvpin}.outputMatrix[{c}]", f"{graph}.main_transforms[{i}]"
             )
@@ -845,8 +845,9 @@ class Rig(component.Rig):
         for i, u_value in enumerate(self["output_u_values"]["value"]):
             cmds.connectAttr(
                 f"{self.guide_root}.output_u_values[{i}]",
-                f"{uvpin}.coordinate[{c}].coordinateU",
+                f"{uvpin}.coordinate[{c}].coordinateV",
             )
+            cmds.setAttr(f"{uvpin}.coordinate[{c}].coordinateU", 0.5)
             cmds.connectAttr(
                 f"{uvpin}.outputMatrix[{c}]", f"{graph}.up_transforms[{i}]"
             )

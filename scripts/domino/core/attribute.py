@@ -564,9 +564,10 @@ class NurbsCurve(dict):
         self.long_name = longName
         self.data = {
             "dataType": self.data_type,
-            "value": kwargs["value"],
             "multi": False,
         }
+        if "value" in kwargs:
+            self.data["value"] = kwargs["value"]
 
     def create(self):
         data = self.data
@@ -628,9 +629,10 @@ class NurbsSurface(dict):
         self.long_name = longName
         self.data = {
             "dataType": self.data_type,
-            "value": kwargs["value"],
             "multi": False,
         }
+        if "value" in kwargs:
+            self.data["value"] = kwargs["value"]
 
     def create(self):
         data = self.data
@@ -692,9 +694,10 @@ class Polygon(dict):
         self.long_name = longName
         self.data = {
             "dataType": self.data_type,
-            "value": kwargs["value"],
             "multi": False,
         }
+        if "value" in kwargs:
+            self.data["value"] = kwargs["value"]
 
     def create(self):
         data = self.data
