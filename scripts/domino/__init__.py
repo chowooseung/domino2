@@ -1,8 +1,13 @@
 # maya
 from maya import cmds
+from maya.api import OpenMaya as om
 
 # domino
 from domino.core import dagmenu
+from domino.core.utils import logger
+
+# built-ins
+import os
 
 
 place_a_locator_average_position_command = """from maya import cmds
@@ -172,6 +177,22 @@ ui = dominomanager.Manager.get_instance()
 ui.show(dockable=True)"""
 
 
+def cb_joint_inverse_scale_disconnect(child, parent, client_data):
+    """parent 시 joint inverseScale 연결 해제.
+    생성 시는 domino.core Joint 에서 해제"""
+    if not cmds.objExists(f"{child.fullPathName()}.is_domino_skel"):
+        return
+
+    plug = cmds.listConnections(
+        f"{child.fullPathName()}.inverseScale",
+        source=True,
+        destination=False,
+        plugs=True,
+    )
+    if plug:
+        cmds.disconnectAttr(plug[0], f"{child.fullPathName()}.inverseScale")
+
+
 ## maya menu
 def install():
     menu_id = "Domino"
@@ -205,3 +226,11 @@ def install():
         radioButton=False,
         command="import logging;from domino.core.utils import logger;logger.setLevel(logging.DEBUG)",
     )
+
+    _id = os.getenv("DOMINO_JOINT_INVERSE_SCALE_DISCONNECT", None)
+    if _id is not None:
+        logger.info(f"Remove joint inverseScale disconnect callback id: {_id}")
+        om.MMessage.removeCallback(int(_id))
+    _id = om.MDagMessage.addParentAddedCallback(cb_joint_inverse_scale_disconnect)
+    logger.info(f"Add joint inverseScale disconnect callback id: {_id}")
+    os.environ["DOMINO_JOINT_INVERSE_SCALE_DISCONNECT"] = str(_id)
