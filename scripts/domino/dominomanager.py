@@ -36,7 +36,7 @@ COMPONENTLIST.remove("assembly")
 
 # region maya cb
 def cb_setup_output_joint(child, parent, client_data):
-    if not cmds.objExists(child.fullPathName() + ".is_domino_skel"):
+    if not cmds.objExists(f"{child.fullPathName()}.is_domino_skel"):
         return
 
     try:
@@ -44,7 +44,7 @@ def cb_setup_output_joint(child, parent, client_data):
         output_joint = child.fullPathName()
         parent = parent.fullPathName()
 
-        index = cmds.getAttr(output_joint + ".skel_index")
+        index = cmds.getAttr(f"{output_joint}.skel_index")
         if parent.split("|")[-1] == "skel":
             cmds.connectAttr(
                 "skel.worldInverseMatrix[0]",
@@ -63,24 +63,24 @@ def cb_setup_output_joint(child, parent, client_data):
                 f"Connect {SKEL}.worldInverseMatrix[0] -> {SKEL}.parent_inverse_matrix[{index}]"
             )
             return
-        if cmds.objExists(parent + ".is_domino_skel"):
+        if cmds.objExists(f"{parent}.is_domino_skel"):
             parent_output_attr = cmds.connectionInfo(
-                parent + ".output", sourceFromDestination=True
+                f"{parent}.output", sourceFromDestination=True
             )
             parent_output = parent_output_attr.split(".")[0]
             parent_root_attr = [
                 x
                 for x in cmds.connectionInfo(
-                    parent_output + ".message", destinationFromSource=True
+                    f"{parent_output}.message", destinationFromSource=True
                 )
                 if cmds.nodeType(x) == "transform" and ".output" in x
             ]
             output_index = int(parent_root_attr[0].split("[")[1].split("]")[0])
             parent_root = parent_root_attr[0].split(".")[0]
 
-            parent_inverse_matrix = parent_output + ".worldInverseMatrix[0]"
+            parent_inverse_matrix = f"{parent_output}.worldInverseMatrix[0]"
             initialize_parent_inverse_matrix = (
-                parent_root + f".initialize_output_inverse_matrix[{output_index}]"
+                f"{parent_root}.initialize_output_inverse_matrix[{output_index}]"
             )
 
             cmds.connectAttr(

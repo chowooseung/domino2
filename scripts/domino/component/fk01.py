@@ -174,7 +174,7 @@ class Rig(component.Rig):
                     f"{self.rig_root}.worldInverseMatrix[0]", f"{mult_m}.matrixIn[1]"
                 )
                 cmds.connectAttr(f"{mult_m}.matrixSum", f"{output}.offsetParentMatrix")
-                cmds.hide(output)
+                cmds.setAttr(f"{output}.drawStyle", 2)
                 self["output"][count].connect()
 
                 # output joint

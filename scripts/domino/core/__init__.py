@@ -214,6 +214,7 @@ class Transform:
             cmds.setAttr(f"{self._node}.description", self._description, type="string")
             cmds.addAttr(self._node, longName="extension", dataType="string")
             cmds.setAttr(f"{self._node}.extension", self._extension, type="string")
+            cmds.setAttr(f"{self._node}.rotateAxis", lock=True)
         self.set_matrix(self._m)
         return self._node
 
@@ -394,6 +395,13 @@ class Joint(Transform):
             cmds.setAttr(f"{self._node}.extension", self._extension, type="string")
         self.set_initialize_matrix(self._m)
         cmds.setAttr(f"{self._node}.segmentScaleCompensate", 0)
+        cmds.setAttr(f"{self._node}.segmentScaleCompensate", lock=True)
+        cmds.setAttr(f"{self._node}.rotateAxis", lock=True)
+        plug = cmds.listConnections(
+            f"{self._node}.inverseScale", source=True, destination=False, plugs=True
+        )
+        if plug:
+            cmds.disconnectAttr(plug[0], f"{self._node}.inverseScale")
         self.set_label(*self.label_args)
         return self._node
 
@@ -584,6 +592,7 @@ class Controller(Transform):
                 m=ORIGINMATRIX,
             )
             self._npo = ins.create()
+            cmds.setAttr(f"{self._npo}.rotateAxis", lock=True)
         if not cmds.objExists(self._node):
             ins = Transform(
                 parent=self._npo,
@@ -595,6 +604,7 @@ class Controller(Transform):
                 m=ORIGINMATRIX,
             )
             self._node = ins.create()
+            cmds.setAttr(f"{self._node}.rotateAxis", lock=True)
             cmds.setAttr(f"{self._node}.v", keyable=False)
             self.replace_shape(shape=self._shape, color=self._color)
             cmds.addAttr(
@@ -623,6 +633,9 @@ class Controller(Transform):
             )
             cmds.addAttr(self._node, longName="npo", attributeType="message")
             cmds.setAttr(f"{self._node}.rotateOrder", channelBox=True)
+            cmds.setAttr(f"{self._node}.t", 0, 0, 0)
+            cmds.setAttr(f"{self._node}.r", 0, 0, 0)
+            cmds.setAttr(f"{self._node}.s", 1, 1, 1)
 
         self.set_matrix(self._m)
 
