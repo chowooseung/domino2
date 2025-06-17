@@ -1095,14 +1095,21 @@ class Rig(dict):
         self_cons = cmds.parentConstraint(self.rig_root, query=True)
         if self_cons:
             cons.append(self_cons)
-        # constraint 삭제시 마지막 값으로 남지않는 문제.
-        attrs = cmds.listAttr(f"{self.rig_root}.guide_matrix", multi=True) or []
-        attrs += cmds.listAttr(f"{self.rig_root}.npo_matrix", multi=True) or []
+        # guide 삭제시 warning이나 error가 발생하지 않도록 root 간에 disconnect
+        attrs = cmds.listAttr(self.rig_root, userDefined=True) or []
         for attr in attrs:
-            source_plug = cmds.listConnections(
-                f"{self.rig_root}.{attr}", source=True, destination=False, plugs=True
-            )[0]
-            cmds.disconnectAttr(source_plug, f"{self.rig_root}.{attr}")
+            plugs = cmds.listConnections(
+                f"{self.rig_root}.{attr}",
+                source=True,
+                destination=False,
+                connections=True,
+                plugs=True,
+            )
+            while plugs:
+                destination = plugs.pop(0)
+                source = plugs.pop(0)
+                if source.startswith(self.guide_root):
+                    cmds.disconnectAttr(source, destination)
         # output 아래 rigRoot 가 offset 되는 문제. constaint 먼저 삭제.
         if cons:
             cmds.delete(cons)
