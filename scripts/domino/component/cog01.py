@@ -37,7 +37,7 @@ DATA = [
         longName="parent_output_index", minValue=-1, defaultValue=-1, value=-1
     ),
     # output joint 생성 option
-    attribute.Bool(longName="create_output_joint", value=0),
+    attribute.Bool(longName="create_output_joint", value=1),
     # offset output rotate
     attribute.DoubleAngle(
         longName="offset_output_rotate_x", minValue=-360, maxValue=360
@@ -144,6 +144,7 @@ class Rig(component.Rig):
         )
         cmds.connectAttr(f"{mult_m}.matrixSum", f"{output}.offsetParentMatrix")
         self["output"][0].connect()
+        cmds.setAttr(f"{output}.drawStyle", 2)
 
         # output joint
         if self["create_output_joint"]["value"]:
