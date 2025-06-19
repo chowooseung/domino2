@@ -2286,10 +2286,10 @@ class Fkik2Jnt01(DynamicWidget):
                     cmds.setAttr(f"{controllers[i]}.sy", lock=False, keyable=True)
                     cmds.setAttr(f"{controllers[i]}.sz", lock=False, keyable=True)
             else:
-                cmds.setAttr(f"{controllers[i]}.sx", 1)
-                cmds.setAttr(f"{controllers[i]}.sy", 1)
-                cmds.setAttr(f"{controllers[i]}.sz", 1)
                 for i in [3, 6, 7]:
+                    cmds.setAttr(f"{controllers[i]}.sx", 1)
+                    cmds.setAttr(f"{controllers[i]}.sy", 1)
+                    cmds.setAttr(f"{controllers[i]}.sz", 1)
                     cmds.setAttr(f"{controllers[i]}.sx", lock=True, keyable=False)
                     cmds.setAttr(f"{controllers[i]}.sy", lock=True, keyable=False)
                     cmds.setAttr(f"{controllers[i]}.sz", lock=True, keyable=False)
@@ -2356,10 +2356,10 @@ class HumanArm01(DynamicWidget):
                     cmds.setAttr(f"{controllers[i]}.sy", lock=False, keyable=True)
                     cmds.setAttr(f"{controllers[i]}.sz", lock=False, keyable=True)
             else:
-                cmds.setAttr(f"{controllers[i]}.sx", 1)
-                cmds.setAttr(f"{controllers[i]}.sy", 1)
-                cmds.setAttr(f"{controllers[i]}.sz", 1)
                 for i in [5, 8, 9]:
+                    cmds.setAttr(f"{controllers[i]}.sx", 1)
+                    cmds.setAttr(f"{controllers[i]}.sy", 1)
+                    cmds.setAttr(f"{controllers[i]}.sz", 1)
                     cmds.setAttr(f"{controllers[i]}.sx", lock=True, keyable=False)
                     cmds.setAttr(f"{controllers[i]}.sy", lock=True, keyable=False)
                     cmds.setAttr(f"{controllers[i]}.sz", lock=True, keyable=False)

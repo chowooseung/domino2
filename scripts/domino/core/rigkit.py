@@ -1074,6 +1074,13 @@ def ribbon_uv(
     cmds.connectAttr(negate_plug, f"{md}.input2Z")
     negate_primary_last_vector_plug = f"{md}.output"
 
+    md = cmds.createNode("multiplyDivide")
+    cmds.setAttr(f"{md}.input1", 0, 0, 1)
+    cmds.connectAttr(negate_plug, f"{md}.input2X")
+    cmds.connectAttr(negate_plug, f"{md}.input2Y")
+    cmds.connectAttr(negate_plug, f"{md}.input2Z")
+    secondary_vector_plug = f"{md}.output"
+
     c = 0
     result_parent = parent
     for main_ribbon_output, up_ribbon_output in zip(main_output_plugs, up_output_plugs):
@@ -1089,7 +1096,7 @@ def ribbon_uv(
         )
         aim_m = cmds.createNode("aimMatrix")
         cmds.connectAttr(primary_vector_plug, f"{aim_m}.primaryInputAxis")
-        cmds.setAttr(f"{aim_m}.secondaryInputAxis", 0, 0, 1)
+        cmds.connectAttr(secondary_vector_plug, f"{aim_m}.secondaryInputAxis")
         cmds.setAttr(f"{aim_m}.primaryMode", 1)
         cmds.setAttr(f"{aim_m}.secondaryMode", 1)
         cmds.connectAttr(main_ribbon_output, f"{aim_m}.inputMatrix")
@@ -1129,7 +1136,7 @@ def ribbon_uv(
         )
         aim_m = cmds.createNode("aimMatrix")
         cmds.connectAttr(primary_vector_plug, f"{aim_m}.primaryInputAxis")
-        cmds.setAttr(f"{aim_m}.secondaryInputAxis", 0, 0, 1)
+        cmds.connectAttr(secondary_vector_plug, f"{aim_m}.secondaryInputAxis")
         cmds.setAttr(f"{aim_m}.primaryMode", 1)
         cmds.setAttr(f"{aim_m}.secondaryMode", 1)
         cmds.connectAttr(uniform_main_output, f"{aim_m}.inputMatrix")

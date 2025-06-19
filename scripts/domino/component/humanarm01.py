@@ -610,6 +610,7 @@ class Rig(component.Rig):
         cmds.connectAttr(f"{negate_condition}.outColorR", f"{clavicle_bone1_joint}.tx")
         cmds.setAttr(f"{clavicle_bone0_joint}.t", 0, 0, 0)
         cmds.setAttr(f"{clavicle_bone0_joint}.r", 0, 0, 0)
+        cmds.setAttr(f"{clavicle_bone0_joint}.jointOrient", 0, 0, 0)
         clavicle_bone_ikh, _ = cmds.ikHandle(
             name=Name.create(
                 Name.controller_name_convention,
@@ -770,6 +771,14 @@ class Rig(component.Rig):
             npo_matrix_index=4,
         )
         cmds.setAttr(f"{wrist_ctl}.mirror_type", 1)
+        if self["unlock_last_scale"]["value"]:
+            cmds.setAttr(f"{wrist_ctl}.sx", lock=False, keyable=True)
+            cmds.setAttr(f"{wrist_ctl}.sy", lock=False, keyable=True)
+            cmds.setAttr(f"{wrist_ctl}.sz", lock=False, keyable=True)
+        else:
+            cmds.setAttr(f"{wrist_ctl}.sx", lock=True, keyable=False)
+            cmds.setAttr(f"{wrist_ctl}.sy", lock=True, keyable=False)
+            cmds.setAttr(f"{wrist_ctl}.sz", lock=True, keyable=False)
 
         ik_pos_npo, ik_pos_ctl = self["controller"][6].create(
             parent=clavicle_bone_npo_inverse,
@@ -816,6 +825,8 @@ class Rig(component.Rig):
         guideline = cmds.parent(guideline, clavicle_bone_npo_inverse)[0]
         cmds.setAttr(f"{guideline}.overrideEnabled", 1)
         cmds.setAttr(f"{guideline}.overrideDisplayType", 1)
+        cmds.setAttr(f"{guideline}.t", 0, 0, 0)
+        cmds.setAttr(f"{guideline}.r", 0, 0, 0)
 
         ins = Joint(
             parent=clavicle_bone_npo_inverse,
@@ -866,6 +877,15 @@ class Rig(component.Rig):
             npo_matrix_index=6,
         )
         cmds.setAttr(f"{ik_ctl}.mirror_type", 0)
+        if self["unlock_last_scale"]["value"]:
+            cmds.setAttr(f"{ik_ctl}.sx", lock=False, keyable=True)
+            cmds.setAttr(f"{ik_ctl}.sy", lock=False, keyable=True)
+            cmds.setAttr(f"{ik_ctl}.sz", lock=False, keyable=True)
+        else:
+            cmds.setAttr(f"{ik_ctl}.sx", lock=True, keyable=False)
+            cmds.setAttr(f"{ik_ctl}.sy", lock=True, keyable=False)
+            cmds.setAttr(f"{ik_ctl}.sz", lock=True, keyable=False)
+
         cmds.addAttr(
             ik_ctl,
             longName="ik_scale",
@@ -920,6 +940,15 @@ class Rig(component.Rig):
             color=12,
             npo_matrix_index=7,
         )
+        if self["unlock_last_scale"]["value"]:
+            cmds.setAttr(f"{ik_local_ctl}.sx", lock=False, keyable=True)
+            cmds.setAttr(f"{ik_local_ctl}.sy", lock=False, keyable=True)
+            cmds.setAttr(f"{ik_local_ctl}.sz", lock=False, keyable=True)
+        else:
+            cmds.setAttr(f"{ik_local_ctl}.sx", lock=True, keyable=False)
+            cmds.setAttr(f"{ik_local_ctl}.sy", lock=True, keyable=False)
+            cmds.setAttr(f"{ik_local_ctl}.sz", lock=True, keyable=False)
+
         cmds.setAttr(f"{ik_local_ctl}.mirror_type", 1)
         cmds.orientConstraint(ik_local_ctl, ik2_jnt, maintainOffset=False)
         cmds.scaleConstraint(ik_local_ctl, ik2_jnt, maintainOffset=False)
