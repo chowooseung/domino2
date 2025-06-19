@@ -267,6 +267,14 @@ class Rig(component.Rig):
             npo_matrix_index=2,
         )
         cmds.setAttr(f"{fk2_ctl}.mirror_type", 1)
+        if self["unlock_last_scale"]["value"]:
+            cmds.setAttr(f"{fk2_ctl}.sx", lock=False, keyable=True)
+            cmds.setAttr(f"{fk2_ctl}.sy", lock=False, keyable=True)
+            cmds.setAttr(f"{fk2_ctl}.sz", lock=False, keyable=True)
+        else:
+            cmds.setAttr(f"{fk2_ctl}.sx", lock=True, keyable=False)
+            cmds.setAttr(f"{fk2_ctl}.sy", lock=True, keyable=False)
+            cmds.setAttr(f"{fk2_ctl}.sz", lock=True, keyable=False)
 
         ik_pos_npo, ik_pos_ctl = self["controller"][4].create(
             parent=self.rig_root,
@@ -379,6 +387,15 @@ class Rig(component.Rig):
             npo_matrix_index=4,
         )
         cmds.setAttr(f"{ik_ctl}.mirror_type", 0)
+        if self["unlock_last_scale"]["value"]:
+            cmds.setAttr(f"{ik_ctl}.sx", lock=False, keyable=True)
+            cmds.setAttr(f"{ik_ctl}.sy", lock=False, keyable=True)
+            cmds.setAttr(f"{ik_ctl}.sz", lock=False, keyable=True)
+        else:
+            cmds.setAttr(f"{ik_ctl}.sx", lock=True, keyable=False)
+            cmds.setAttr(f"{ik_ctl}.sy", lock=True, keyable=False)
+            cmds.setAttr(f"{ik_ctl}.sz", lock=True, keyable=False)
+
         cmds.addAttr(
             ik_ctl,
             longName="ik_scale",
@@ -434,6 +451,15 @@ class Rig(component.Rig):
             npo_matrix_index=5,
         )
         cmds.setAttr(f"{ik_local_ctl}.mirror_type", 1)
+        if self["unlock_last_scale"]["value"]:
+            cmds.setAttr(f"{ik_local_ctl}.sx", lock=False, keyable=True)
+            cmds.setAttr(f"{ik_local_ctl}.sy", lock=False, keyable=True)
+            cmds.setAttr(f"{ik_local_ctl}.sz", lock=False, keyable=True)
+        else:
+            cmds.setAttr(f"{ik_local_ctl}.sx", lock=True, keyable=False)
+            cmds.setAttr(f"{ik_local_ctl}.sy", lock=True, keyable=False)
+            cmds.setAttr(f"{ik_local_ctl}.sz", lock=True, keyable=False)
+
         cmds.orientConstraint(ik_local_ctl, ik2_jnt)
         cmds.scaleConstraint(ik_local_ctl, ik2_jnt)
 
