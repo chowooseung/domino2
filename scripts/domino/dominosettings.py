@@ -420,7 +420,8 @@ class UIGenerator:
     def add_check_box(cls, parent, label, attribute):
 
         def toggle_attribute():
-            pass
+            checked = check_box.isChecked()
+            cmds.setAttr(attribute, checked)
 
         check = True if cmds.getAttr(attribute) else False
         check_box = QtWidgets.QCheckBox()
@@ -2280,7 +2281,7 @@ class Fkik2Jnt01(DynamicWidget):
             )
 
             if check_box.isChecked():
-                for i in [2, 5, 6]:
+                for i in [3, 6, 7]:
                     cmds.setAttr(f"{controllers[i]}.sx", lock=False, keyable=True)
                     cmds.setAttr(f"{controllers[i]}.sy", lock=False, keyable=True)
                     cmds.setAttr(f"{controllers[i]}.sz", lock=False, keyable=True)
@@ -2288,7 +2289,7 @@ class Fkik2Jnt01(DynamicWidget):
                 cmds.setAttr(f"{controllers[i]}.sx", 1)
                 cmds.setAttr(f"{controllers[i]}.sy", 1)
                 cmds.setAttr(f"{controllers[i]}.sz", 1)
-                for i in [2, 5, 6]:
+                for i in [3, 6, 7]:
                     cmds.setAttr(f"{controllers[i]}.sx", lock=True, keyable=False)
                     cmds.setAttr(f"{controllers[i]}.sy", lock=True, keyable=False)
                     cmds.setAttr(f"{controllers[i]}.sz", lock=True, keyable=False)
@@ -2336,6 +2337,54 @@ class HumanSpine01(DynamicWidget):
 # endregion
 
 
+# region HumanArm01
+class HumanArm01(DynamicWidget):
+
+    def __init__(self, parent=None, root=None):
+
+        def toggle_unlock_last_scale():
+            rig_root = cmds.listConnections(
+                f"{root}.component", source=False, destination=True
+            )[0]
+            controllers = cmds.listConnections(
+                f"{rig_root}.controller", source=True, destination=False
+            )
+
+            if check_box.isChecked():
+                for i in [5, 8, 9]:
+                    cmds.setAttr(f"{controllers[i]}.sx", lock=False, keyable=True)
+                    cmds.setAttr(f"{controllers[i]}.sy", lock=False, keyable=True)
+                    cmds.setAttr(f"{controllers[i]}.sz", lock=False, keyable=True)
+            else:
+                cmds.setAttr(f"{controllers[i]}.sx", 1)
+                cmds.setAttr(f"{controllers[i]}.sy", 1)
+                cmds.setAttr(f"{controllers[i]}.sz", 1)
+                for i in [5, 8, 9]:
+                    cmds.setAttr(f"{controllers[i]}.sx", lock=True, keyable=False)
+                    cmds.setAttr(f"{controllers[i]}.sy", lock=True, keyable=False)
+                    cmds.setAttr(f"{controllers[i]}.sz", lock=True, keyable=False)
+
+        super(HumanArm01, self).__init__(parent=parent, root=root)
+        UIGenerator.add_common_component_settings(self.parent_widget, root)
+
+        UIGenerator.add_check_box(
+            self.parent_widget,
+            "Align last transform to guide",
+            f"{root}.align_last_transform_to_guide",
+        )
+        check_box = UIGenerator.add_check_box(
+            self.parent_widget,
+            "Unlock last scale",
+            f"{root}.unlock_last_scale",
+        )
+        check_box.toggled.connect(toggle_unlock_last_scale)
+
+        UIGenerator.add_notes(self.parent_widget, f"{root}.notes")
+
+
+# endregion
+
+
 # region Settings
 UITABLE = {
     "assembly": Assembly,
@@ -2345,6 +2394,7 @@ UITABLE = {
     "uicontainer01": UIContainer01,
     "fkik2jnt01": Fkik2Jnt01,
     "humanspine01": HumanSpine01,
+    "humanarm01": HumanArm01,
 }
 
 

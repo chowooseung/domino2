@@ -34,6 +34,7 @@ COMPONENTLIST = [
     "uicontainer01",
     "fkik2jnt01",
     "humanspine01",
+    "humanarm01",
 ]
 GUIDE = "guide"
 RIG = "rig"
