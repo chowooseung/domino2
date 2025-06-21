@@ -1563,13 +1563,13 @@ def build(context, component, attach_guide=False):
         cmds.sets(domino_skel, add="skel_sets")
 
         output_joints = []
-        color_index_list = [12, 14, 17, 18, 19, 21]
-        color_index = 0
+        color_index = 1
         stack = [component]
         while stack:
             c = stack.pop(0)
-            if color_index > 5:
-                color_index = 0
+            if color_index > 8:
+                # color index 1~8
+                color_index = 1
             name, side, index = c.identifier
             for output_joint in c["output_joint"]:
                 joint_name = Name.create(
@@ -1589,7 +1589,7 @@ def build(context, component, attach_guide=False):
                     cmds.parent(joint_name, output_joint["parent"])
                 cmds.setAttr(f"{joint_name}.radius", output_joint["radius"])
                 cmds.setAttr(f"{joint_name}.drawStyle", output_joint["draw_style"])
-                cmds.color(joint_name, userDefined=color_index_list[color_index])
+                cmds.color(joint_name, userDefined=color_index)
                 output_joints.append(joint_name)
             color_index += 1
             stack.extend(c["children"])
