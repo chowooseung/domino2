@@ -123,12 +123,13 @@ copy_paste_vertex_weight_command = """from maya import cmds
 from maya import mel
 
 selected = cmds.ls(orderedSelection=True, flatten=True)
-vertices = [x for x in selected if "vtx" in x]
-cmds.select(vertices[0])
-mel.eval('doCopyVertexWeightsArgList 1 { "1" };')
-cmds.select(vertices[1:])
-mel.eval('doPasteVertexWeightsArgList 1 { "1" };')
-cmds.select(selected)"""
+if selected:
+    vertices = [x for x in selected if "vtx" in x]
+    cmds.select(vertices[0])
+    mel.eval('doCopyVertexWeightsArgList 1 { "1" };')
+    cmds.select(vertices[1:])
+    mel.eval('doPasteVertexWeightsArgList 1 { "1" };')
+    cmds.select(selected)"""
 
 
 def install_rig_commands_menu(menu_id):
