@@ -138,6 +138,10 @@ class Rig(component.Rig):
             color=12,
             npo_matrix_index=0,
         )
+        cmds.setAttr(f"{frame_ctl}.sx", keyable=True)
+        cmds.setAttr(f"{frame_ctl}.sy", keyable=True)
+        cmds.setAttr(f"{frame_ctl}.sz", keyable=True)
+        cmds.setAttr(f"{frame_ctl}.rotateOrder", keyable=False, channelBox=False)
         # output
         self["output"][0].connect()
         # output joint
@@ -188,6 +192,7 @@ class Rig(component.Rig):
             cmds.setAttr(f"{ctl}.sx", lock=True, keyable=False)
             cmds.setAttr(f"{ctl}.sy", lock=True, keyable=False)
             cmds.setAttr(f"{ctl}.sz", lock=True, keyable=False)
+            cmds.setAttr(f"{ctl}.rotateOrder", keyable=False, channelBox=False)
             # mirror ctl name
             _side = Name.side_str_list[self["slider_side"]["value"][i]]
             if _side == "C":

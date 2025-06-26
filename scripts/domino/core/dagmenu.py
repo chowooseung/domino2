@@ -73,8 +73,30 @@ def popup_menu(parent_menu, *args, **kwargs):
             rig_menu(parent_menu)
             maya_dag_menu = True
         elif cmds.objExists(f"{selection[0]}.is_domino_controller"):
+            stack = (
+                cmds.listConnections(
+                    f"{selection[0]}.message",
+                    source=False,
+                    destination=True,
+                    type="transform",
+                )
+                or []
+            )
+            root = None
+            while stack:
+                n = stack.pop(0)
+                if cmds.objExists(f"{n}.is_domino_rig_root"):
+                    root = n
+                    break
+            host = (
+                cmds.listConnections(
+                    f"{root}.host", source=True, destination=False, type="transform"
+                )
+                or []
+            )
             controller_menu(
                 parent_menu,
+                True if host else False,
                 (
                     True
                     if cmds.getAttr(f"{selection[0]}.component") == "assembly"
@@ -333,6 +355,21 @@ def rig_menu(parent_menu):
 # endregion
 
 # region Controller Commands
+go_to_host_command = """from maya import cmds
+selected = cmds.ls(selection=True)
+if selected:
+    stack = cmds.listConnections(selected[0] + ".message", source=False, destination=True, type="transform") or []
+    root = None
+    while stack:
+        n = stack.pop(0)
+        if cmds.objExists(n + ".is_domino_rig_root"):
+            root = n
+            break
+    host = cmds.listConnections(root + ".host", source=True, destination=False, type="transform") or []
+    if host:
+        cmds.select(host[0])
+"""
+
 apply_children_option_commnad = f"""from maya import cmds
 apply_children_state = cmds.optionVar(query="{CONTROLLER_APPLY_CHILDREN_OPTION}")
 state = False if apply_children_state else True
@@ -406,6 +443,13 @@ from maya import cmds
 cogCtl = "origin_COG_ctl"
 """
 
+select_origin_controller_command = """from maya import cmds
+selection = cmds.ls(selection=True)
+if selection:
+    _, namespace = cmds.ls(selection[0], showNamespace=True)
+    if cmds.objExists(f"{namespace}origin_ctl"):
+        cmds.select(f"{namespace}origin_ctl")"""
+
 select_child_controller_command = """from domino.core import Controller
 from maya import cmds
 controllers = []
@@ -421,19 +465,22 @@ fkik_switch_command = """"""
 
 
 # region Controller Menu
-def controller_menu(parent_menu, is_assembly=False, has_fkik_switch=False):
+def controller_menu(
+    parent_menu, has_host=False, is_assembly=False, has_fkik_switch=False
+):
     cmds.menu(parent_menu, edit=True, deleteAllItems=True)
     if CONTROLLER_APPLY_CHILDREN_OPTION not in cmds.optionVar(list=True):
         cmds.optionVar(intValue=(CONTROLLER_APPLY_CHILDREN_OPTION, 0))
     apply_children_state = cmds.optionVar(query=CONTROLLER_APPLY_CHILDREN_OPTION)
 
-    cmds.menuItem(
-        parent=parent_menu,
-        label="Apply children",
-        radialPosition="N",
-        command=apply_children_option_commnad,
-        checkBox=apply_children_state,
-    )
+    if has_host:
+        cmds.menuItem(
+            parent=parent_menu,
+            label="Go to host",
+            radialPosition="N",
+            command=go_to_host_command,
+            image="host.png",
+        )
     cmds.menuItem(
         parent=parent_menu,
         label="Reset",
@@ -442,10 +489,28 @@ def controller_menu(parent_menu, is_assembly=False, has_fkik_switch=False):
         image="refresh.png",
         enableCommandRepeat=True,
     )
+    if has_fkik_switch:
+        cmds.menuItem(
+            parent=parent_menu,
+            label="FK / IK Switch",
+            radialPosition="E",
+            command=fkik_switch_command,
+            enableCommandRepeat=True,
+        )
+        cmds.menuItem(
+            parent=parent_menu,
+            optionBox=True,
+            command='print("fk/ik Set Key")',
+        )
     cmds.menuItem(
         parent=parent_menu,
-        label="Mirror / Flip (PLANE)",
-        radialPosition="NW",
+        label="Apply children",
+        checkBox=apply_children_state,
+        command=apply_children_option_commnad,
+    )
+    cmds.menuItem(
+        parent=parent_menu,
+        label="Mirror",
         image="symmetryConstraint.svg",
         command=rt_mirror_controller_command,
         enableCommandRepeat=True,
@@ -457,8 +522,7 @@ def controller_menu(parent_menu, is_assembly=False, has_fkik_switch=False):
     )
     cmds.menuItem(
         parent=parent_menu,
-        label="Mirror / Flip (SRT)",
-        radialPosition="W",
+        label="Flip",
         image="arrows-exchange.svg",
         command=rt_flip_controller_command,
         enableCommandRepeat=True,
@@ -468,7 +532,15 @@ def controller_menu(parent_menu, is_assembly=False, has_fkik_switch=False):
         optionBox=True,
         command='print("Flip Set Key")',
     )
-
+    cmds.menuItem(parent=parent_menu, divider=True)
+    if not is_assembly:
+        cmds.menuItem(
+            parent=parent_menu,
+            label="Select origin controller",
+            image="origin_shape.png",
+            command=select_origin_controller_command,
+            enableCommandRepeat=True,
+        )
     cmds.menuItem(
         parent=parent_menu,
         label="Select child controllers",
@@ -476,19 +548,8 @@ def controller_menu(parent_menu, is_assembly=False, has_fkik_switch=False):
         command=select_child_controller_command,
         enableCommandRepeat=True,
     )
-    if has_fkik_switch:
-        cmds.menuItem(
-            parent=parent_menu,
-            label="FK / IK Switch",
-            command=fkik_switch_command,
-            enableCommandRepeat=True,
-        )
-        cmds.menuItem(
-            parent=parent_menu,
-            optionBox=True,
-            command='print("fk/ik Set Key")',
-        )
     if is_assembly:
+        cmds.menuItem(parent=parent_menu, divider=True)
         cmds.menuItem(
             parent=parent_menu,
             label="Set pre-roll frame",

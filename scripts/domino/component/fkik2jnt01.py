@@ -153,6 +153,7 @@ class Rig(component.Rig):
                 else "cube"
             ),
             color=12,
+            host=True,
         )
         cmds.setAttr(f"{host_ctl}.tx", lock=True, keyable=False)
         cmds.setAttr(f"{host_ctl}.ty", lock=True, keyable=False)

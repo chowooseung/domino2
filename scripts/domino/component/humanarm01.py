@@ -434,9 +434,10 @@ class Rig(component.Rig):
             shape=(
                 self["controller"][0]["shape"]
                 if "shape" in self["controller"][0]
-                else "cube"
+                else "host"
             ),
             color=12,
+            host=True,
         )
         cmds.setAttr(f"{host_ctl}.tx", lock=True, keyable=False)
         cmds.setAttr(f"{host_ctl}.ty", lock=True, keyable=False)
