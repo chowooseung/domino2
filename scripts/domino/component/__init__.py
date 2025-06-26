@@ -209,6 +209,7 @@ class Rig(dict):
         cmds.addAttr(
             rig_root, longName="output_joint", attributeType="message", multi=True
         )
+        cmds.addAttr(rig_root, longName="host", attributeType="message")
         cmds.setAttr(f"{rig_root}.useOutlinerColor", 1)
         cmds.setAttr(f"{rig_root}.outlinerColor", 0.375, 0.75, 0.75)
 
@@ -364,6 +365,7 @@ class Rig(dict):
             color,
             npo_matrix_index=None,
             fkik_command_attr="",
+            host=False,
         ):
             parent_controllers_str = []
             for identifier, description in self["parent_controllers"]:
@@ -439,6 +441,8 @@ class Rig(dict):
             cmds.setAttr(f"{ctl}.sx", lock=True, keyable=False)
             cmds.setAttr(f"{ctl}.sy", lock=True, keyable=False)
             cmds.setAttr(f"{ctl}.sz", lock=True, keyable=False)
+            if host:
+                cmds.connectAttr(f"{ctl}.message", f"{self.instance.rig_root}.host")
             return npo, ctl
 
         def __init__(self, description, parent_controllers, rig_instance):
