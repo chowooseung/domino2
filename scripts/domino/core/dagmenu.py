@@ -203,7 +203,12 @@ def guide_menu(parent_menu):
 # endregion
 
 # region RIG Commands
-validation_command = "from domino import validation;validation.show()"
+validation_command = """from domino import validation
+validation.show_ui()
+ins = validation.ValidateUI.get_instance()
+ins.stacked_widget.slide_to_index(0)
+ins.validate()
+"""
 
 spacemanager_command = """from maya import cmds
 from domino import spacemanager
