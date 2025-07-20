@@ -17,6 +17,19 @@ INITIALIZE = 3
 VALIDATING = 4
 
 
+def check_node_count():
+    count = len(cmds.ls())
+    return (
+        WARNING if count > 30000 else SUCCESS,
+        [count],
+        f"총 노드 수 : {count}",
+        "노드 수를 확인합니다. ",
+        "현재 scene 의 노드 수가 30000개를 초과합니다. "
+        "리그에서 생성한 노드 이외에 다른 노드가 있는지 확인해주세요. "
+        "이전에 문제가 있었던 scene 에서는 연결이 끊어진 groupId, groupParts, hyperGraphInfo 등의 노드가 남아있는 경우가 있었습니다.",
+    )
+
+
 def check_clashs():
     nodes = cmds.ls("clash*") + cmds.ls("*:clash*")
     return (
@@ -576,6 +589,7 @@ li {
 
         # initialize
         if self._targets_queue and self._check_list_queue == self._check_list:
+            self._current_target_state = 0
             self._current_target = self._targets_queue.pop(0)
             if self._current_target.scene:
                 cmds.file(self._current_target.scene, open=True, force=True)
@@ -670,6 +684,7 @@ def show_ui():
     ins.clear_layout()
 
     ins.add_target(f"Current Scene", "")
+    ins.add_check_list("All Node Count", check_node_count, "전체 노드 수를 확인합니다.")
     ins.add_check_list("Clash", check_clashs, "clash node 를 찾습니다.")
     ins.add_check_list("Same Name", check_same_name, "same name node 를 찾습니다.")
     ins.add_check_list("Namespaces", check_namespace, "namespace 를 찾습니다.")

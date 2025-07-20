@@ -591,7 +591,7 @@ for mesh in meshes:
         if cmds.nodeType(x) == "skinCluster"
     ]
     name = cmds.listRelatives(mesh, parent=True)[0] + str(len(scs)) + "_sc"
-    cmds.skinCluster(
+    sc = cmds.skinCluster(
         joints + [mesh],
         name=name,
         maximumInfluences=1,
@@ -599,7 +599,8 @@ for mesh in meshes:
         obeyMaxInfluences=False,
         weightDistribution=1,
         multi=True,
-    )
+    )[0]
+    cmds.setAttr(sc + ".relativeSpaceMode", 1)
 cmds.select(selected)"""
 
 disconnect_command = """from maya import cmds
