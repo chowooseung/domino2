@@ -461,7 +461,7 @@ class Rig(component.Rig):
             attributeType="float",
             minValue=0,
             maxValue=1,
-            defaultValue=1,
+            defaultValue=0,
             keyable=True,
         )
         cmds.addAttr(
@@ -543,7 +543,7 @@ class Rig(component.Rig):
         )
         cmds.addAttr(
             clavicle_ctl,
-            longName="twist",
+            longName="roll",
             attributeType="doubleAngle",
             minValue=-360,
             maxValue=360,
@@ -644,22 +644,8 @@ class Rig(component.Rig):
         cmds.pointConstraint(
             clavicle_ikh_driver, clavicle_bone_ikh, maintainOffset=False
         )
-        ins = Transform(
-            parent=self.rig_root,
-            name=name,
-            side=side,
-            index=index,
-            description="clavicleTwist",
-            extension=Name.loc_extension,
-        )
-        clavicle_twist_loc = ins.create()
-        cmds.connectAttr(f"{clavicle_ctl}.twist", f"{clavicle_twist_loc}.rx")
-        cmds.connectAttr(
-            f"{self.rig_root}.npo_matrix[0]", f"{clavicle_twist_loc}.offsetParentMatrix"
-        )
-        cmds.pointConstraint(clavicle_ctl, clavicle_twist_loc, maintainOffset=False)
         clavicle_bone_npo, clavicle_bone_ctl = self["controller"][2].create(
-            parent=clavicle_twist_loc,
+            parent=self.rig_root,
             shape=(
                 self["controller"][2]["shape"]
                 if "shape" in self["controller"][2]
@@ -673,6 +659,22 @@ class Rig(component.Rig):
             cmds.connectAttr(
                 f"{clavicle_ctl}.clavicle_bone_ctl_visibility", f"{shape}.v"
             )
+
+        ins = Transform(
+            parent=clavicle_bone_npo,
+            name=name,
+            side=side,
+            index=index,
+            description="clavicleRoll",
+            extension=Name.loc_extension,
+            m=cmds.xform(clavicle_bone_ctl, query=True, matrix=True, worldSpace=True),
+        )
+        clavicle_roll_loc = ins.create()
+        multiply = cmds.createNode("multiply")
+        cmds.connectAttr(f"{clavicle_ctl}.roll", f"{multiply}.input[0]")
+        cmds.setAttr(f"{multiply}.input[1]", -1)
+        cmds.connectAttr(f"{multiply}.output", f"{clavicle_roll_loc}.rx")
+        cmds.parent(clavicle_bone_ctl, clavicle_roll_loc)
         ins = Transform(
             parent=clavicle_bone_ctl,
             name=name,
@@ -1891,12 +1893,21 @@ class Rig(component.Rig):
             side=side,
             index=index,
             description="scapularAutoAim",
+            extension=Name.group_extension,
+        )
+        scapular_auto_aim_grp = ins.create()
+        ins = Transform(
+            parent=scapular_auto_aim_grp,
+            name=name,
+            side=side,
+            index=index,
+            description="scapularAutoAim",
             extension=Name.loc_extension,
         )
         scapular_auto_aim_loc = ins.create()
         cmds.connectAttr(
             f"{self.rig_root}.scapular_aim_matrix",
-            f"{scapular_auto_aim_loc}.offsetParentMatrix",
+            f"{scapular_auto_aim_grp}.offsetParentMatrix",
         )
         ins = Transform(
             parent=self.rig_root,
@@ -1907,6 +1918,15 @@ class Rig(component.Rig):
             extension=Name.loc_extension,
         )
         scapular_blend_aim_loc = ins.create()
+        ins = Transform(
+            parent=scapular_blend_aim_loc,
+            name=name,
+            side=side,
+            index=index,
+            description="scapularAutoAim",
+            extension="rotationWinging",
+        )
+        scapular_aim_rotation_winging = ins.create()
         ins = Transform(
             parent=clavicle_bone_npo_inverse,
             name=name,
@@ -1926,12 +1946,21 @@ class Rig(component.Rig):
             side=side,
             index=index,
             description="scapularAutoUp",
+            extension=Name.group_extension,
+        )
+        scapular_auto_up_grp = ins.create()
+        ins = Transform(
+            parent=scapular_auto_up_grp,
+            name=name,
+            side=side,
+            index=index,
+            description="scapularAutoUp",
             extension=Name.loc_extension,
         )
         scapular_auto_up_loc = ins.create()
         cmds.connectAttr(
             f"{self.rig_root}.scapular_up_matrix",
-            f"{scapular_auto_up_loc}.offsetParentMatrix",
+            f"{scapular_auto_up_grp}.offsetParentMatrix",
         )
         ins = Transform(
             parent=self.rig_root,
@@ -1942,6 +1971,15 @@ class Rig(component.Rig):
             extension=Name.loc_extension,
         )
         scapular_blend_up_loc = ins.create()
+        ins = Transform(
+            parent=scapular_blend_up_loc,
+            name=name,
+            side=side,
+            index=index,
+            description="scapularAutoUp",
+            extension="rotationWinging",
+        )
+        scapular_up_rotation_winging = ins.create()
         mult_m = cmds.createNode("multMatrix")
         cmds.connectAttr(f"{scapular_aim_loc}.worldMatrix[0]", f"{mult_m}.matrixIn[0]")
         cmds.connectAttr(
@@ -1949,8 +1987,16 @@ class Rig(component.Rig):
         )
         blend_m = cmds.createNode("blendMatrix")
         cmds.connectAttr(f"{mult_m}.matrixSum", f"{blend_m}.inputMatrix")
+        mult_m = cmds.createNode("multMatrix")
         cmds.connectAttr(
-            f"{scapular_auto_aim_loc}.dagLocalMatrix",
+            f"{scapular_auto_aim_loc}.worldMatrix[0]",
+            f"{mult_m}.matrixIn[0]",
+        )
+        cmds.connectAttr(
+            f"{self.rig_root}.worldInverseMatrix[0]", f"{mult_m}.matrixIn[1]"
+        )
+        cmds.connectAttr(
+            f"{mult_m}.matrixSum",
             f"{blend_m}.target[0].targetMatrix",
         )
         cmds.connectAttr(f"{host_ctl}.auto_scapular", f"{blend_m}.envelope")
@@ -1964,8 +2010,16 @@ class Rig(component.Rig):
         )
         blend_m = cmds.createNode("blendMatrix")
         cmds.connectAttr(f"{mult_m}.matrixSum", f"{blend_m}.inputMatrix")
+        mult_m = cmds.createNode("multMatrix")
         cmds.connectAttr(
-            f"{scapular_auto_up_loc}.dagLocalMatrix",
+            f"{scapular_auto_up_loc}.worldMatrix[0]",
+            f"{mult_m}.matrixIn[0]",
+        )
+        cmds.connectAttr(
+            f"{self.rig_root}.worldInverseMatrix[0]", f"{mult_m}.matrixIn[1]"
+        )
+        cmds.connectAttr(
+            f"{mult_m}.matrixSum",
             f"{blend_m}.target[0].targetMatrix",
         )
         cmds.connectAttr(f"{host_ctl}.auto_scapular", f"{blend_m}.envelope")
@@ -1973,12 +2027,12 @@ class Rig(component.Rig):
             f"{blend_m}.outputMatrix", f"{scapular_blend_up_loc}.offsetParentMatrix"
         )
         cons = cmds.aimConstraint(
-            scapular_blend_aim_loc,
+            scapular_aim_rotation_winging,
             scapular_npo,
             aimVector=(1, 0, 0),
             upVector=(0, 1, 0),
             worldUpType="object",
-            worldUpObject=scapular_blend_up_loc,
+            worldUpObject=scapular_up_rotation_winging,
             maintainOffset=False,
         )[0]
         cmds.connectAttr(f"{self.rig_root}.scapular_aim_axis_x", f"{cons}.aimVectorX")
@@ -1987,6 +2041,20 @@ class Rig(component.Rig):
         cmds.connectAttr(f"{self.rig_root}.scapular_up_axis_x", f"{cons}.upVectorX")
         cmds.connectAttr(f"{self.rig_root}.scapular_up_axis_y", f"{cons}.upVectorY")
         cmds.connectAttr(f"{self.rig_root}.scapular_up_axis_z", f"{cons}.upVectorZ")
+
+        md = cmds.createNode("multiplyDivide")
+        cmds.setAttr(f"{md}.input2", 1, -1, -1)
+        cmds.connectAttr(
+            f"{scapular_ctl}.rotation", f"{scapular_aim_rotation_winging}.ty"
+        )
+
+        cmds.connectAttr(f"{scapular_ctl}.upper_winging", f"{md}.input1Y")
+        cmds.connectAttr(f"{scapular_ctl}.lower_winging", f"{md}.input1Z")
+        cmds.connectAttr(f"{md}.outputY", f"{scapular_aim_rotation_winging}.tz")
+        subtract = cmds.createNode("subtract")
+        cmds.connectAttr(f"{md}.outputY", f"{subtract}.input2")
+        cmds.connectAttr(f"{md}.outputZ", f"{subtract}.input1")
+        cmds.connectAttr(f"{subtract}.output", f"{scapular_up_rotation_winging}.tz")
 
         # output
         c = 0

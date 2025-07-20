@@ -786,20 +786,27 @@ class Controller(Transform):
     def reset(node):
         attrs = [".tx", ".ty", ".tz", ".rx", ".ry", ".rz"]
         for attr in attrs:
-            if cmds.getAttr(f"{node}{attr}", lock=True):
-                continue
-            cmds.setAttr(f"{node}{attr}", 0)
+            try:
+                cmds.setAttr(f"{node}{attr}", 0)
+            except:
+                ...
         attrs = [".sx", ".sy", ".sz"]
         for attr in attrs:
-            if cmds.getAttr(f"{node}{attr}", lock=True):
-                continue
-            cmds.setAttr(f"{node}{attr}", 1)
+            try:
+                cmds.setAttr(f"{node}{attr}", 1)
+            except:
+                ...
         attrs = [
             "." + x for x in cmds.listAttr(node, userDefined=True, keyable=True) or []
         ]
         for attr in attrs:
-            default_value = cmds.addAttr(f"{node}{attr}", query=True, defaultValue=True)
-            cmds.setAttr(f"{node}{attr}", default_value)
+            try:
+                default_value = cmds.addAttr(
+                    f"{node}{attr}", query=True, defaultValue=True
+                )
+                cmds.setAttr(f"{node}{attr}", default_value)
+            except:
+                ...
 
 
 # endregion
