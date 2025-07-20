@@ -684,11 +684,8 @@ class Rig(component.Rig):
             m=ORIGINMATRIX,
         )
         clavicle_bone_npo_inverse = ins.create()
-        mult_m = cmds.createNode("multMatrix")
-        cmds.connectAttr(f"{self.rig_root}.npo_matrix[1]", f"{mult_m}.matrixIn[0]")
-        cmds.connectAttr(f"{self.rig_root}.npo_matrix[0]", f"{mult_m}.matrixIn[1]")
         inverse_m = cmds.createNode("inverseMatrix")
-        cmds.connectAttr(f"{mult_m}.matrixSum", f"{inverse_m}.inputMatrix")
+        cmds.connectAttr(f"{self.rig_root}.npo_matrix[0]", f"{inverse_m}.inputMatrix")
         cmds.connectAttr(
             f"{inverse_m}.outputMatrix",
             f"{clavicle_bone_npo_inverse}.offsetParentMatrix",
@@ -1887,6 +1884,8 @@ class Rig(component.Rig):
             f"{self.rig_root}.scapular_aim_matrix",
             f"{scapular_aim_loc}.offsetParentMatrix",
         )
+        cmds.setAttr(f"{scapular_aim_loc}.t", 0, 0, 0)
+        cmds.setAttr(f"{scapular_aim_loc}.r", 0, 0, 0)
         ins = Transform(
             parent=self.rig_root,
             name=name,
@@ -1940,6 +1939,8 @@ class Rig(component.Rig):
             f"{self.rig_root}.scapular_up_matrix",
             f"{scapular_up_loc}.offsetParentMatrix",
         )
+        cmds.setAttr(f"{scapular_up_loc}.t", 0, 0, 0)
+        cmds.setAttr(f"{scapular_up_loc}.r", 0, 0, 0)
         ins = Transform(
             parent=self.rig_root,
             name=name,
