@@ -675,6 +675,8 @@ class Rig(component.Rig):
         cmds.setAttr(f"{multiply}.input[1]", -1)
         cmds.connectAttr(f"{multiply}.output", f"{clavicle_roll_loc}.rx")
         cmds.parent(clavicle_bone_ctl, clavicle_roll_loc)
+        cmds.setAttr(f"{clavicle_bone_ctl}.t", 0, 0, 0)
+        cmds.setAttr(f"{clavicle_bone_ctl}.r", 0, 0, 0)
         ins = Transform(
             parent=clavicle_bone_ctl,
             name=name,
@@ -1054,8 +1056,7 @@ class Rig(component.Rig):
         )
         mult_m = cmds.createNode("multMatrix")
         cmds.connectAttr(f"{self.rig_root}.npo_matrix[2]", f"{mult_m}.matrixIn[0]")
-        cmds.connectAttr(f"{self.rig_root}.npo_matrix[1]", f"{mult_m}.matrixIn[1]")
-        cmds.connectAttr(f"{self.rig_root}.npo_matrix[0]", f"{mult_m}.matrixIn[2]")
+        cmds.connectAttr(f"{self.rig_root}.npo_matrix[0]", f"{mult_m}.matrixIn[1]")
         decom_m = cmds.createNode("decomposeMatrix")
         cmds.connectAttr(f"{mult_m}.matrixSum", f"{decom_m}.inputMatrix")
         cmds.connectAttr(f"{decom_m}.outputRotate", f"{ik0_jnt}.jointOrient")
