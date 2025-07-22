@@ -687,7 +687,7 @@ class Rig(component.Rig):
         )
         clavicle_bone_npo_inverse = ins.create()
         inverse_m = cmds.createNode("inverseMatrix")
-        cmds.connectAttr(f"{self.rig_root}.npo_matrix[0]", f"{inverse_m}.inputMatrix")
+        cmds.connectAttr(f"{self.rig_root}.npo_matrix[1]", f"{inverse_m}.inputMatrix")
         cmds.connectAttr(
             f"{inverse_m}.outputMatrix",
             f"{clavicle_bone_npo_inverse}.offsetParentMatrix",
@@ -1056,7 +1056,7 @@ class Rig(component.Rig):
         )
         mult_m = cmds.createNode("multMatrix")
         cmds.connectAttr(f"{self.rig_root}.npo_matrix[2]", f"{mult_m}.matrixIn[0]")
-        cmds.connectAttr(f"{self.rig_root}.npo_matrix[0]", f"{mult_m}.matrixIn[1]")
+        cmds.connectAttr(f"{self.rig_root}.npo_matrix[1]", f"{mult_m}.matrixIn[1]")
         decom_m = cmds.createNode("decomposeMatrix")
         cmds.connectAttr(f"{mult_m}.matrixSum", f"{decom_m}.inputMatrix")
         cmds.connectAttr(f"{decom_m}.outputRotate", f"{ik0_jnt}.jointOrient")
