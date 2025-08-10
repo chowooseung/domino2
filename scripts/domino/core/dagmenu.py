@@ -249,20 +249,8 @@ cmds.select(selected)"""
 sdkmanager_command = """from maya import cmds
 from domino import sdkmanager
 
-selected = cmds.ls(selection=True)[0]
-sdkmanager.show()
-sdkmanager.initialize()
-parent = cmds.listRelatives("sdk_manager", parent=True)
-if not parent or parent[0] != "origin_sub_ctl":
-    cmds.parent("sdk_manager", "origin_sub_ctl")
-if not cmds.objExists(selected + ".sdk_manager"):
-    cmds.addAttr(selected, longName="sdk_manager", attributeType="message")
-if (
-    cmds.connectionInfo(selected + ".sdk_manager", sourceFromDestination=True)
-    != "sdk_manager.message"
-):
-    cmds.connectAttr("sdk_manager.message", selected + ".sdk_manager", force=True)
-cmds.select(selected)"""
+ins = sdkmanager.SDKManager.get_instance()
+ins.show(dockable=True)"""
 
 add_data_command = """from maya import cmds
 from maya import OpenMayaUI as omui
