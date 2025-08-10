@@ -879,81 +879,8 @@ class Assembly(DynamicWidget):
         def toggled_run_script(_attr, _checked):
             cmds.setAttr(_attr, _checked)
 
-        def set_modeling_path():
-            pass
-
-        def set_dummy_path():
-            pass
-
-        def set_blendshape_manager_path():
-            pass
-
-        def set_space_manager_path():
-            pass
-
-        def set_pose_manager_path():
-            pass
-
-        def set_sdk_manager_path():
-            pass
-
-        def set_deformer_manager_path():
-            pass
-
         # endregion
         super(Assembly, self).__init__(parent=parent, root=root)
-
-        up_icon = (icon_dir / "arrow-big-up-lines.svg").as_posix()
-        down_icon = (icon_dir / "arrow-big-down-lines.svg").as_posix()
-
-        self.add_check_box_line_edit_btn(
-            self.parent_widget,
-            "Modeling",
-            [f"{root}.run_import_modeling", f"{root}.modeling_path"],
-            down_icon,
-        )
-        self.add_check_box_line_edit_btn(
-            self.parent_widget,
-            "Dummy",
-            [f"{root}.run_import_dummy", f"{root}.dummy_path"],
-            down_icon,
-        )
-        self.add_check_box_line_edit_btn(
-            self.parent_widget,
-            "BlendShape Manager",
-            [
-                f"{root}.run_import_blendshape_manager",
-                f"{root}.blendshape_manager_path",
-            ],
-            up_icon,
-        )
-        self.add_check_box_line_edit_btn(
-            self.parent_widget,
-            "Pose Manager",
-            [f"{root}.run_import_pose_manager", f"{root}.pose_manager_path"],
-            up_icon,
-        )
-        self.add_check_box_line_edit_btn(
-            self.parent_widget,
-            "SDK Manager",
-            [f"{root}.run_import_sdk_manager", f"{root}.sdk_manager_path"],
-            up_icon,
-        )
-        self.add_check_box_line_edit_btn(
-            self.parent_widget,
-            "Space Manager",
-            [f"{root}.run_import_space_manager", f"{root}.space_manager_path"],
-            up_icon,
-        )
-        self.add_check_box_line_edit_btn(
-            self.parent_widget,
-            "DeformerWeights Manager",
-            [
-                f"{root}.run_import_deformer_weights_manager",
-                f"{root}.deformer_weights_manager_path",
-            ],
-            up_icon,
-        )
 
         # region -    Assembly / context menu
         def show_context_menu(

@@ -34,6 +34,7 @@ COMPONENTLIST = [
     "uicontainer01",
     "fkik2jnt01",
     "humanspine01",
+    "humanneck01",
     "humanarm01",
 ]
 GUIDE = "guide"
@@ -1486,28 +1487,29 @@ class Rig(dict):
 # region BUILD
 @build_log(logging.INFO)
 def build(context, component, attach_guide=False):
-    context["_attach_guide"] = True if attach_guide else False
-    # import modeling
-    if "modeling" in component:
-        if Path(component["modeling"]).exists():
-            cmds.file(newFile=True, force=True)
-            cmds.file(component["modeling"], i=True, namespace=":")
+    try:
+        cmds.ogs(pause=True)
+        cmds.undoInfo(openChunk=True)
 
-    if component["run_import_dummy"]:
-        dummy_path = Path(component["dummy_path"]["value"])
-        for path in [
-            p
-            for p in dummy_path.iterdir()
-            if str(p).endswith(".mb") or str(p).endswith(".ma")
-        ]:
-            cmds.file(path, i=True, namespace=":")
-            logger.info(f"Imported Dummy {path}")
+        # import modeling
+        if "modeling" in component:
+            if Path(component["modeling"]).exists():
+                cmds.file(newFile=True, force=True)
+                cmds.file(component["modeling"], i=True, namespace=":")
 
-    for script_path in component["pre_custom_scripts"]["value"]:
-        if not script_path:
-            continue
-        try:
-            cmds.undoInfo(openChunk=True)
+        if component["run_import_dummy"]:
+            dummy_path = Path(component["dummy_path"]["value"])
+            for path in [
+                p
+                for p in dummy_path.iterdir()
+                if str(p).endswith(".mb") or str(p).endswith(".ma")
+            ]:
+                cmds.file(path, i=True, namespace=":")
+                logger.info(f"Imported Dummy {path}")
+
+        for script_path in component["pre_custom_scripts"]["value"]:
+            if not script_path:
+                continue
             name = Path(script_path).name.split(".")[0]
             spec = importlib.util.spec_from_file_location(name, script_path)
             module = importlib.util.module_from_spec(spec)
@@ -1516,20 +1518,13 @@ def build(context, component, attach_guide=False):
 
             logger.info(f"Run {name} {script_path}")
             module.run(context=context)
-        except Exception as e:
-            logger.error(e, exc_info=True)
-        finally:
-            cmds.undoInfo(closeChunk=True)
-
-    try:
-        cmds.undoInfo(openChunk=True)
 
         # rig build
         stack = [component]
         while stack:
             c = stack.pop(0)
             c.rig()
-            if context["_attach_guide"]:
+            if attach_guide:
                 c.attach_guide()
             identifier = "_".join([str(x) for x in c.identifier if str(x)])
             context[identifier] = {
@@ -1598,15 +1593,10 @@ def build(context, component, attach_guide=False):
             color_index += 1
             stack.extend(c["children"])
         component.setup_skel(output_joints)
-        cmds.select("rig")
-    finally:
-        cmds.undoInfo(closeChunk=True)
 
-    for script_path in component["post_custom_scripts"]["value"]:
-        if not script_path:
-            continue
-        try:
-            cmds.undoInfo(openChunk=True)
+        for script_path in component["post_custom_scripts"]["value"]:
+            if not script_path:
+                continue
             name = Path(script_path).name.split(".")[0]
             spec = importlib.util.spec_from_file_location(name, script_path)
             module = importlib.util.module_from_spec(spec)
@@ -1615,22 +1605,20 @@ def build(context, component, attach_guide=False):
 
             logger.info(f"Run {name} {script_path}")
             module.run(context=context)
-        except Exception as e:
-            logger.error(e, exc_info=True)
-        finally:
-            cmds.undoInfo(closeChunk=True)
 
-    # rig build info
-    cmds.undoInfo(openChunk=True)
-    info = "maya version\n\t" + maya_version()
-    info += "\nused plugins"
-    plugins = used_plugins()
-    for i in range(int(len(plugins) / 2)):
-        info += f"\n\t{plugins[i * 2]:<20}{plugins[i * 2 + 1]}"
-    cmds.addAttr("rig", longName="notes", dataType="string")
-    cmds.setAttr("rig.notes", info, type="string")
-    cmds.setAttr("rig.notes", lock=True)
-    cmds.undoInfo(closeChunk=True)
+        # rig build info
+        info = "maya version\n\t" + maya_version()
+        info += "\nused plugins"
+        plugins = used_plugins()
+        for i in range(int(len(plugins) / 2)):
+            info += f"\n\t{plugins[i * 2]:<20}{plugins[i * 2 + 1]}"
+        cmds.addAttr("rig", longName="notes", dataType="string")
+        cmds.setAttr("rig.notes", info, type="string")
+        cmds.setAttr("rig.notes", lock=True)
+        cmds.select("rig")
+    finally:
+        cmds.undoInfo(closeChunk=True)
+        cmds.ogs(pause=True)
 
     # rig result logging
     @build_log(logging.DEBUG)
@@ -1849,7 +1837,7 @@ def save(file_path, data=None):
     if not data:
         return
 
-    # scripts, dummy, blendshape, deformerWeights 를 버전 업 된 path 로 수정합니다.
+    # custom scripts 를 버전 업 된 path 로 수정합니다.
     # 수동으로 모든 파일을 버전업 하지 않게 하기 위함입니다.
     path = Path(file_path)
     metadata_dir = path.parent / (path.name.split(".")[0] + ".metadata")
