@@ -215,13 +215,13 @@ class TargetWidget(QtWidgets.QFrame):
         layout.setContentsMargins(0, 0, 0, 0)
 
         self.frame = QtWidgets.QFrame()
-        self.frame.setFrameShape(QtWidgets.QFrame.StyledPanel)
+        self.frame.setFrameShape(QtWidgets.QFrame.Shape.StyledPanel)
         self.frame.setStyleSheet("background-color: #999999; border-radius: 2px;")
         self.frame.setFixedSize(16, 16)
-        layout.addWidget(self.frame, alignment=QtCore.Qt.AlignVCenter)
+        layout.addWidget(self.frame, alignment=QtCore.Qt.AlignmentFlag.AlignVCenter)
 
         self.label = QtWidgets.QLabel(title)
-        layout.addWidget(self.label, alignment=QtCore.Qt.AlignVCenter)
+        layout.addWidget(self.label, alignment=QtCore.Qt.AlignmentFlag.AlignVCenter)
 
     def mousePressEvent(self, event):
         if self.hasFocus():
@@ -286,13 +286,13 @@ class CheckListWidget(QtWidgets.QWidget):
         layout.setContentsMargins(0, 0, 0, 0)
 
         self.frame = QtWidgets.QFrame()
-        self.frame.setFrameShape(QtWidgets.QFrame.StyledPanel)
+        self.frame.setFrameShape(QtWidgets.QFrame.Shape.StyledPanel)
         self.frame.setStyleSheet("background-color: #999999; border-radius: 2px;")
         self.frame.setFixedSize(16, 16)
-        layout.addWidget(self.frame, alignment=QtCore.Qt.AlignVCenter)
+        layout.addWidget(self.frame, alignment=QtCore.Qt.AlignmentFlag.AlignVCenter)
 
         self.label = QtWidgets.QLabel(title)
-        layout.addWidget(self.label, alignment=QtCore.Qt.AlignVCenter)
+        layout.addWidget(self.label, alignment=QtCore.Qt.AlignmentFlag.AlignVCenter)
 
         self.btn = QtWidgets.QPushButton()
         self.btn.setIcon(QtGui.QIcon(f"{icon_dir}/chevron-right-grey.svg"))
@@ -301,7 +301,7 @@ class CheckListWidget(QtWidgets.QWidget):
         if btn_events:
             for event in btn_events:
                 self.btn.clicked.connect(event)
-        layout.addWidget(self.btn, alignment=QtCore.Qt.AlignVCenter)
+        layout.addWidget(self.btn, alignment=QtCore.Qt.AlignmentFlag.AlignVCenter)
 
     def set_state(self, state):
         if state == SUCCESS:
@@ -352,7 +352,7 @@ class AnimatedStackedWidget(QtWidgets.QStackedWidget):
 
         # 부드러운 커브
         for anim in (anim_current, anim_next):
-            anim.setEasingCurve(QtCore.QEasingCurve.OutCubic)
+            anim.setEasingCurve(QtCore.QEasingCurve.Type.OutCubic)
 
         def on_finished():
             self.setCurrentIndex(index)
@@ -373,7 +373,7 @@ class ValidateUI(QtWidgets.QDialog):
     def __init__(self, parent=None):
         super(ValidateUI, self).__init__(parent)
         self.setWindowTitle("Domino Validation UI")
-        self.setWindowFlags(QtCore.Qt.WindowStaysOnTopHint)
+        self.setWindowFlags(QtCore.Qt.WindowType.WindowStaysOnTopHint)
         self.setMinimumSize(400, 500)
         self.setBaseSize(400, 500)
 
@@ -408,7 +408,7 @@ background-color: #353535;
         self.validation_target_layout = QtWidgets.QVBoxLayout()
         self.validation_target_layout.setContentsMargins(0, 0, 10, 0)
         self.validation_target_label = QtWidgets.QLabel(
-            "Validation Target", alignment=QtCore.Qt.AlignCenter
+            "Validation Target", alignment=QtCore.Qt.AlignmentFlag.AlignCenter
         )
         self.validation_target_label.setStyleSheet("font-size: 16px;")
         self.validation_target_layout.addWidget(self.validation_target_label)
@@ -416,14 +416,17 @@ background-color: #353535;
 
         self.validation_target_layout.addSpacerItem(
             QtWidgets.QSpacerItem(
-                20, 40, QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Expanding
+                20,
+                40,
+                QtWidgets.QSizePolicy.Policy.Minimum,
+                QtWidgets.QSizePolicy.Policy.Expanding,
             )
         )
 
         self.validation_list_layout = QtWidgets.QVBoxLayout()
         self.validation_list_layout.setContentsMargins(10, 0, 0, 0)
         self.validation_list_label = QtWidgets.QLabel(
-            "Validation List", alignment=QtCore.Qt.AlignCenter
+            "Validation List", alignment=QtCore.Qt.AlignmentFlag.AlignCenter
         )
         self.validation_list_label.setStyleSheet("font-size: 16px;")
         self.validation_list_layout.addWidget(self.validation_list_label)
@@ -445,7 +448,10 @@ background-color: #353535;
         self.btn_layout.setSpacing(6)
         self.btn_layout.addSpacerItem(
             QtWidgets.QSpacerItem(
-                20, 40, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum
+                20,
+                40,
+                QtWidgets.QSizePolicy.Policy.Expanding,
+                QtWidgets.QSizePolicy.Policy.Minimum,
             )
         )
 
@@ -460,7 +466,10 @@ background-color: #353535;
 
         self.validation_list_layout.addSpacerItem(
             QtWidgets.QSpacerItem(
-                20, 40, QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Expanding
+                20,
+                40,
+                QtWidgets.QSizePolicy.Policy.Minimum,
+                QtWidgets.QSizePolicy.Policy.Expanding,
             )
         )
 
@@ -500,7 +509,10 @@ background-color: #353535;
         self.list_btn_layout.addWidget(self.check_list_label)
         self.list_btn_layout.addSpacerItem(
             QtWidgets.QSpacerItem(
-                20, 40, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum
+                20,
+                40,
+                QtWidgets.QSizePolicy.Policy.Expanding,
+                QtWidgets.QSizePolicy.Policy.Minimum,
             )
         )
 
