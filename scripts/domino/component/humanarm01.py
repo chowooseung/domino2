@@ -136,7 +136,7 @@ DATA = [
     attribute.DoubleAngle(
         longName="offset_output_rotate_z", minValue=-360, maxValue=360
     ),
-    attribute.Float(longName="pole_vector_multiple", minValue=1, value=5),
+    attribute.Float(longName="pole_vector_multiple", value=5),
     attribute.Matrix(longName="pole_vector_matrix", value=list(ORIGINMATRIX)),
     attribute.Bool(longName="align_last_transform_to_guide", defaultValue=0),
     attribute.Bool(longName="unlock_last_scale", defaultValue=0),
@@ -568,9 +568,6 @@ class Rig(component.Rig):
         )
         clavicle_pos_loc = ins.create()
         cmds.pointConstraint(clavicle_ctl, clavicle_pos_loc, maintainOffset=False)
-        decom_m = cmds.createNode("decomposeMatrix")
-        cmds.connectAttr(f"{self.rig_root}.npo_matrix[0]", f"{decom_m}.inputMatrix")
-        cmds.connectAttr(f"{decom_m}.outputRotate", f"{clavicle_pos_loc}.r")
         ins = Transform(
             parent=clavicle_ctl,
             name=name,
@@ -582,50 +579,48 @@ class Rig(component.Rig):
         clavicle_ikh_driver = ins.create()
         cmds.setAttr(f"{clavicle_ikh_driver}.t", 0, 0, 0)
         cmds.setAttr(f"{clavicle_ikh_driver}.r", 0, 0, 0)
-        multiply = cmds.createNode("multiply")
         cmds.connectAttr(
-            f"{self.rig_root}.clavicle_bone_distance", f"{multiply}.input[0]"
+            f"{self.rig_root}.clavicle_bone_distance", f"{clavicle_ikh_driver}.tx"
         )
-        cmds.connectAttr(f"{negate_condition}.outColorR", f"{multiply}.input[1]")
-        cmds.connectAttr(f"{multiply}.output", f"{clavicle_ikh_driver}.tx")
         ins = Joint(
             parent=clavicle_pos_loc,
             name=name,
             side=side,
             index=index,
-            description="clavicleBone0",
+            description="clavicleSC0",
             extension=Name.joint_extension,
             m=ORIGINMATRIX,
         )
-        clavicle_bone0_joint = ins.create()
+        clavicle_sc0_joint = ins.create()
         ins = Joint(
-            parent=clavicle_bone0_joint,
+            parent=clavicle_sc0_joint,
             name=name,
             side=side,
             index=index,
-            description="clavicleBone1",
+            description="clavicleSC1",
             extension=Name.joint_extension,
             m=ORIGINMATRIX,
         )
-        clavicle_bone1_joint = ins.create()
-        cmds.connectAttr(f"{negate_condition}.outColorR", f"{clavicle_bone1_joint}.tx")
-        cmds.setAttr(f"{clavicle_bone0_joint}.t", 0, 0, 0)
-        cmds.setAttr(f"{clavicle_bone0_joint}.r", 0, 0, 0)
-        cmds.setAttr(f"{clavicle_bone0_joint}.jointOrient", 0, 0, 0)
-        clavicle_bone_ikh, _ = cmds.ikHandle(
+        clavicle_sc1_joint = ins.create()
+        cmds.connectAttr(f"{negate_condition}.outColorR", f"{clavicle_sc1_joint}.tx")
+        cmds.setAttr(f"{clavicle_sc0_joint}.t", 0, 0, 0)
+        cmds.setAttr(f"{clavicle_sc0_joint}.r", 0, 0, 0)
+        cmds.setAttr(f"{clavicle_sc0_joint}.jointOrient", 0, 0, 0)
+        clavicle_sc_ikh, _ = cmds.ikHandle(
             name=Name.create(
                 Name.controller_name_convention,
                 name=name,
                 side=side,
                 index=index,
-                description="clavicleBone",
+                description="clavicleSC",
                 extension=Name.ikh_extension,
             ),
-            startJoint=clavicle_bone0_joint,
-            endEffector=clavicle_bone1_joint,
+            startJoint=clavicle_sc0_joint,
+            endEffector=clavicle_sc1_joint,
             solver="ikSCsolver",
         )
-        clavicle_bone_ikh = cmds.parent(clavicle_bone_ikh, self.rig_root)[0]
+        clavicle_sc_ikh = cmds.parent(clavicle_sc_ikh, self.rig_root)[0]
+        cmds.setAttr(f"{clavicle_sc_ikh}.r", 0, 0, 0)
         clavicle_negate_condition = cmds.createNode("condition")
         cmds.connectAttr(
             f"{self.rig_root}.side", f"{clavicle_negate_condition}.firstTerm"
@@ -633,50 +628,62 @@ class Rig(component.Rig):
         cmds.setAttr(f"{clavicle_negate_condition}.secondTerm", 2)
         cmds.setAttr(f"{clavicle_negate_condition}.colorIfTrueR", 180)
         cmds.setAttr(f"{clavicle_negate_condition}.colorIfFalseR", 0)
-        cmds.connectAttr(
-            f"{clavicle_negate_condition}.outColorR", f"{clavicle_bone_ikh}.rx"
-        )
-        cmds.hide(clavicle_bone0_joint, clavicle_bone_ikh)
+        cmds.hide(clavicle_sc0_joint, clavicle_sc_ikh)
         cmds.connectAttr(
             f"{self.rig_root}.clavicle_bone_matrix",
-            f"{clavicle_bone0_joint}.offsetParentMatrix",
+            f"{clavicle_sc0_joint}.offsetParentMatrix",
         )
-        cmds.pointConstraint(
-            clavicle_ikh_driver, clavicle_bone_ikh, maintainOffset=False
+        cmds.pointConstraint(clavicle_ikh_driver, clavicle_sc_ikh, maintainOffset=False)
+        ins = Transform(
+            clavicle_pos_loc,
+            name=name,
+            side=side,
+            index=index,
+            description="clavicleSC",
+            extension="space",
         )
+        clavicle_sc_space = ins.create()
+        cmds.connectAttr(
+            f"{self.rig_root}.clavicle_bone_matrix",
+            f"{clavicle_sc_space}.offsetParentMatrix",
+        )
+        cmds.setAttr(f"{clavicle_sc_space}.t", 0, 0, 0)
+        cmds.setAttr(f"{clavicle_sc_space}.s", 1, 1, 1)
+        cmds.connectAttr(f"{clavicle_sc0_joint}.r", f"{clavicle_sc_space}.r")
         clavicle_bone_npo, clavicle_bone_ctl = self["controller"][2].create(
-            parent=self.rig_root,
+            parent=clavicle_sc_space,
             shape=(
                 self["controller"][2]["shape"]
                 if "shape" in self["controller"][2]
                 else "square"
             ),
             color=12,
-            npo_matrix_index=1,
         )
-        cmds.connectAttr(f"{clavicle_bone0_joint}.r", f"{clavicle_bone_npo}.r")
+        mult_m = cmds.createNode("multMatrix")
+        cmds.connectAttr(f"{self.rig_root}.npo_matrix[1]", f"{mult_m}.matrixIn[0]")
+
+        inverse_m = cmds.createNode("inverseMatrix")
+        cmds.connectAttr(
+            f"{self.rig_root}.clavicle_bone_matrix", f"{inverse_m}.inputMatrix"
+        )
+        cmds.connectAttr(f"{inverse_m}.outputMatrix", f"{mult_m}.matrixIn[1]")
+
+        pick_m = cmds.createNode("pickMatrix")
+        cmds.connectAttr(f"{mult_m}.matrixSum", f"{pick_m}.inputMatrix")
+        cmds.setAttr(f"{pick_m}.useTranslate", 0)
+        cmds.connectAttr(
+            f"{pick_m}.outputMatrix", f"{clavicle_bone_npo}.offsetParentMatrix"
+        )
+
+        multiply = cmds.createNode("multiply")
+        cmds.connectAttr(f"{clavicle_ctl}.roll", f"{multiply}.input[0]")
+        cmds.setAttr(f"{multiply}.input[1]", -1)
+        cmds.connectAttr(f"{multiply}.output", f"{clavicle_bone_npo}.rx")
         for shape in cmds.listRelatives(clavicle_bone_ctl, shapes=True) or []:
             cmds.connectAttr(
                 f"{clavicle_ctl}.clavicle_bone_ctl_visibility", f"{shape}.v"
             )
 
-        ins = Transform(
-            parent=clavicle_bone_npo,
-            name=name,
-            side=side,
-            index=index,
-            description="clavicleRoll",
-            extension=Name.loc_extension,
-            m=cmds.xform(clavicle_bone_ctl, query=True, matrix=True, worldSpace=True),
-        )
-        clavicle_roll_loc = ins.create()
-        multiply = cmds.createNode("multiply")
-        cmds.connectAttr(f"{clavicle_ctl}.roll", f"{multiply}.input[0]")
-        cmds.setAttr(f"{multiply}.input[1]", -1)
-        cmds.connectAttr(f"{multiply}.output", f"{clavicle_roll_loc}.rx")
-        cmds.parent(clavicle_bone_ctl, clavicle_roll_loc)
-        cmds.setAttr(f"{clavicle_bone_ctl}.t", 0, 0, 0)
-        cmds.setAttr(f"{clavicle_bone_ctl}.r", 0, 0, 0)
         ins = Transform(
             parent=clavicle_bone_ctl,
             name=name,
@@ -1481,11 +1488,7 @@ class Rig(component.Rig):
         cmds.setAttr(f"{cons}.interpType", 2)
         cmds.pointConstraint(pin_ctl, lower_non_twist0_jnt, maintainOffset=False)
         cmds.pointConstraint(pin_ctl, lower_twist0_jnt, maintainOffset=False)
-        cmds.pointConstraint(blend1_jnt, pin_npo, maintainOffset=False)
-        cons = cmds.orientConstraint(
-            blend0_jnt, blend1_jnt, pin_npo, maintainOffset=False
-        )[0]
-        cmds.setAttr(f"{cons}.interpType", 2)
+        cmds.parentConstraint(blend1_jnt, pin_npo, maintainOffset=False)
         mult_m = cmds.createNode("multMatrix")
         cmds.connectAttr(f"{pole_vec_ctl}.worldMatrix[0]", f"{mult_m}.matrixIn[0]")
         cmds.connectAttr(
@@ -2248,7 +2251,7 @@ class Rig(component.Rig):
             parent=self.guide_root,
             description="clavicle",
             m=self["guide_matrix"]["value"][0],
-            mirror_type=self["guide_mirror_type"]["value"][0],
+            mirror_type=2,
         )
         shoulder_guide = self.add_guide(
             parent=clavicle_guide,
@@ -2291,14 +2294,16 @@ class Rig(component.Rig):
         clavicle_bone_aim_loc = ins.create()
         cmds.setAttr(f"{clavicle_bone_aim_loc}.t", 0, 0, 0)
         cmds.setAttr(f"{clavicle_bone_aim_loc}.r", 0, 0, 0)
-        negate_multiply = cmds.createNode("multiply")
+        divide = cmds.createNode("divide")
         cmds.connectAttr(
-            f"{self.guide_root}.clavicle_bone_distance", f"{negate_multiply}.input[0]"
+            f"{self.guide_root}.clavicle_bone_distance", f"{divide}.input1"
         )
-        cmds.connectAttr(f"{negate_condition}.outColorR", f"{negate_multiply}.input[1]")
-        cmds.connectAttr(f"{negate_multiply}.output", f"{clavicle_bone_aim_loc}.tx")
+        decom_m = cmds.createNode("decomposeMatrix")
+        cmds.connectAttr(f"{clavicle_guide}.worldMatrix[0]", f"{decom_m}.inputMatrix")
+        cmds.connectAttr(f"{decom_m}.outputScaleX", f"{divide}.input2")
+        cmds.connectAttr(f"{divide}.output", f"{clavicle_bone_aim_loc}.tx")
         ins = Joint(
-            parent=clavicle_guide,
+            parent=self.guide_root,
             name=name,
             side=side,
             index=index,
@@ -2307,6 +2312,7 @@ class Rig(component.Rig):
             m=ORIGINMATRIX,
         )
         sc0_joint = ins.create()
+        cmds.pointConstraint(clavicle_bone_guide, sc0_joint, maintainOffset=False)
         ins = Joint(
             parent=sc0_joint,
             name=name,
@@ -2317,6 +2323,8 @@ class Rig(component.Rig):
             m=ORIGINMATRIX,
         )
         sc1_joint = ins.create()
+        cmds.setAttr(f"{sc1_joint}.t", 0, 0, 0)
+        cmds.setAttr(f"{sc0_joint}.jointOrient", 0, 0, 0)
         cmds.connectAttr(f"{negate_condition}.outColorR", f"{sc1_joint}.tx")
         sc_ikh, _ = cmds.ikHandle(
             name=Name.create(
@@ -2335,31 +2343,28 @@ class Rig(component.Rig):
         cmds.hide(sc_ikh, sc0_joint)
         cmds.pointConstraint(clavicle_bone_guide, sc0_joint, maintainOffset=False)
         cmds.pointConstraint(clavicle_bone_aim_loc, sc_ikh, maintainOffset=False)
-        mult_m = cmds.createNode("multMatrix")
-        cmds.connectAttr(f"{sc0_joint}.worldMatrix[0]", f"{mult_m}.matrixIn[0]")
-        cmds.connectAttr(
-            f"{clavicle_guide}.worldInverseMatrix", f"{mult_m}.matrixIn[1]"
-        )
+        cmds.setAttr(f"{sc_ikh}.r", 0, 0, 0)
         pick_m = cmds.createNode("pickMatrix")
+        cmds.setAttr(f"{pick_m}.useRotate", 0)
         cmds.setAttr(f"{pick_m}.useScale", 0)
         cmds.setAttr(f"{pick_m}.useShear", 0)
+        cmds.connectAttr(f"{clavicle_guide}.worldMatrix[0]", f"{pick_m}.inputMatrix")
+        inverse_m = cmds.createNode("inverseMatrix")
+        cmds.connectAttr(f"{pick_m}.outputMatrix", f"{inverse_m}.inputMatrix")
+        mult_m = cmds.createNode("multMatrix")
+        cmds.connectAttr(f"{sc0_joint}.worldMatrix[0]", f"{mult_m}.matrixIn[0]")
+        cmds.connectAttr(f"{inverse_m}.outputMatrix", f"{mult_m}.matrixIn[1]")
+        pick_m = cmds.createNode("pickMatrix")
+        cmds.setAttr(f"{pick_m}.useScale", 0)
         cmds.connectAttr(f"{mult_m}.matrixSum", f"{pick_m}.inputMatrix")
         cmds.connectAttr(
             f"{pick_m}.outputMatrix", f"{self.guide_root}.clavicle_bone_matrix"
         )
-        clavicle_negate_condition = cmds.createNode("condition")
-        cmds.connectAttr(
-            f"{self.rig_root}.side", f"{clavicle_negate_condition}.firstTerm"
-        )
-        cmds.setAttr(f"{clavicle_negate_condition}.secondTerm", 2)
-        cmds.setAttr(f"{clavicle_negate_condition}.colorIfTrueR", 180)
-        cmds.setAttr(f"{clavicle_negate_condition}.colorIfFalseR", 0)
-        cmds.connectAttr(f"{clavicle_negate_condition}.outColorR", f"{sc_ikh}.rx")
         scapular_guide = self.add_guide(
             parent=clavicle_guide,
             description="scapular",
             m=self["guide_matrix"]["value"][6],
-            mirror_type=self["guide_mirror_type"]["value"][6],
+            mirror_type=2,
         )
         scapular_aim_guide = self.add_guide(
             parent=scapular_guide,
@@ -2776,7 +2781,6 @@ class Rig(component.Rig):
             elbow_guide,
             longName="pole_vector_multiple",
             attributeType="float",
-            minValue=0,
             keyable=True,
             defaultValue=self["pole_vector_multiple"]["value"],
         )
