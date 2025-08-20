@@ -157,8 +157,12 @@ def build_log(level):
 
 
 def maya_version():
-    return cmds.about(version=True)
+    return f"{cmds.about(majorVersion=True)}.{cmds.about(minorVersion=True)}"
 
 
 def used_plugins():
     return cmds.pluginInfo(query=True, pluginsInUse=True) or []
+
+
+def bifrost_version():
+    return cmds.pluginInfo("bifrostGraph", query=True, version=True)

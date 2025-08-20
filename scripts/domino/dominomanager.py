@@ -51,16 +51,8 @@ def cb_setup_output_joint(child, parent, client_data):
                 f"{SKEL}.initialize_parent_inverse_matrix[{index}]",
                 force=True,
             )
-            cmds.connectAttr(
-                "skel.worldInverseMatrix[0]",
-                f"{SKEL}.parent_inverse_matrix[{index}]",
-                force=True,
-            )
             logger.info(
                 f"Connect {SKEL}.worldInverseMatrix[0] -> {SKEL}.initialize_parent_inverse_matrix[{index}]"
-            )
-            logger.info(
-                f"Connect {SKEL}.worldInverseMatrix[0] -> {SKEL}.parent_inverse_matrix[{index}]"
             )
             return
         if cmds.objExists(f"{parent}.is_domino_skel"):
@@ -78,16 +70,10 @@ def cb_setup_output_joint(child, parent, client_data):
             output_index = int(parent_root_attr[0].split("[")[1].split("]")[0])
             parent_root = parent_root_attr[0].split(".")[0]
 
-            parent_inverse_matrix = f"{parent_output}.worldInverseMatrix[0]"
             initialize_parent_inverse_matrix = (
                 f"{parent_root}.initialize_output_inverse_matrix[{output_index}]"
             )
 
-            cmds.connectAttr(
-                parent_inverse_matrix,
-                f"{SKEL}.parent_inverse_matrix[{index}]",
-                force=True,
-            )
             cmds.connectAttr(
                 initialize_parent_inverse_matrix,
                 f"{SKEL}.initialize_parent_inverse_matrix[{index}]",
@@ -95,9 +81,6 @@ def cb_setup_output_joint(child, parent, client_data):
             )
             logger.info(
                 f"Connect {initialize_parent_inverse_matrix} -> {SKEL}.initialize_parent_inverse_matrix[{index}]"
-            )
-            logger.info(
-                f"Connect {parent_inverse_matrix} -> {SKEL}.parent_inverse_matrix[{index}]"
             )
     except Exception as e:
         logger.error(e, exc_info=True)
@@ -734,18 +717,23 @@ QTreeView::branch:open:has-children  {{
                 cmds.delete("rig")
             if cmds.objExists("guide"):
                 cmds.delete("guide")
+            if cmds.objExists("rig_sets"):
+                cmds.delete((cmds.sets("rig_sets", query=True) or []) + ["rig_sets"])
 
-            rig = load(file_path[0], create=False)
-            self.rig_tree_model.rig = rig
-            self.rig_tree_model.populate_model()
+            load(file_path[0], create=True)
+            self.refresh()
             self.domino_path_line_edit.setText(file_path[0])
-            build({}, rig)
 
     def load_template(self, file_path, create):
         """file_line_edit 에 path 를 기록하지 않고 load 합니다."""
-        rig = load(file_path, create)
-        self.rig_tree_model.rig = rig
-        self.rig_tree_model.populate_model()
+        if cmds.objExists("rig"):
+            cmds.delete("rig")
+        if cmds.objExists("guide"):
+            cmds.delete("guide")
+        if cmds.objExists("rig_sets"):
+            cmds.delete((cmds.sets("rig_sets", query=True) or []) + ["rig_sets"])
+        load(file_path, create)
+        self.refresh()
 
     # endregion
     def build(self, new_scene=False):
@@ -753,6 +741,7 @@ QTreeView::branch:open:has-children  {{
             cmds.file(newFile=True, force=True)
         rig = self.rig_tree_model.rig
         build({}, rig)
+        self.refresh()
 
     def showEvent(self, e):
         cmds.workspaceControl(self.control_name, edit=True, uiScript=self.ui_script)

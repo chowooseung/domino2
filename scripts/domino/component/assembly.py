@@ -75,12 +75,8 @@ description = """## assembly
 
 
 #### Settings
-- Modeling  
-> build 시 먼저 modeling 을 불러옵니다.
-- Dummy  
-> build 시 먼저 dummy 를 불러옵니다.
 - Custom Scripts  
-> build 시 같이 실행되는 pre, post script 를 관리합니다.
+> build 시 같이 실행되는 pre, post script 를 관리합니다.  
 > Manager 에서 domino path 를 버전업 하게되면 script 또한 버전업 되어서 저장됩니다."""
 # endregion
 
@@ -182,9 +178,20 @@ class Rig(component.Rig):
             m=m,
             mirror_type=self["guide_mirror_type"]["value"][0],
         )
-        cmds.setAttr(f"{guide}.sx", lock=False, keyable=True)
-        cmds.setAttr(f"{guide}.sy", lock=False, keyable=True)
-        cmds.setAttr(f"{guide}.sz", lock=False, keyable=True)
+        cmds.setAttr(f"{guide}.tx", lock=True, keyable=False)
+        cmds.setAttr(f"{guide}.ty", lock=True, keyable=False)
+        cmds.setAttr(f"{guide}.tz", lock=True, keyable=False)
+        cmds.setAttr(f"{guide}.rx", lock=True, keyable=False)
+        cmds.setAttr(f"{guide}.ry", lock=True, keyable=False)
+        cmds.setAttr(f"{guide}.rz", lock=True, keyable=False)
+        cmds.addAttr(
+            guide,
+            longName="asset_scale",
+            attributeType="float",
+            keyable=True,
+            defaultValue=1,
+        )
+        cmds.connectAttr(f"{guide}.asset_scale", f"{self.guide_root}.asset_scale")
         pick_m = cmds.createNode("pickMatrix")
         cmds.setAttr(f"{pick_m}.useTranslate", 0)
         cmds.setAttr(f"{pick_m}.useRotate", 0)

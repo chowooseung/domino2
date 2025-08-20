@@ -9,8 +9,15 @@ from domino.core import (
     Polygon,
     attribute,
     nurbscurve,
+    rigkit,
 )
-from domino.core.utils import build_log, logger, maya_version, used_plugins
+from domino.core.utils import (
+    build_log,
+    logger,
+    maya_version,
+    used_plugins,
+    bifrost_version,
+)
 
 # maya
 from maya import cmds
@@ -20,6 +27,7 @@ from maya.api import OpenMaya as om
 from pathlib import Path
 import copy
 import json
+import time
 import shutil
 import importlib
 import logging
@@ -175,6 +183,39 @@ class Rig(dict):
         cmds.addAttr(
             self.guide_root, longName="_guides", attributeType="message", multi=True
         )
+
+        cmds.setAttr(f"{self.guide_root}.tx", lock=True, keyable=False)
+        cmds.setAttr(f"{self.guide_root}.ty", lock=True, keyable=False)
+        cmds.setAttr(f"{self.guide_root}.tz", lock=True, keyable=False)
+        cmds.setAttr(f"{self.guide_root}.rx", lock=True, keyable=False)
+        cmds.setAttr(f"{self.guide_root}.ry", lock=True, keyable=False)
+        cmds.setAttr(f"{self.guide_root}.rz", lock=True, keyable=False)
+        cmds.setAttr(f"{self.guide_root}.sx", keyable=False)
+        cmds.setAttr(f"{self.guide_root}.sy", keyable=False)
+        cmds.setAttr(f"{self.guide_root}.sz", keyable=False)
+
+        if self == self.assembly:
+            cmds.addAttr(
+                self.guide_root,
+                longName="asset_scale",
+                attributeType="float",
+                defaultValue=1.0,
+                keyable=False,
+            )
+        else:
+            if cmds.objExists(f"{self.assembly.guide_root}"):
+                cmds.connectAttr(
+                    f"{self.assembly.guide_root}.asset_scale",
+                    f"{self.guide_root}.sx",
+                )
+                cmds.connectAttr(
+                    f"{self.assembly.guide_root}.asset_scale",
+                    f"{self.guide_root}.sy",
+                )
+                cmds.connectAttr(
+                    f"{self.assembly.guide_root}.asset_scale",
+                    f"{self.guide_root}.sz",
+                )
 
         for long_name, data in self.items():
             if not isinstance(data, dict):
@@ -778,14 +819,14 @@ class Rig(dict):
         return graph
 
     def setup_skel(self, joints):
+
         for output_joint in joints:
             parent = cmds.listRelatives(output_joint, parent=True)[0]
-            # parent_inverse_matrix, initialize_parent_inverse_matrix
+            # initialize_parent_inverse_matrix
             if parent != "skel":
                 parent_output = cmds.listConnections(
                     f"{parent}.output", destination=False, source=True
                 )[0]
-                parent_inverse_matrix = f"{parent_output}.worldInverseMatrix[0]"
                 plugs = [
                     x
                     for x in cmds.listConnections(
@@ -803,16 +844,13 @@ class Rig(dict):
                     f"{parent_root}.initialize_output_inverse_matrix[{index}]"
                 )
             else:
-                initialize_parent_inverse_matrix = parent_inverse_matrix = (
-                    "skel.worldInverseMatrix[0]"
-                )
-            # output_matrix, initialize_output_matrix, initialize_output_inverse_matrix
-            loc = cmds.listConnections(
+                initialize_parent_inverse_matrix = "skel.worldInverseMatrix[0]"
+            # initialize_output_matrix
+            output = cmds.listConnections(
                 f"{output_joint}.output", destination=False, source=True
             )[0]
-            output_matrix = f"{loc}.worldMatrix[0]"
             plugs = cmds.listConnections(
-                f"{loc}.message",
+                f"{output}.message",
                 destination=True,
                 source=False,
             )
@@ -824,27 +862,21 @@ class Rig(dict):
                 plug = cmds.listConnections(
                     f"{root}.{attr}", source=True, destination=False
                 )[0]
-                if plug == loc:
+                if plug == output:
                     break
             index = int(attr.split("[")[1].split("]")[0])
             initialize_output_matrix = f"{root}.initialize_output_matrix[{index}]"
-            initialize_output_inverse_matrix = (
-                f"{root}.initialize_output_inverse_matrix[{index}]"
-            )
 
             # connect
             index = len(
                 cmds.listConnections(
-                    f"{SKEL}.parent_inverse_matrix", source=True, destination=False
+                    f"{SKEL}.initialize_parent_inverse_matrix",
+                    source=True,
+                    destination=False,
                 )
                 or []
             )
             cmds.setAttr(f"{output_joint}.skel_index", index)
-            cmds.connectAttr(
-                parent_inverse_matrix,
-                f"{SKEL}.parent_inverse_matrix[{index}]",
-                force=True,
-            )
             cmds.connectAttr(
                 initialize_parent_inverse_matrix,
                 f"{SKEL}.initialize_parent_inverse_matrix[{index}]",
@@ -855,58 +887,12 @@ class Rig(dict):
                 f"{SKEL}.initialize_output_matrix[{index}]",
                 force=True,
             )
-            cmds.connectAttr(
-                initialize_output_inverse_matrix,
-                f"{SKEL}.initialize_output_inverse_matrix[{index}]",
-                force=True,
-            )
-            parent_inverse_matrix = f"{SKEL}.parent_inverse_matrix[{index}]"
             initialize_parent_inverse_matrix = (
                 f"{SKEL}.initialize_parent_inverse_matrix[{index}]"
             )
             initialize_output_matrix = f"{SKEL}.initialize_output_matrix[{index}]"
-            initialize_output_inverse_matrix = (
-                f"{SKEL}.initialize_output_inverse_matrix[{index}]"
-            )
 
-            mult_m = cmds.createNode("multMatrix")
-            cmds.connectAttr(output_matrix, f"{mult_m}.matrixIn[0]")
-            cmds.connectAttr(parent_inverse_matrix, f"{mult_m}.matrixIn[1]")
-
-            decom_m = cmds.createNode("decomposeMatrix")
-            cmds.connectAttr(f"{mult_m}.matrixSum", f"{decom_m}.inputMatrix")
-            cmds.connectAttr(f"{decom_m}.outputTranslate", f"{output_joint}.t")
-            output_scale_attrs = [f"{decom_m}.outputScale{a}" for a in ["X", "Y", "Z"]]
-            scale_attrs = [f"{output_joint}.s{a}" for a in ["x", "y", "z"]]
-            for output_attr, attr in zip(output_scale_attrs, scale_attrs):
-                abs = cmds.createNode("absolute")
-                cmds.connectAttr(output_attr, f"{abs}.input")
-                sub = cmds.createNode("subtract")
-                cmds.connectAttr(f"{abs}.output", f"{sub}.input1")
-                cmds.setAttr(f"{sub}.input2", 1)
-                abs = cmds.createNode("absolute")
-                cmds.connectAttr(f"{sub}.output", f"{abs}.input")
-                condition = cmds.createNode("condition")
-                cmds.connectAttr(f"{abs}.output", f"{condition}.firstTerm")
-                cmds.setAttr(f"{condition}.secondTerm", 0.000001)
-                cmds.setAttr(f"{condition}.operation", 5)
-                cmds.setAttr(f"{condition}.colorIfTrueR", 1)
-                cmds.connectAttr(output_attr, f"{condition}.colorIfFalseR")
-                cmds.connectAttr(f"{condition}.outColorR", attr)
-
-            output_shear_attrs = [f"{decom_m}.outputShear{a}" for a in ["X", "X", "Y"]]
-            shear_attrs = [f"{output_joint}.shear{a}" for a in ["XY", "XZ", "YZ"]]
-            for output_attr, attr in zip(output_shear_attrs, shear_attrs):
-                abs = cmds.createNode("absolute")
-                cmds.connectAttr(output_attr, f"{abs}.input")
-                condition = cmds.createNode("condition")
-                cmds.connectAttr(f"{abs}.output", f"{condition}.firstTerm")
-                cmds.setAttr(f"{condition}.secondTerm", 0.000001)
-                cmds.setAttr(f"{condition}.operation", 5)
-                cmds.setAttr(f"{condition}.colorIfTrueR", 0)
-                cmds.connectAttr(output_attr, f"{condition}.colorIfFalseR")
-                cmds.connectAttr(f"{condition}.outColorR", attr)
-
+            # jointOrient
             mult_m = cmds.createNode("multMatrix")
             cmds.connectAttr(initialize_output_matrix, f"{mult_m}.matrixIn[0]")
             cmds.connectAttr(initialize_parent_inverse_matrix, f"{mult_m}.matrixIn[1]")
@@ -915,21 +901,16 @@ class Rig(dict):
             cmds.connectAttr(f"{mult_m}.matrixSum", f"{decom_m}.inputMatrix")
             cmds.connectAttr(f"{decom_m}.outputRotate", f"{output_joint}.jointOrient")
 
-            mult_m = cmds.createNode("multMatrix")
-            cmds.connectAttr(initialize_output_matrix, f"{mult_m}.matrixIn[0]")
-            cmds.connectAttr(initialize_parent_inverse_matrix, f"{mult_m}.matrixIn[1]")
-
-            inv_m = cmds.createNode("inverseMatrix")
-            cmds.connectAttr(f"{mult_m}.matrixSum", f"{inv_m}.inputMatrix")
-
-            mult_m = cmds.createNode("multMatrix")
-            cmds.connectAttr(output_matrix, f"{mult_m}.matrixIn[0]")
-            cmds.connectAttr(parent_inverse_matrix, f"{mult_m}.matrixIn[1]")
-            cmds.connectAttr(f"{inv_m}.outputMatrix", f"{mult_m}.matrixIn[2]")
-
-            decom_m = cmds.createNode("decomposeMatrix")
-            cmds.connectAttr(f"{mult_m}.matrixSum", f"{decom_m}.inputMatrix")
-            cmds.connectAttr(f"{decom_m}.outputRotate", f"{output_joint}.r")
+            # constraint
+            cons = cmds.parentConstraint(output, output_joint, maintainOffset=False)[0]
+            cmds.parent(cons, SKEL)
+            cmds.setAttr(f"{cons}.hiddenInOutliner", True)
+            cmds.connectAttr(
+                f"{decom_m}.outputRotate", f"{cons}.constraintJointOrient", force=True
+            )
+            cons = cmds.scaleConstraint(output, output_joint, maintainOffset=False)[0]
+            cmds.parent(cons, SKEL)
+            cmds.setAttr(f"{cons}.hiddenInOutliner", True)
 
     # endregion
 
@@ -1004,18 +985,6 @@ class Rig(dict):
             cmds.addAttr(
                 SKEL,
                 longName="initialize_output_matrix",
-                attributeType="matrix",
-                multi=True,
-            )
-            cmds.addAttr(
-                SKEL,
-                longName="initialize_output_inverse_matrix",
-                attributeType="matrix",
-                multi=True,
-            )
-            cmds.addAttr(
-                SKEL,
-                longName="parent_inverse_matrix",
                 attributeType="matrix",
                 multi=True,
             )
@@ -1220,6 +1189,12 @@ class Rig(dict):
             )
             duplicate_component["index"]["value"] = index
             duplicate_component.set_parent(parent_component)
+            duplicate_component["controller"] = []
+            duplicate_component.populate_controller()
+            duplicate_component["output"] = []
+            duplicate_component.populate_output()
+            duplicate_component["output_joint"] = []
+            duplicate_component.populate_output_joint()
             if apply_to_output:
                 duplicate_component.rig()
                 output_joints = []
@@ -1490,6 +1465,7 @@ def build(context, component, attach_guide=False):
     try:
         cmds.ogs(pause=True)
         cmds.undoInfo(openChunk=True)
+        start_time = time.perf_counter()
 
         # import modeling
         if "modeling" in component:
@@ -1541,12 +1517,12 @@ def build(context, component, attach_guide=False):
                 crv = ins.create_from_data()
                 cmds.connectAttr(f"{crv}.message", f"rig.custom_curve_data[{i}]")
         if "custom_surface_data" in component:
-            for data in component["custom_surface_data"]:
+            for i, data in enumerate(component["custom_surface_data"]):
                 ins = Surface(data=data)
                 surface = ins.create_from_data()
                 cmds.connectAttr(f"{surface}.message", f"rig.custom_surface_data[{i}]")
         if "custom_polygon_data" in component:
-            for data in component["custom_polygon_data"]:
+            for i, data in enumerate(component["custom_polygon_data"]):
                 ins = Polygon(data=data)
                 polygon = ins.create_from_data()
                 cmds.connectAttr(f"{polygon}.message", f"rig.custom_polygon_data[{i}]")
@@ -1606,12 +1582,19 @@ def build(context, component, attach_guide=False):
             logger.info(f"Run {name} {script_path}")
             module.run(context=context)
 
+        execution_time = time.perf_counter() - start_time
+        minutes, seconds = divmod(execution_time, 60)
+        hours, minutes = divmod(minutes, 60)
+
         # rig build info
-        info = "maya version\n\t" + maya_version()
-        info += "\nused plugins"
+        info = "Maya Version\n\t" + maya_version()
+        info += "\nBifrost Version\n\t"
+        info += bifrost_version()
+        info += "\n\nUsed Plug-ins"
         plugins = used_plugins()
         for i in range(int(len(plugins) / 2)):
             info += f"\n\t{plugins[i * 2]:<20}{plugins[i * 2 + 1]}"
+        info += f"\n\nTotal Build Time : {int(hours):01d}h {int(minutes):01d}m {seconds:4f}s"
         cmds.addAttr("rig", longName="notes", dataType="string")
         cmds.setAttr("rig.notes", info, type="string")
         cmds.setAttr("rig.notes", lock=True)
@@ -1901,6 +1884,15 @@ def save(file_path, data=None):
     for i, path in enumerate(data["post_custom_scripts"]["value"]):
         cmds.setAttr(root + f".post_custom_scripts[{i}]", path, type="string")
 
+    # _exportSkin_sets
+    skin_dir = metadata_dir / "skin"
+    if not skin_dir.exists():
+        skin_dir.mkdir()
+
+    objs = cmds.sets("_exportSkin_sets", query=True) or []
+    if objs:
+        rigkit.export_weights(skin_dir.as_posix(), objs, file_type="json")
+
     with open(file_path, "w") as f:
         json.dump(data, f, indent=2, ensure_ascii=False)
 
@@ -1918,7 +1910,17 @@ def load(file_path, create=True):
 
     logger.info(f"Load filePath: {file_path}")
 
-    return deserialize(data, create)
+    rig = deserialize(data, create)
+
+    # _exportSkin_sets
+    metadata_dir = Path(file_path).parent / (
+        Path(file_path).name.split(".")[0] + ".metadata"
+    )
+    skin_dir = metadata_dir / "skin"
+    if skin_dir.exists():
+        rigkit.import_weights(skin_dir.as_posix())
+
+    return rig
 
 
 # endregion
