@@ -1847,6 +1847,21 @@ class Rig(component.Rig):
             color=12,
             npo_matrix_index=8,
         )
+        ins = Transform(
+            scapular_ctl,
+            name=name,
+            side=side,
+            index=index,
+            description="scapular",
+            extension="inverse",
+        )
+        scapular_negate_inverse = ins.create()
+        cmds.setAttr(f"{scapular_negate_inverse}.t", 0, 0, 0)
+        cmds.setAttr(f"{scapular_negate_inverse}.r", 0, 0, 0)
+        cmds.setAttr(f"{scapular_negate_inverse}.s", 1, 1, 1)
+        cmds.connectAttr(
+            f"{negate_condition}.outColorR", f"{scapular_negate_inverse}.sz"
+        )
         cmds.connectAttr(f"{host_ctl}.scapular_ctl_visibility", f"{scapular_npo}.v")
         cmds.addAttr(
             scapular_ctl,
@@ -2034,8 +2049,8 @@ class Rig(component.Rig):
         cons = cmds.aimConstraint(
             scapular_aim_rotation_winging,
             scapular_npo,
-            aimVector=(1, 0, 0),
-            upVector=(0, 1, 0),
+            aimVector=(-1, 0, 0),
+            upVector=(0, -1, 0),
             worldUpType="object",
             worldUpObject=scapular_up_rotation_winging,
             maintainOffset=False,
@@ -2048,13 +2063,14 @@ class Rig(component.Rig):
         cmds.connectAttr(f"{self.rig_root}.scapular_up_axis_z", f"{cons}.upVectorZ")
 
         md = cmds.createNode("multiplyDivide")
-        cmds.setAttr(f"{md}.input2", 1, -1, -1)
-        cmds.connectAttr(
-            f"{scapular_ctl}.rotation", f"{scapular_aim_rotation_winging}.ty"
-        )
+        cmds.connectAttr(f"{negate_condition}.outColorR", f"{md}.input2X")
+        cmds.connectAttr(f"{negate_condition}.outColorR", f"{md}.input2Y")
+        cmds.connectAttr(f"{negate_condition}.outColorR", f"{md}.input2Z")
+        cmds.connectAttr(f"{scapular_ctl}.rotation", f"{md}.input1X")
 
         cmds.connectAttr(f"{scapular_ctl}.upper_winging", f"{md}.input1Y")
         cmds.connectAttr(f"{scapular_ctl}.lower_winging", f"{md}.input1Z")
+        cmds.connectAttr(f"{md}.outputX", f"{scapular_aim_rotation_winging}.ty")
         cmds.connectAttr(f"{md}.outputY", f"{scapular_aim_rotation_winging}.tz")
         subtract = cmds.createNode("subtract")
         cmds.connectAttr(f"{md}.outputY", f"{subtract}.input2")
@@ -2214,7 +2230,9 @@ class Rig(component.Rig):
         cmds.setAttr(f"{scapular_output}.drawStyle", 2)
         self["output"][c].connect()
         mult_m = cmds.createNode("multMatrix")
-        cmds.connectAttr(f"{scapular_ctl}.worldMatrix[0]", f"{mult_m}.matrixIn[0]")
+        cmds.connectAttr(
+            f"{scapular_negate_inverse}.worldMatrix[0]", f"{mult_m}.matrixIn[0]"
+        )
         cmds.connectAttr(
             f"{self.rig_root}.worldInverseMatrix[0]", f"{mult_m}.matrixIn[1]"
         )
