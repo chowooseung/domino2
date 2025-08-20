@@ -350,8 +350,9 @@ def rig_menu(parent_menu):
 # region Controller Commands
 go_to_host_command = """from maya import cmds
 selected = cmds.ls(selection=True)
-if selected:
-    stack = cmds.listConnections(selected[0] + ".message", source=False, destination=True, type="transform") or []
+hosts = []
+for sel in selected:
+    stack = cmds.listConnections(sel + ".message", source=False, destination=True, type="transform") or []
     root = None
     while stack:
         n = stack.pop(0)
@@ -360,7 +361,9 @@ if selected:
             break
     host = cmds.listConnections(root + ".host", source=True, destination=False, type="transform") or []
     if host:
-        cmds.select(host[0])
+        hosts.append(host[0])
+if hosts:
+    cmds.select(hosts)
 """
 
 apply_children_option_commnad = f"""from maya import cmds
