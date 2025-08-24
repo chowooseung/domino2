@@ -397,7 +397,7 @@ def ribbon_spline_ik(
     )
     main_crv = cmds.parent(main_crv, parent)[0]
     up_crv, up_crv_iso = cmds.duplicateCurve(
-        f"{surface}.u[1]",
+        f"{surface}.u[0]",
         name=f"{surface}_upIkCrv",
         constructionHistory=True,
         rn=False,
@@ -494,7 +494,7 @@ def ribbon_spline_ik(
         force=True,
     )
     up_orig_uniform_crv, up_orig_uniform_crv_iso = cmds.duplicateCurve(
-        f"{orig}.u[1]",
+        f"{orig}.u[0]",
         name=f"{surface}_uniformUpCrvOrig",
         constructionHistory=True,
         rn=False,
@@ -604,7 +604,7 @@ def ribbon_spline_ik(
         )
         aim_m = cmds.createNode("aimMatrix")
         cmds.connectAttr(primary_vector_plug, f"{aim_m}.primaryInputAxis")
-        cmds.setAttr(f"{aim_m}.secondaryInputAxis", 0, 1, 0)
+        cmds.setAttr(f"{aim_m}.secondaryInputAxis", 0, -1, 0)
         cmds.setAttr(f"{aim_m}.primaryMode", 1)
         cmds.setAttr(f"{aim_m}.secondaryMode", 1)
         cmds.connectAttr(f"{main_j}.worldMatrix[0]", f"{aim_m}.inputMatrix")
@@ -642,7 +642,7 @@ def ribbon_spline_ik(
         )
         aim_m = cmds.createNode("aimMatrix")
         cmds.connectAttr(primary_vector_plug, f"{aim_m}.primaryInputAxis")
-        cmds.setAttr(f"{aim_m}.secondaryInputAxis", 0, 1, 0)
+        cmds.setAttr(f"{aim_m}.secondaryInputAxis", 0, -1, 0)
         cmds.setAttr(f"{aim_m}.primaryMode", 1)
         cmds.setAttr(f"{aim_m}.secondaryMode", 1)
         cmds.connectAttr(main_ribbon_output, f"{aim_m}.inputMatrix")
@@ -682,7 +682,7 @@ def ribbon_spline_ik(
         )
         aim_m = cmds.createNode("aimMatrix")
         cmds.connectAttr(primary_vector_plug, f"{aim_m}.primaryInputAxis")
-        cmds.setAttr(f"{aim_m}.secondaryInputAxis", 0, 1, 0)
+        cmds.setAttr(f"{aim_m}.secondaryInputAxis", 0, -1, 0)
         cmds.setAttr(f"{aim_m}.primaryMode", 1)
         cmds.setAttr(f"{aim_m}.secondaryMode", 1)
         cmds.connectAttr(main_uniform_output, f"{aim_m}.inputMatrix")

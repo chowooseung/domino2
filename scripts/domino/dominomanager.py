@@ -737,10 +737,11 @@ QTreeView::branch:open:has-children  {{
 
     # endregion
     def build(self, new_scene=False):
-        if new_scene:
-            cmds.file(newFile=True, force=True)
         rig = self.rig_tree_model.rig
-        build({}, rig)
+        if rig:
+            if new_scene:
+                cmds.file(newFile=True, force=True)
+                build({}, rig)
         self.refresh()
 
     def showEvent(self, e):

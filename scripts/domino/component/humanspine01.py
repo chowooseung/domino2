@@ -206,6 +206,8 @@ class Rig(component.Rig):
         result = dialog.exec()
         try:
             value = int(line_edit.text())
+            if value < 3:
+                return False
             self["output_count"]["value"] = value
             self["output_u_values"]["value"] = [v / (value - 1) for v in range(value)]
             self["initialize_output_matrix"]["value"] = [
@@ -834,21 +836,21 @@ class Rig(component.Rig):
         cmds.connectAttr(f"{surface}.worldSpace[0]", f"{uvpin}.deformedGeometry")
 
         c = 0
-        for i, u_value in enumerate(self["output_u_values"]["value"]):
-            cmds.connectAttr(
-                f"{self.guide_root}.output_u_values[{i}]",
-                f"{uvpin}.coordinate[{c}].coordinateV",
-            )
-            cmds.connectAttr(
-                f"{uvpin}.outputMatrix[{c}]", f"{graph}.main_transforms[{i}]"
-            )
-            c += 1
-        for i, u_value in enumerate(self["output_u_values"]["value"]):
+        for i in range(len(self["output_u_values"]["value"])):
             cmds.connectAttr(
                 f"{self.guide_root}.output_u_values[{i}]",
                 f"{uvpin}.coordinate[{c}].coordinateV",
             )
             cmds.setAttr(f"{uvpin}.coordinate[{c}].coordinateU", 0.5)
+            cmds.connectAttr(
+                f"{uvpin}.outputMatrix[{c}]", f"{graph}.main_transforms[{i}]"
+            )
+            c += 1
+        for i in range(len(self["output_u_values"]["value"])):
+            cmds.connectAttr(
+                f"{self.guide_root}.output_u_values[{i}]",
+                f"{uvpin}.coordinate[{c}].coordinateV",
+            )
             cmds.connectAttr(
                 f"{uvpin}.outputMatrix[{c}]", f"{graph}.up_transforms[{i}]"
             )
