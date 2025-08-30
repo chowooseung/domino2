@@ -1741,9 +1741,8 @@ class Rig(component.Rig):
             f"{self.rig_root}.upper_ribbon_surface",
             f"{upper_ribbon_surface}ShapeOrig.create",
         )
-        cmds.sets(upper_ribbon_surface, edit=True, addElement="_exportSkin_sets")
-
         sc = cmds.findDeformers(upper_ribbon_surface)[0]
+        cmds.sets(sc, edit=True, addElement="_deformerWeights_sets")
         cmds.skinPercent(
             sc, f"{upper_ribbon_surface}.cv[*][0]", transformValue=[driver_joints[0], 1]
         )
@@ -1798,9 +1797,9 @@ class Rig(component.Rig):
             f"{self.rig_root}.lower_ribbon_surface",
             f"{lower_ribbon_surface}ShapeOrig.create",
         )
-        cmds.sets(lower_ribbon_surface, edit=True, addElement="_exportSkin_sets")
-
         sc = cmds.findDeformers(lower_ribbon_surface)[0]
+        cmds.sets(sc, edit=True, addElement="_deformerWeights_sets")
+
         cmds.skinPercent(
             sc, f"{lower_ribbon_surface}.cv[*][0]", transformValue=[driver_joints[3], 1]
         )

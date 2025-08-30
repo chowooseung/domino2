@@ -594,10 +594,10 @@ class Rig(component.Rig):
         cmds.connectAttr(
             f"{self.rig_root}.ribbon_surface", f"{ribbon_surface}ShapeOrig.create"
         )
-        cmds.sets(ribbon_surface, edit=True, addElement="_exportSkin_sets")
+        sc = cmds.findDeformers(ribbon_surface)[0]
+        cmds.sets(sc, edit=True, addElement="_deformerWeights_sets")
 
         cmds.hide(ribbon_grp, ribbon0_jnt, ribbon1_jnt, ribbon2_jnt, ribbon3_jnt)
-        sc = cmds.findDeformers(ribbon_surface)[0]
         cmds.skinPercent(
             sc, f"{ribbon_surface}.cv[*][0]", transformValue=[ribbon0_jnt, 1]
         )

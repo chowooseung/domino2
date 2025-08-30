@@ -3,6 +3,7 @@ from maya import cmds
 
 # built-ins
 from pathlib import Path
+import json
 
 # domino
 from domino.core.utils import logger
@@ -1257,14 +1258,10 @@ def ribbon_uv(
     return surface, outputs
 
 
-# endregion
+def spline_ik():
+    pass
 
 
-# region bezier - nurbs layer
-# endregion
-
-
-# region bezier - nurbs layer
 # endregion
 
 
@@ -1296,9 +1293,9 @@ def transfer_blendshape(source, destination, bs, smooth=0):
     cmds.setAttr(f"{p_wrap}.smoothInfluences", smooth)
 
     # rename
-    transferred_bs = cmds.blendShape(destination)[0]
+    final_bs = cmds.blendShape(destination)[0]
     cmds.rename(bs, "TEMPBLENDSHAPE")
-    transferred_bs = cmds.rename(transferred_bs, bs)
+    final_bs = cmds.rename(final_bs, bs)
     bs = cmds.rename("TEMPBLENDSHAPE", f"{bs}_transferred")
 
     # inbetween attributes
@@ -1344,12 +1341,12 @@ def transfer_blendshape(source, destination, bs, smooth=0):
     for i, attr in enumerate(weight_attrs):
         cmds.setAttr(f"{bs}.{attr}", 1)
         cmds.blendShape(
-            transferred_bs,
+            final_bs,
             edit=True,
             target=(destination, i, interface_mesh, 1),
             weight=(i, 0),
         )
-        cmds.aliasAttr(attr, f"{transferred_bs}.w[{i}]")
+        cmds.aliasAttr(attr, f"{final_bs}.w[{i}]")
         connections = cmds.listConnections(
             f"{interface_mesh}Shape.worldMesh[0]", connections=True, plugs=True
         )
@@ -1358,7 +1355,7 @@ def transfer_blendshape(source, destination, bs, smooth=0):
             value = int(inbetween_attr[-4:-1]) / 1000
             cmds.setAttr(f"{bs}.{attr}", value)
             cmds.blendShape(
-                transferred_bs,
+                final_bs,
                 edit=True,
                 inBetween=True,
                 inBetweenType="absolute",
@@ -1394,7 +1391,7 @@ def transfer_blendshape(source, destination, bs, smooth=0):
                     destination_attr = connections[i * 2].split(".")[1]
                     source_attr = connections[i * 2 + 1].split(".")[1]
                     cmds.connectAttr(
-                        f"{transferred_bs}.{source_attr}",
+                        f"{final_bs}.{source_attr}",
                         f"{combination_shape}.{destination_attr}",
                     )
                 connections = cmds.listConnections(
@@ -1408,13 +1405,13 @@ def transfer_blendshape(source, destination, bs, smooth=0):
                 source_attr = connections[0].split(".")[1]
                 cmds.connectAttr(
                     f"{combination_shape}.{source_attr}",
-                    f"{transferred_bs}.{destination_attr}",
+                    f"{final_bs}.{destination_attr}",
                 )
             else:
                 plug = cmds.listConnections(
                     f"{bs}.{attr}", source=True, destination=False, plugs=True
                 )[0]
-                cmds.connectAttr(plug, f"{transferred_bs}.{attr}")
+                cmds.connectAttr(plug, f"{final_bs}.{attr}")
 
     # remove
     cmds.proximityWrap(p_wrap, edit=True, removeDrivers=source)
@@ -1423,6 +1420,8 @@ def transfer_blendshape(source, destination, bs, smooth=0):
 
 def export_blendshape(directory, bs):
     directory_path = Path(directory)
+    if not directory_path.exists():
+        return logger.warning(f"{directory} 가 존재하지 않습니다.")
     mesh = cmds.deformer(bs, geometry=True, query=True)[0]
 
     plug = cmds.listConnections(f"{bs}.originalGeometry[0]", plugs=True)[0]
@@ -1457,6 +1456,8 @@ def export_blendshape(directory, bs):
 
 def import_blendshape(directory):
     directory_path = Path(directory)
+    if not directory_path.exists():
+        return logger.warning(f"{directory} 가 존재하지 않습니다.")
 
     obj_files = directory_path.glob("*__*.obj")
     for obj in obj_files:
@@ -1475,44 +1476,206 @@ def import_blendshape(directory):
 
 
 # region deformerWeight import / export
-FILETYPE = {"xml": "XML", "json": "JSON"}
+DEFORMER_TYPE_TABLE = {
+    "skinCluster": [
+        "skinningMethod",
+        "useComponents",
+        "normalizeWeights",
+        "deformUserNormals",
+        "relativeSpaceMode",
+        "weightDistribution",
+    ],
+    "blendShape": ["weight", "origin"],
+    "cluster": ["relative", "angleInterpolation"],
+    "deltaMush": [
+        "smoothingIterations",
+        "smoothingStep",
+        "inwardConstraint",
+        "outwardConstraint",
+        "distanceWeight",
+        "displacement",
+        "pinBorderVertices",
+    ],
+    "tension": [
+        "smoothingIterations",
+        "smoothingStep",
+        "inwardConstraint",
+        "outwardConstraint",
+        "squashConstraint",
+        "stretchConstraint",
+        "relative",
+        "shearStrength",
+        "bendStrength",
+        "pinBorderVertices",
+    ],
+    "proximityWrap": [
+        "wrapMode",
+        "coordinateFrames",
+        "maxDrivers",
+        "falloffScale",
+        "dropoffRateScale",
+        "scaleCompensation",
+        "smoothInfluences",
+        "smoothNormals",
+        "softNormalization",
+        "spanSamples",
+    ],
+    "shrinkWrap": [
+        "targetSmoothLevel",
+        "projection",
+        "closestIfNoIntersection",
+        "reverse",
+        "bidirectional",
+        "boundingBoxCenter",
+        "axisReference",
+        "alongX",
+        "alongY",
+        "alongZ",
+        "offset",
+        "targetInflation",
+        "falloff",
+        "falloffIterations",
+        "shapePreservationEnable",
+        "shapePreservationSteps",
+        "shapePreservationReprojection",
+    ],
+    "wire": [
+        "crossingEffect",
+        "tension",
+        "localInfluence",
+        "rotation",
+        "dropoffDistance",
+        "scale",
+        "freezeGeometry",
+        "bindToOriginalGeometry",
+    ],
+    "jiggle": [
+        "enable",
+        "ignoreTransform",
+        "forceAlongNormal",
+        "forceOnTangent",
+        "motionMultiplier",
+        "stiffness",
+        "damping",
+        "jiggleWeight",
+        "directionBias",
+    ],
+    "ffd": [
+        "local",
+        "localInfluenceS",
+        "localInfluenceT",
+        "localInfluenceU",
+        "outsideLattice",
+        "outsideFalloffDist",
+        "usePartialResolution",
+        "partialResolution",
+        "bindToOriginalGeometry",
+        "freezeGeometry",
+    ],
+}
 
 
-def export_weights(directory, objs, file_type="xml"):
-    for obj in objs:
-        deformers = cmds.findDeformers(obj) or []
-        for deformer in deformers:
-            cmds.deformerWeights(
-                f"{obj}__{deformer}.{file_type}",
-                export=True,
-                deformer=deformer,
-                format=FILETYPE[file_type],
-                path=directory,
-            )
+def export_weights(directory, deformers):
+    if not Path(directory).exists():
+        logger.info(f"{directory} 가 존재하지 않습니다.")
+
+    for deformer in deformers:
+        deformer_type = cmds.nodeType(deformer)
+        if deformer_type not in DEFORMER_TYPE_TABLE:
+            logger.warning(f"{deformer_type} 을 지원하지 않습니다.")
+            continue
+        objs = cmds.deformer(deformer, geometry=True, query=True) or []
+        for obj in objs:
+            all_deformer = cmds.deformableShape(obj) or []
+            all_deformer.remove(deformer)
+            skip_objs = objs.copy()
+            skip_objs.remove(obj)
+            flags = {
+                "export": True,
+                "deformer": deformer,
+                "shape": obj,
+                "skip": skip_objs + all_deformer,
+                "format": "JSON",
+                "path": directory,
+                "vertexConnections": True if cmds.nodeType(obj) == "mesh" else False,
+                "attribute": (
+                    DEFORMER_TYPE_TABLE[deformer_type]
+                    if deformer_type in DEFORMER_TYPE_TABLE
+                    else []
+                ),
+                "defaultValue": 0 if deformer_type == "skinCluster" else 1,
+            }
+            file_name = f"{obj}__{deformer}__{deformer_type}.json"
+            cmds.deformerWeights(file_name, **flags)
+            with open(Path(directory) / file_name, "r") as f:
+                data = json.load(f)
+
+            # weight 수정을 하지않는 경우 제대로 export 되지 않음. 수동으로 추가.
+            if "weights" not in data["deformerWeight"]:
+                data["deformerWeight"]["weights"] = [
+                    {
+                        "deformer": deformer,
+                        "source": "baseLayer",
+                        "shape": obj,
+                        "layer": 0,
+                        "defaultValue": 1.0,
+                        "size": 0,
+                        "max": 0,
+                    }
+                ]
+            with open(Path(directory) / file_name, "w") as f:
+                json.dump(data, f, indent=2)
 
 
 def import_weights(directory):
     path = Path(directory)
+    if not path.exists():
+        logger.info(f"{directory} 가 존재하지 않습니다.")
 
     for f in path.iterdir():
+        # 파일 이름이 형식에 맞지 않다면 continue
         try:
             name, ext = f.name.split(".")
-            _, deformer = name.split("__")
+            obj, deformer_name, deformer_type = name.split("__")
         except:
             continue
-        if cmds.objExists(deformer):
-            cmds.deformerWeights(
-                f.name,
-                im=True,
-                deformer=deformer,
-                format=FILETYPE[ext],
-                path=directory,
+
+        flags = {
+            "im": True,
+            "deformer": deformer_name,
+            "format": "JSON",
+            "path": directory,
+            "attribute": DEFORMER_TYPE_TABLE[deformer_type],
+        }
+        with open(Path(directory) / f.name, "r") as _f:
+            data = json.load(_f)
+
+        # skincluster 의 경우 없으면 생성하는것이 작업하기 편함.
+        if deformer_type == "skinCluster" and not cmds.objExists(deformer_name):
+            joints = [d["source"] for d in data["deformerWeight"]["weights"]]
+            cmds.skinCluster(
+                joints + [obj],
+                name=deformer_name,
+                maximumInfluences=1,
+                normalizeWeights=True,
+                obeyMaxInfluences=False,
+                weightDistribution=1,
+                multi=True,
             )
-            logger.info(f"Imported {deformer} weights")
-        else:
-            cmds.warning(
-                f"{deformer} 가 존재하지 않습니다. weights 를 가져오는데 실패하였습니다."
-            )
+            logger.info(f"Create {deformer_name}")
+
+        cmds.deformerWeights(f.name, **flags)
+
+        # 이유를 모르겠지만 attribute flag 가 작동하지 않음. 수동으로 적용.
+        for attr in data["deformerWeight"]["deformers"][0]["attributes"]:
+            if "multi" in attr:
+                multi_indexes = attr["multi"].split(" ")
+                value_indexes = attr["value"].split(" ")
+                for m_i, v_i in zip(multi_indexes, value_indexes):
+                    cmds.setAttr(f"{deformer_name}.{attr['name']}[{m_i}]", float(v_i))
+            else:
+                cmds.setAttr(f"{deformer_name}.{attr['name']}", float(attr["value"]))
+        logger.info(f"Imported {deformer_name} weights")
 
 
 # endregion
@@ -1529,10 +1692,12 @@ def set_deformer_chain(geometry, chain):
     check = False
     if len(chain) != len(new_chain):
         cmds.warning(f"deformer 가 서로 맞지 않습니다. {chain} {new_chain}")
+        check = True
 
     for deformer in chain:
         if deformer not in new_chain:
             cmds.warning(f"{deformer} 가 현재 {new_chain} 에 존재하지 않습니다.")
+            check = True
 
     if check:
         return

@@ -971,10 +971,16 @@ class Rig(dict):
             skel_sets = cmds.sets(name="skel_sets", empty=True)
             geo_sets = cmds.sets(name="geometry_sets", empty=True)
             controller_sets = cmds.sets(name="controller_sets", empty=True)
-            export_skin_sets = cmds.sets(name="_exportSkin_sets", empty=True)
-            cmds.setAttr(f"{export_skin_sets}.hiddenInOutliner", 1)
+            deformer_weights_sets = cmds.sets(name="_deformerWeights_sets", empty=True)
+            cmds.setAttr(f"{deformer_weights_sets}.hiddenInOutliner", 1)
             cmds.sets(
-                [model_sets, skel_sets, geo_sets, controller_sets, export_skin_sets],
+                [
+                    model_sets,
+                    skel_sets,
+                    geo_sets,
+                    controller_sets,
+                    deformer_weights_sets,
+                ],
                 name="rig_sets",
             )
         if not cmds.objExists(SKEL):
@@ -1884,14 +1890,14 @@ def save(file_path, data=None):
     for i, path in enumerate(data["post_custom_scripts"]["value"]):
         cmds.setAttr(root + f".post_custom_scripts[{i}]", path, type="string")
 
-    # _exportSkin_sets
-    skin_dir = metadata_dir / "skin"
-    if not skin_dir.exists():
-        skin_dir.mkdir()
+    # _deformerWeights_sets
+    deformer_weights_dir = metadata_dir / "deformerWeights"
+    if not deformer_weights_dir.exists():
+        deformer_weights_dir.mkdir()
 
-    objs = cmds.sets("_exportSkin_sets", query=True) or []
-    if objs:
-        rigkit.export_weights(skin_dir.as_posix(), objs, file_type="json")
+    deformers = cmds.sets("_deformerWeights_sets", query=True) or []
+    if deformers:
+        rigkit.export_weights(deformer_weights_dir.as_posix(), deformers)
 
     with open(file_path, "w") as f:
         json.dump(data, f, indent=2, ensure_ascii=False)
@@ -1912,13 +1918,13 @@ def load(file_path, create=True):
 
     rig = deserialize(data, create)
 
-    # _exportSkin_sets
+    # _deformerWeights_sets
     metadata_dir = Path(file_path).parent / (
         Path(file_path).name.split(".")[0] + ".metadata"
     )
-    skin_dir = metadata_dir / "skin"
-    if skin_dir.exists():
-        rigkit.import_weights(skin_dir.as_posix())
+    deformer_weights_dir = metadata_dir / "deformerWeights"
+    if deformer_weights_dir.exists():
+        rigkit.import_weights(deformer_weights_dir.as_posix())
 
     return rig
 
