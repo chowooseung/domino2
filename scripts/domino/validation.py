@@ -169,23 +169,64 @@ def check_default_value_controller():
         keyable = cmds.listAttr(ctl, userDefined=True, keyable=True) or []
         channelbox = cmds.listAttr(ctl, userDefined=True, channelBox=True) or []
         for attr in tr:
-            if cmds.getAttr(ctl + attr) != 0.0:
-                result.append(ctl + attr)
+            if cmds.getAttr(f"{ctl}{attr}") != 0.0:
+                result.append(f"{ctl}{attr}")
         for attr in s:
-            if cmds.getAttr(ctl + attr) != 1.0:
-                result.append(ctl + attr)
+            if cmds.getAttr(f"{ctl}{attr}") != 1.0:
+                result.append(f"{ctl}{attr}")
         attrs = keyable + channelbox
-        for attr in ["." + x for x in attrs]:
-            default_value = cmds.addAttr(ctl + attr, query=True, defaultValue=True)
-            if default_value != cmds.getAttr(ctl + attr):
-                result.append(ctl + attr)
+        for attr in [f".{x}" for x in attrs]:
+            default_value = cmds.addAttr(f"{ctl}{attr}", query=True, defaultValue=True)
+            if default_value != cmds.getAttr(f"{ctl}{attr}"):
+                result.append(f"{ctl}{attr}")
     return (
         WARNING if result else SUCCESS,
         result,
-        "default value controller found!",
+        "not default value controller found!",
         "default value 가 아닌 controller 를 찾습니다.",
         "controller 의 기본값이 아닌 값을 가지고 있습니다. "
         "특별한 경우가 아니라면 기본값을 유지해주세요.",
+    )
+
+
+def check_output_joint():
+    output_joints = [
+        x for x in cmds.ls(type="joint") if cmds.objExists(f"{x}.is_domino_skel")
+    ]
+    attrs = [".rx", ".ry", ".rz", ".sx", ".sy", ".sz"]
+    result = []
+    for joint in output_joints:
+        for attr in attrs:
+            rx, ry, rz = [round(x, 3) for x in cmds.getAttr(joint + ".r")[0]]
+            sx, sy, sz = [round(x, 3) for x in cmds.getAttr(joint + ".s")[0]]
+            if (
+                rx != 0.0
+                or ry != 0.0
+                or rz != 0.0
+                or sx != 1.0
+                or sy != 1.0
+                or sz != 1.0
+            ):
+                result.append(f"{joint}{attr}")
+    return (
+        SUCCESS if not result else WARNING,
+        result,
+        "output joints value warning!",
+        "output joint 의 rotate, scale 값을 검사합니다.",
+        "output joint 의 rotate, scale 값을 소수점 3번째 자리까지 검사합니다. "
+        "리그에서 어쩔수 없이 값이 변경되지만 의도하지 않은 경우를 체크하기 위함입니다. "
+        "값이 0이 아닌경우 리그의 설정이 잘못된 경우가 많으니 확인해주세요.",
+    )
+
+
+def check_output_joint_hierarchy():
+    joints = cmds.listRelatives("skel", children=True, type="joint")
+    return (
+        SUCCESS if len(joints) == 1 and joints[0] == "origin_jnt" else ERROR,
+        [] if len(joints) == 1 and joints[0] == "origin_jnt" else joints,
+        "output joints hierarchy error!",
+        "skel 하위의 output joint hierarchy 를 검사합니다.",
+        "모든 output joint 는 origin_jnt 를 root 로 만들어 주세요.",
     )
 
 
@@ -738,6 +779,16 @@ def show_ui():
         "script node 를 찾습니다.",
     )
     ins.add_check_list("Keyframe", check_keyframe, "script node 를 찾습니다.")
+    ins.add_check_list(
+        "Output joint",
+        check_output_joint,
+        "output joint 의 rotate, scale 값을 검사합니다.",
+    )
+    ins.add_check_list(
+        "Output joint hierarchy",
+        check_output_joint_hierarchy,
+        "skel 하위의 hierarchy 를 검사합니다.",
+    )
     ins.add_check_list("GroupId", check_group_id, "groupId node 를 찾습니다.")
     ins.add_check_list("GroupParts", check_group_parts, "groupParts node 를 찾습니다.")
     ins.show()
