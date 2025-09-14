@@ -783,7 +783,7 @@ class Controller(Transform):
         return controllers
 
     @staticmethod
-    def reset(node):
+    def reset(node, srt=True):
         attrs = [".tx", ".ty", ".tz", ".rx", ".ry", ".rz"]
         for attr in attrs:
             try:
@@ -796,17 +796,19 @@ class Controller(Transform):
                 cmds.setAttr(f"{node}{attr}", 1)
             except:
                 ...
-        attrs = [
-            "." + x for x in cmds.listAttr(node, userDefined=True, keyable=True) or []
-        ]
-        for attr in attrs:
-            try:
-                default_value = cmds.addAttr(
-                    f"{node}{attr}", query=True, defaultValue=True
-                )
-                cmds.setAttr(f"{node}{attr}", default_value)
-            except:
-                ...
+        if not srt:
+            attrs = [
+                "." + x
+                for x in cmds.listAttr(node, userDefined=True, keyable=True) or []
+            ]
+            for attr in attrs:
+                try:
+                    default_value = cmds.addAttr(
+                        f"{node}{attr}", query=True, defaultValue=True
+                    )
+                    cmds.setAttr(f"{node}{attr}", default_value)
+                except:
+                    ...
 
 
 # endregion
@@ -909,6 +911,7 @@ class Curve:
                 "use_rgb": cmds.getAttr(f"{shape}.overrideRGBColors"),
                 "color_rgb": cmds.getAttr(f"{shape}.overrideColorRGB")[0],
                 "color_index": cmds.getAttr(f"{shape}.overrideColor"),
+                "always_draw_on_top": cmds.getAttr(f"{shape}.alwaysDrawOnTop"),
             }
         self._node = n
 
@@ -933,6 +936,7 @@ class Curve:
             cmds.setAttr(f"{shape}.overrideRGBColors", data["use_rgb"])
             cmds.setAttr(f"{shape}.overrideColorRGB", *data["color_rgb"])
             cmds.setAttr(f"{shape}.overrideColor", data["color_index"])
+            cmds.setAttr(f"{shape}.alwaysDrawOnTop", data["always_draw_on_top"])
             shape = cmds.rename(shape, f"{transform.split('|')[-1]}Shape")
             cmds.parent(shape, transform, relative=True, shape=True)
             cmds.delete(shape_transform)
