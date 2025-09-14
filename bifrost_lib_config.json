@@ -3,6 +3,7 @@
         {
             "libraryName": "Domino",
             "libraryVersion": "1.0.0",
+            "vendorName": "Cho Wooseung",
             "jsonLibs": [
                 {
                     "path": "bifrost/components",
