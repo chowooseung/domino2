@@ -13,11 +13,13 @@ from PySide6 import QtWidgets, QtCore, QtGui
 from domino.core import anim
 
 
-sdk_node_name = "sdk_manager"
+SDK_NODE_NAME = "sdk_manager"
+SDK_SETS = "sdk_sets"
+RIG_SETS = "rig_sets"
 
 
 def create_sdk_node():
-    sdk_node = cmds.createNode("transform", name=sdk_node_name)
+    sdk_node = cmds.createNode("transform", name=SDK_NODE_NAME)
     cmds.addAttr(sdk_node, longName="_data", dataType="string")
 
     data = {"controls": [], "sdk": {}}
@@ -26,7 +28,7 @@ def create_sdk_node():
 
 
 def get_sdk_node():
-    return sdk_node_name if cmds.objExists(sdk_node_name) else None
+    return SDK_NODE_NAME if cmds.objExists(SDK_NODE_NAME) else None
 
 
 def add_sdk_control(controls):
@@ -83,6 +85,11 @@ def add_sdk_control(controls):
         cmds.xform(sdk_control, matrix=m, worldSpace=True)
         cmds.parent(control, sdk_control)
         sdk_controls.append(sdk_control)
+    if not cmds.objExists(SDK_SETS):
+        cmds.sets(name=SDK_SETS, empty=True)
+    cmds.sets(sdk_controls, add=SDK_SETS)
+    if cmds.objExists(RIG_SETS):
+        cmds.sets(SDK_SETS, add=RIG_SETS)
     data["controls"].extend(sdk_controls)
     cmds.setAttr(f"{sdk_node}._data", json.dumps(data), type="string")
     cmds.select(sdk_controls)
@@ -110,6 +117,8 @@ def remove_sdk_control(controls):
     sdk_sets = set(sdk_controls)
     data["controls"] = [ctl for ctl in data["controls"] if ctl not in sdk_sets]
     cmds.setAttr(f"{sdk_node}._data", json.dumps(data), type="string")
+    if cmds.objExists(SDK_SETS) and not cmds.sets(SDK_SETS, query=True):
+        cmds.delete(SDK_SETS)
     if selected:
         cmds.select([s for s in selected if cmds.objExists(s)])
 
