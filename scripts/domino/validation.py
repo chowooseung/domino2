@@ -16,17 +16,18 @@ ERROR = 2
 INITIALIZE = 3
 VALIDATING = 4
 
+# CHECK FUNCTION RETURN TYPE
+# state, nodes, error_msg, description_msg, solve_msg
 
-def check_node_count():
-    count = len(cmds.ls())
+
+def check_pasted():
+    nodes = cmds.ls("pasted__*")
     return (
-        WARNING if count > 30000 else SUCCESS,
-        [count],
-        f"총 노드 수 : {count}",
-        "노드 수를 확인합니다. ",
-        "현재 scene 의 노드 수가 30000개를 초과합니다. "
-        "리그에서 생성한 노드 이외에 다른 노드가 있는지 확인해주세요. "
-        "이전에 문제가 있었던 scene 에서는 연결이 끊어진 groupId, groupParts, hyperGraphInfo 등의 노드가 남아있는 경우가 있었습니다.",
+        ERROR if nodes else SUCCESS,  # state
+        nodes,  # nodes
+        "pasted nodes found!",  # error_msg
+        "Ctrl+v 로 추가된 pasted node 를 찾습니다.",  # description_msg
+        "필요없는 pasted__ 노드를 삭제해 주세요.",  # solve_msg
     )
 
 
@@ -38,7 +39,7 @@ def check_clashs():
         "clash nodes found!",
         "clash node 를 찾습니다.",
         "clash node 는 여타 scene 을 import 할 때 중복된 이름으로 생성됩니다."
-        "노드를 찾아서 삭제하거나 이름을 변경해주세요.",
+        "필요없는 clash 노드를 찾아서 삭제하거나 이름을 변경해주세요.",
     )
 
 
@@ -98,9 +99,9 @@ def check_unknown_plugins():
         plugins,
         "unknown plugins found!",
         "unknown plug-ins 를 찾습니다.",
-        "unknown plug-ins 은 현재 maya 환경에서 인식되지 않는 플러그인입니다."
-        "해당 플러그인을 사용한 scene 을 import 하거나 reference 로 사용하면 발생합니다."
-        "스크립트를 사용해 제거해주세요.",
+        "unknown plug-ins 은 현재 maya 환경에서 인식되지 않는 플러그인입니다. "
+        "import / reference 로 추가된 경우가 많습니다. 해당 플러그인이 필요하다면 "
+        "설치하거나 스크립트를 사용해 제거해주세요.",
     )
 
 
@@ -115,7 +116,8 @@ def check_unknown_nodes():
         nodes,
         "unknown nodes found!",
         "unknown node 를 찾습니다.",
-        "unknown node 는 잘못된 node 타입으로 생성된 노드입니다. 사용하려던 노드타입을 확인하고 제거해주세요.",
+        "unknown node 는 잘못된 node 타입으로 생성된 노드입니다. "
+        "사용하려던 노드타입을 확인하고 제거해주세요.",
     )
 
 
@@ -126,8 +128,7 @@ def check_expression():
         expression,
         "expression found!",
         "expression node 를 찾습니다.",
-        "expression 은 잘못 사용한다면 해결하기 힘든 버그를 발생시킬수있고 리그의 속도를 저하시키는 원인이 될수있습니다."
-        "주의해서 사용해주세요.",
+        "꼭 필요한 expression 만 사용했나요?",
     )
 
 
@@ -143,7 +144,7 @@ def check_script():
         nodes,
         "script nodes found!",
         "script node 를 찾습니다.",
-        "일반적인 경우 script 노드를 사용하지 않는 것이 좋습니다.",
+        "꼭 필요한 script node 만 사용했나요?",
     )
 
 
@@ -183,7 +184,8 @@ def check_default_value_controller():
         result,
         "default value controller found!",
         "default value 가 아닌 controller 를 찾습니다.",
-        "controller 의 기본값이 아닌 값을 가지고 있습니다. 특별한 경우가 아니라면 기본값을 유지해주세요.",
+        "controller 의 기본값이 아닌 값을 가지고 있습니다. "
+        "특별한 경우가 아니라면 기본값을 유지해주세요.",
     )
 
 
@@ -198,6 +200,26 @@ def check_keyframe():
         "keyframes found!",
         "keyframe 를 찾습니다.",
         "keyframe 는 리그에 포함될 이유가 없습니다.",
+    )
+
+
+def check_group_id():
+    return (
+        SUCCESS,
+        [],
+        "unused groupId found!",
+        "사용하지 않는 groupId 를 찾습니다.",
+        "사용하지 않는 groupId 를 제거해주세요.",
+    )
+
+
+def check_group_parts():
+    return (
+        SUCCESS,
+        [],
+        "unused groupParts found!",
+        "사용하지 않는 groupParts 를 찾습니다.",
+        "사용하지 않는 groupParts 를 제거해주세요.",
     )
 
 
@@ -668,7 +690,7 @@ li {
     def go_to_list_description_page(self, list_index):
         if self._current_target is None:
             return
-        state, nodes, error_msg, description_msg, solvee_msg = (
+        state, nodes, error_msg, description_msg, solve_msg = (
             self._current_target.result[list_index]
         )
         self.check_list_label.setText(self._check_list[list_index].label.text())
@@ -681,7 +703,7 @@ li {
             node_text += "<br>"
             node_text += error_msg
         self.error_list_text_browser.setHtml(node_text)
-        self.solve_description_text_browser.setText(solvee_msg)
+        self.solve_description_text_browser.setText(solve_msg)
         self.stacked_widget.slide_to_index(1)
 
     @classmethod
@@ -696,7 +718,7 @@ def show_ui():
     ins.clear_layout()
 
     ins.add_target(f"Current Scene", "")
-    ins.add_check_list("All Node Count", check_node_count, "전체 노드 수를 확인합니다.")
+    ins.add_check_list("Pasted", check_pasted, "Ctrl+v 로 추가된 pasted__ 를 찾습니다.")
     ins.add_check_list("Clash", check_clashs, "clash node 를 찾습니다.")
     ins.add_check_list("Same Name", check_same_name, "same name node 를 찾습니다.")
     ins.add_check_list("Namespaces", check_namespace, "namespace 를 찾습니다.")
@@ -716,4 +738,6 @@ def show_ui():
         "script node 를 찾습니다.",
     )
     ins.add_check_list("Keyframe", check_keyframe, "script node 를 찾습니다.")
+    ins.add_check_list("GroupId", check_group_id, "groupId node 를 찾습니다.")
+    ins.add_check_list("GroupParts", check_group_parts, "groupParts node 를 찾습니다.")
     ins.show()
