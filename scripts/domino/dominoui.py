@@ -98,6 +98,7 @@ class UIGenerator:
             try:
                 cmds.undoInfo(openChunk=True)
                 current_component.rename_component(new_name, old_side, old_index, True)
+                cmds.select(current_component.guide_root)
             finally:
                 cmds.undoInfo(closeChunk=True)
             logger.info(
@@ -132,6 +133,7 @@ class UIGenerator:
             try:
                 cmds.undoInfo(openChunk=True)
                 current_component.rename_component(old_name, new_side, old_index, True)
+                cmds.select(current_component.guide_root)
             finally:
                 cmds.undoInfo(closeChunk=True)
             logger.info(
@@ -160,6 +162,7 @@ class UIGenerator:
             try:
                 cmds.undoInfo(openChunk=True)
                 current_component.rename_component(old_name, old_side, index, True)
+                cmds.select(current_component.guide_root)
             finally:
                 cmds.undoInfo(closeChunk=True)
             logger.info(
