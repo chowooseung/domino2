@@ -126,6 +126,11 @@ class Rig(component.Rig):
         cmds.connectAttr(f"{cog_pivot_ctl}.t", f"{cog_ctl}.rotatePivot")
         cmds.connectAttr(f"{cog_ctl}.pivot_ctl_visibility", f"{cog_pivot_npo}.v")
 
+        shapes = cmds.listRelatives(cog_ctl, shapes=True)
+        cmds.cluster(
+            shapes, bindState=1, weightedNode=(cog_pivot_ctl, cog_pivot_ctl), relative=1
+        )
+
         # output
         ins = Joint(
             self.rig_root,
