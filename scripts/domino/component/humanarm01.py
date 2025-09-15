@@ -413,7 +413,7 @@ class Rig(component.Rig):
             self.add_output_joint(
                 parent_description=parent_description, description="wrist"
             )
-            self.add_output_joint(parent_description=None, description="scapular")
+            self.add_output_joint(parent_description="clavicle", description="scapular")
 
     # region RIG
     @build_log(logging.INFO)
@@ -745,6 +745,8 @@ class Rig(component.Rig):
             color=12,
             npo_matrix_index=3,
         )
+        cmds.setAttr(f"{elbow_ctl}.rx", lock=True, keyable=False)
+        cmds.setAttr(f"{elbow_ctl}.rz", lock=True, keyable=False)
         cmds.setAttr(f"{elbow_ctl}.mirror_type", 1)
         ins = Transform(
             parent=elbow_ctl,
