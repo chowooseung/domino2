@@ -1275,7 +1275,7 @@ def spline_ik():
 
 
 # region blendshape transfer / import / export
-def transfer_blendshape(source, destination, bs, smooth=0):
+def transfer_blendshape(source, destination, bs, smooth=0, delta_mush=False):
     check = False
     if not cmds.objExists(source):
         cmds.warning(f"{source} 가 존재하지 않습니다.")
@@ -1300,6 +1300,10 @@ def transfer_blendshape(source, destination, bs, smooth=0):
     cmds.proximityWrap(p_wrap, edit=True, addDrivers=source)
     cmds.setAttr(f"{p_wrap}.wrapMode", 0)
     cmds.setAttr(f"{p_wrap}.smoothInfluences", smooth)
+    if delta_mush:
+        delta_mush = cmds.deformer(interface_mesh, tool="deltaMush")[0]
+        cmds.setAttr(f"{delta_mush}.displacement", 1)
+        cmds.setAttr(f"{delta_mush}.pinBorderVertices", 0)
 
     # rename
     final_bs = cmds.blendShape(destination)[0]
@@ -1442,7 +1446,7 @@ def export_blendshape(directory, bs):
     orig_shape = cmds.ls(new_transform, dagObjects=True, intermediateObjects=True)[0]
     cmds.setAttr(f"{orig_shape}.intermediateObject", 0)
 
-    new_transform = cmds.rename(new_transform, f"{bs}_shp")
+    new_transform = cmds.rename(new_transform, f"{bs}_orig")
     new_shape = cmds.listRelatives(new_transform, shapes=True)[0]
     new_shape = cmds.rename(new_shape, f"{new_transform}Shape")
 
