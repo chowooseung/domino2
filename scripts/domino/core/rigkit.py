@@ -352,6 +352,8 @@ def ribbon_spline_ik(
     volume_high_bound_attr,
     output_u_value_plugs,
     negate_plug=None,
+    primary_axis=(1, 0, 0),
+    secondary_axis=(0, 0, 1),
 ):
     surface = cmds.parent(surface, parent)[0]
 
@@ -578,17 +580,23 @@ def ribbon_spline_ik(
 
     last_index = len(main_ik_joints) - 1
     md = cmds.createNode("multiplyDivide")
-    cmds.setAttr(f"{md}.input1", 1, 0, 0)
+    cmds.setAttr(f"{md}.input1", *primary_axis)
     cmds.connectAttr(negate_plug, f"{md}.input2X")
     cmds.connectAttr(negate_plug, f"{md}.input2Y")
     cmds.connectAttr(negate_plug, f"{md}.input2Z")
     negate_primary_vector_plug = f"{md}.output"
     md = cmds.createNode("multiplyDivide")
-    cmds.setAttr(f"{md}.input1", -1, 0, 0)
+    cmds.setAttr(f"{md}.input1", *[x * -1 for x in primary_axis])
     cmds.connectAttr(negate_plug, f"{md}.input2X")
     cmds.connectAttr(negate_plug, f"{md}.input2Y")
     cmds.connectAttr(negate_plug, f"{md}.input2Z")
     negate_primary_last_vector_plug = f"{md}.output"
+    md = cmds.createNode("multiplyDivide")
+    cmds.setAttr(f"{md}.input1", *secondary_axis)
+    cmds.connectAttr(negate_plug, f"{md}.input2X")
+    cmds.connectAttr(negate_plug, f"{md}.input2Y")
+    cmds.connectAttr(negate_plug, f"{md}.input2Z")
+    secondary_vector_plug = f"{md}.output"
 
     c = 0
     result_parent = parent
@@ -605,7 +613,7 @@ def ribbon_spline_ik(
         )
         aim_m = cmds.createNode("aimMatrix")
         cmds.connectAttr(primary_vector_plug, f"{aim_m}.primaryInputAxis")
-        cmds.setAttr(f"{aim_m}.secondaryInputAxis", 0, -1, 0)
+        cmds.connectAttr(secondary_vector_plug, f"{aim_m}.secondaryInputAxis")
         cmds.setAttr(f"{aim_m}.primaryMode", 1)
         cmds.setAttr(f"{aim_m}.secondaryMode", 1)
         cmds.connectAttr(f"{main_j}.worldMatrix[0]", f"{aim_m}.inputMatrix")
@@ -643,7 +651,7 @@ def ribbon_spline_ik(
         )
         aim_m = cmds.createNode("aimMatrix")
         cmds.connectAttr(primary_vector_plug, f"{aim_m}.primaryInputAxis")
-        cmds.setAttr(f"{aim_m}.secondaryInputAxis", 0, -1, 0)
+        cmds.connectAttr(secondary_vector_plug, f"{aim_m}.secondaryInputAxis")
         cmds.setAttr(f"{aim_m}.primaryMode", 1)
         cmds.setAttr(f"{aim_m}.secondaryMode", 1)
         cmds.connectAttr(main_ribbon_output, f"{aim_m}.inputMatrix")
@@ -683,7 +691,7 @@ def ribbon_spline_ik(
         )
         aim_m = cmds.createNode("aimMatrix")
         cmds.connectAttr(primary_vector_plug, f"{aim_m}.primaryInputAxis")
-        cmds.setAttr(f"{aim_m}.secondaryInputAxis", 0, -1, 0)
+        cmds.connectAttr(secondary_vector_plug, f"{aim_m}.secondaryInputAxis")
         cmds.setAttr(f"{aim_m}.primaryMode", 1)
         cmds.setAttr(f"{aim_m}.secondaryMode", 1)
         cmds.connectAttr(main_uniform_output, f"{aim_m}.inputMatrix")
@@ -829,6 +837,8 @@ def ribbon_uv(
     volume_high_bound_attr,
     output_u_value_plugs,
     negate_plug=None,
+    primary_axis=(1, 0, 0),
+    secondary_axis=(0, 0, 1),
 ):
     surface = cmds.parent(surface, parent)[0]
 
@@ -1063,20 +1073,19 @@ def ribbon_uv(
 
     last_index = len(output_u_value_plugs) - 1
     md = cmds.createNode("multiplyDivide")
-    cmds.setAttr(f"{md}.input1", 1, 0, 0)
+    cmds.setAttr(f"{md}.input1", *primary_axis)
     cmds.connectAttr(negate_plug, f"{md}.input2X")
     cmds.connectAttr(negate_plug, f"{md}.input2Y")
     cmds.connectAttr(negate_plug, f"{md}.input2Z")
     negate_primary_vector_plug = f"{md}.output"
     md = cmds.createNode("multiplyDivide")
-    cmds.setAttr(f"{md}.input1", -1, 0, 0)
+    cmds.setAttr(f"{md}.input1", *[x * -1 for x in primary_axis])
     cmds.connectAttr(negate_plug, f"{md}.input2X")
     cmds.connectAttr(negate_plug, f"{md}.input2Y")
     cmds.connectAttr(negate_plug, f"{md}.input2Z")
     negate_primary_last_vector_plug = f"{md}.output"
-
     md = cmds.createNode("multiplyDivide")
-    cmds.setAttr(f"{md}.input1", 0, 0, 1)
+    cmds.setAttr(f"{md}.input1", *secondary_axis)
     cmds.connectAttr(negate_plug, f"{md}.input2X")
     cmds.connectAttr(negate_plug, f"{md}.input2Y")
     cmds.connectAttr(negate_plug, f"{md}.input2Z")

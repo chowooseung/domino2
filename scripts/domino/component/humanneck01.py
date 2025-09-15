@@ -24,97 +24,105 @@ from PySide6 import QtWidgets
 ORIGINMATRIX = om.MMatrix()
 matrices = []
 m = om.MMatrix()
-upper_body_m = om.MTransformationMatrix(m)
-upper_body_m.setTranslation(
-    om.MVector((0.0, 9.53984260559082, 0.11921143531799316)), om.MSpace.kWorld
+base_m = om.MTransformationMatrix(m)
+base_m.setTranslation(
+    om.MVector((0.0, 15.205387597855454, -0.18662836338194372)), om.MSpace.kWorld
 )
-matrices.append(list(upper_body_m.asMatrix()))
+radians = [om.MAngle(x, om.MAngle.kDegrees).asRadians() for x in (12, 0, 0)]
+euler_rot = om.MEulerRotation(radians, om.MEulerRotation.kXYZ)
+base_m.setRotation(euler_rot)
+matrices.append(list(base_m.asMatrix()))
 
-hip_m = om.MTransformationMatrix(m)
-hip_m.setTranslation(
-    om.MVector((0.0, 10.8296775483839, 0.1447981369158308)), om.MSpace.kWorld
+mid_m = om.MTransformationMatrix(m)
+mid_m.setTranslation(
+    om.MVector((0.0, 15.82836456532575, -0.05421052117683989)), om.MSpace.kWorld
 )
-matrices.append(list(hip_m.asMatrix()))
-
-fk0_m = om.MTransformationMatrix(m)
-fk0_m.setTranslation(
-    om.MVector((0.0, 10.149886407942963, 0.11921143531799316)), om.MSpace.kWorld
-)
-matrices.append(list(fk0_m.asMatrix()))
-
-fk1_m = om.MTransformationMatrix(m)
-fk1_m.setTranslation(
-    om.MVector((0.0, 11.547268988596459, 0.11921143531799316)), om.MSpace.kWorld
-)
-matrices.append(list(fk1_m.asMatrix()))
-
-ik_m = om.MTransformationMatrix(m)
-ik_m.setTranslation(
-    om.MVector((0.0, 12.765792369084298, -0.2692372427896797)), om.MSpace.kWorld
-)
-matrices.append(list(ik_m.asMatrix()))
+radians = [
+    om.MAngle(x, om.MAngle.kDegrees).asRadians() for x in (14.300141980922623, 0.0, 0.0)
+]
+euler_rot = om.MEulerRotation(radians, om.MEulerRotation.kXYZ)
+mid_m.setRotation(euler_rot)
+matrices.append(list(mid_m.asMatrix()))
 
 tip_m = om.MTransformationMatrix(m)
 tip_m.setTranslation(
-    om.MVector((0.0, 13.870291709899902, -0.5028788447380066)), om.MSpace.kWorld
+    om.MVector((0.0, 16.37538983061668, 0.08522591413996394)), om.MSpace.kWorld
 )
 matrices.append(list(tip_m.asMatrix()))
 
 driver0_m = om.MTransformationMatrix(m)
 driver0_m.setTranslation(
-    om.MVector((0.0, 9.53984260559082, 0.11921143531799316)), om.MSpace.kWorld
+    om.MVector((0.0, 15.209552389153174, -0.19302179587686236)), om.MSpace.kWorld
 )
+radians = [
+    om.MAngle(x, om.MAngle.kDegrees).asRadians()
+    for x in (-0.04653472644044774, 0.0, 0.0)
+]
+euler_rot = om.MEulerRotation(radians, om.MEulerRotation.kXYZ)
+driver0_m.setRotation(euler_rot)
 matrices.append(list(driver0_m.asMatrix()))
 
 driver1_m = om.MTransformationMatrix(m)
 driver1_m.setTranslation(
-    om.MVector((0.0, 10.69349728010567, 0.11921144276857376)), om.MSpace.kWorld
+    om.MVector((0.0, 15.814510269266407, -0.026828883386029817)), om.MSpace.kWorld
 )
+radians = [
+    om.MAngle(x, om.MAngle.kDegrees).asRadians()
+    for x in (-0.04653472644044774, 0.0, 0.0)
+]
+euler_rot = om.MEulerRotation(radians, om.MEulerRotation.kXYZ)
+driver1_m.setRotation(euler_rot)
 matrices.append(list(driver1_m.asMatrix()))
 
 driver2_m = om.MTransformationMatrix(m)
 driver2_m.setTranslation(
-    om.MVector((0.0, 12.50360438331311, -0.2777713934556867)), om.MSpace.kWorld
+    om.MVector((0.0, 16.39692541638754, 0.086303324910252)), om.MSpace.kWorld
 )
+radians = [
+    om.MAngle(x, om.MAngle.kDegrees).asRadians()
+    for x in (-0.04653472644044774, 0.0, 0.0)
+]
+euler_rot = om.MEulerRotation(radians, om.MEulerRotation.kXYZ)
+driver2_m.setRotation(euler_rot)
 matrices.append(list(driver2_m.asMatrix()))
 
-driver3_m = om.MTransformationMatrix(m)
-driver3_m.setTranslation(
-    om.MVector((0.0, 13.870291487161905, -0.5028788575941494)), om.MSpace.kWorld
+head_m = om.MTransformationMatrix(m)
+head_m.setTranslation(
+    om.MVector((0.0, 15.684408199357074, -0.12440543581803054)), om.MSpace.kWorld
 )
-matrices.append(list(driver3_m.asMatrix()))
+matrices.append(list(head_m.asMatrix()))
+
 
 DATA = [
-    attribute.String(longName="component", value="humanspine01"),
-    attribute.String(longName="name", value="humanSpine"),
+    attribute.String(longName="component", value="humanneck01"),
+    attribute.String(longName="name", value="humanNeck"),
     attribute.Enum(longName="side", enumName=Name.side_list, value=0),
     attribute.Integer(longName="index", minValue=0),
     attribute.Matrix(longName="guide_matrix", multi=True, value=matrices),
-    attribute.Matrix(longName="npo_matrix", multi=True, value=matrices[:-4]),
+    attribute.Matrix(
+        longName="npo_matrix", multi=True, value=[list(ORIGINMATRIX) for _ in range(4)]
+    ),
     attribute.Matrix(
         longName="initialize_output_matrix",
         multi=True,
-        value=[list(ORIGINMATRIX) for _ in range(5)],
+        value=[list(ORIGINMATRIX) for _ in range(3)],
     ),
     attribute.Matrix(
         longName="initialize_output_inverse_matrix",
         multi=True,
-        value=[list(ORIGINMATRIX) for _ in range(5)],
+        value=[list(ORIGINMATRIX) for _ in range(3)],
     ),
     attribute.Integer(
         longName="guide_mirror_type",
         multi=True,
         value=[
-            2,  # upperBody
-            2,  # hip
-            2,  # fk0
-            2,  # fk1
-            2,  # ik
+            2,  # base
+            2,  # mid
             2,  # tip
             1,  # driver0
             1,  # driver1
             1,  # driver2
-            1,  # driver3
+            2,  # head
         ],
     ),
     attribute.Integer(
@@ -131,13 +139,20 @@ DATA = [
     attribute.DoubleAngle(
         longName="offset_output_rotate_z", minValue=-360, maxValue=360
     ),
-    attribute.Integer(longName="output_count", value=5),
-    attribute.Float(
-        longName="output_u_values", multi=True, value=[0, 0.25, 0.5, 0.75, 1]
+    attribute.Integer(longName="output_count", value=3),
+    attribute.Float(longName="output_u_values", multi=True, value=[0, 0.5, 1]),
+    attribute.Matrix(
+        longName="driver_matrix",
+        multi=True,
+        value=[list(ORIGINMATRIX) for _ in range(4)],
     ),
-    attribute.Matrix(longName="driver_matrix", multi=True, value=matrices[-4:]),
-    attribute.Matrix(longName="driver_inverse_matrix", multi=True, value=matrices[-4:]),
-    attribute.Matrix(longName="tip_matrix", value=list(ORIGINMATRIX)),
+    attribute.Matrix(
+        longName="driver_inverse_matrix",
+        multi=True,
+        value=[list(ORIGINMATRIX) for _ in range(4)],
+    ),
+    attribute.Matrix(longName="tip_rot_matrix", value=list(ORIGINMATRIX)),
+    attribute.Matrix(longName="head_matrix", value=list(ORIGINMATRIX)),
     attribute.NurbsSurface(
         longName="ribbon_surface",
         value={
@@ -157,8 +172,8 @@ DATA = [
                 1.0,
                 0.0,
                 0.0,
-                0.0,
-                0.0,
+                1.7763568394002505e-15,
+                -2.7755575615628914e-16,
                 1.0,
             ],
             "surface": {
@@ -169,16 +184,31 @@ DATA = [
                 "degree_u": 1,
                 "degree_v": 3,
                 "cvs": [
-                    (0.3239349977974598, 9.539842605590822, 0.11921144276857373, 1.0),
-                    (0.3239349977974598, 10.573100090026857, 0.18489342927932736, 1.0),
-                    (0.3239349977974598, 11.719689369201657, 0.26006561517715476, 1.0),
-                    (0.3239349977974598, 12.829869270324705, -0.5030749440193175, 1.0),
-                    (0.3239349977974598, 13.863416671752928, -0.5030738115310668, 1.0),
-                    (-0.3239349977974598, 9.539842605590822, 0.11921144276857373, 1.0),
-                    (-0.3239349977974598, 10.573100090026857, 0.18489342927932736, 1.0),
-                    (-0.3239349977974598, 11.719689369201657, 0.26006561517715476, 1.0),
-                    (-0.3239349977974598, 12.829869270324705, -0.5030749440193175, 1.0),
-                    (-0.3239349977974598, 13.863416671752928, -0.5030738115310668, 1.0),
+                    (0.3239349977974598, 15.205301124732639, -0.19341314194903445, 1.0),
+                    (0.3239349977974598, 15.437891495373838, -0.19341313838958674, 1.0),
+                    (0.3239349977974601, 15.781718432567175, -0.06369525705588897, 1.0),
+                    (0.3239349977974598, 16.124175823166624, 0.0967264994978908, 1.0),
+                    (0.3239349977974598, 16.396925416387543, 0.08630332491025225, 1.0),
+                    (
+                        -0.3239349977974598,
+                        15.205301124732639,
+                        -0.19341314194903445,
+                        1.0,
+                    ),
+                    (
+                        -0.3239349977974598,
+                        15.437891495373838,
+                        -0.19341313838958674,
+                        1.0,
+                    ),
+                    (
+                        -0.3239349977974601,
+                        15.781718432567175,
+                        -0.06369525705588897,
+                        1.0,
+                    ),
+                    (-0.3239349977974598, 16.124175823166624, 0.0967264994978908, 1.0),
+                    (-0.3239349977974598, 16.396925416387543, 0.08630332491025225, 1.0),
                 ],
             },
         },
@@ -186,7 +216,7 @@ DATA = [
 ]
 
 
-description = """humanspine01 component.
+description = """humanneck01 component.
 
 """
 
@@ -237,29 +267,21 @@ class Rig(component.Rig):
         if not self["controller"]:
             self.add_controller(description="host", parent_controllers=[])
             self.add_controller(
-                description="upperBody",
-                parent_controllers=[(self.identifier, "host")],
+                description="base", parent_controllers=[(self.identifier, "host")]
             )
             self.add_controller(
-                description="hip",
-                parent_controllers=[(self.identifier, "upperBody")],
-            )
-            fk_descriptions = ["fk0", "fk1"]
-            parent_controllers = [(self.identifier, "hip")]
-            for description in fk_descriptions:
-                self.add_controller(
-                    description=description,
-                    parent_controllers=parent_controllers,
-                )
-                parent_controllers = [(self.identifier, description)]
-            self.add_controller(
-                description="ik",
-                parent_controllers=[(self.identifier, "fk1")],
+                description="mid", parent_controllers=[(self.identifier, "base")]
             )
             self.add_controller(
-                description="tip", parent_controllers=[(self.identifier, "ik")]
+                description="curvature", parent_controllers=[(self.identifier, "mid")]
             )
-            parent_controllers = [(self.identifier, "tip")]
+            self.add_controller(
+                description="tip", parent_controllers=[(self.identifier, "mid")]
+            )
+            self.add_controller(
+                description="head", parent_controllers=[(self.identifier, "tip")]
+            )
+            parent_controllers = [(self.identifier, "head")]
             for i in range(self["output_count"]["value"]):
                 self.add_controller(
                     description=f"tweak{i}", parent_controllers=parent_controllers
@@ -376,7 +398,7 @@ class Rig(component.Rig):
             defaultValue=0,
             keyable=True,
         )
-        upper_body_npo, upper_body_ctl = self["controller"][1].create(
+        base_npo, base_ctl = self["controller"][1].create(
             parent=self.rig_root,
             shape=(
                 self["controller"][1]["shape"]
@@ -386,8 +408,8 @@ class Rig(component.Rig):
             color=12,
             npo_matrix_index=0,
         )
-        hip_npo, hip_ctl = self["controller"][2].create(
-            parent=upper_body_ctl,
+        mid_npo, mid_ctl = self["controller"][2].create(
+            parent=base_ctl,
             shape=(
                 self["controller"][2]["shape"]
                 if "shape" in self["controller"][2]
@@ -396,57 +418,59 @@ class Rig(component.Rig):
             color=12,
             npo_matrix_index=1,
         )
-        fk0_npo, fk0_ctl = self["controller"][3].create(
-            parent=upper_body_ctl,
+        cmds.addAttr(
+            mid_ctl,
+            longName="curvature_ctl_visibility",
+            attributeType="enum",
+            enumName="off:on",
+            keyable=True,
+            defaultValue=0,
+        )
+        curvature_npo, curvature_ctl = self["controller"][3].create(
+            parent=mid_npo,
             shape=(
                 self["controller"][3]["shape"]
                 if "shape" in self["controller"][3]
                 else "cube"
             ),
             color=12,
-            npo_matrix_index=2,
         )
-        fk1_npo, fk1_ctl = self["controller"][4].create(
-            parent=fk0_ctl,
+        cmds.connectAttr(f"{mid_ctl}.curvature_ctl_visibility", f"{curvature_npo}.v")
+        cmds.connectAttr(f"{mid_ctl}.t", f"{curvature_npo}.t")
+        cmds.connectAttr(f"{mid_ctl}.r", f"{curvature_npo}.r")
+        tip_npo, tip_ctl = self["controller"][4].create(
+            parent=mid_ctl,
             shape=(
                 self["controller"][4]["shape"]
                 if "shape" in self["controller"][4]
                 else "cube"
             ),
             color=12,
-            npo_matrix_index=3,
+            npo_matrix_index=2,
         )
-        ik_npo, ik_ctl = self["controller"][5].create(
-            parent=fk1_ctl,
-            shape=(
-                self["controller"][5]["shape"]
-                if "shape" in self["controller"][5]
-                else "cube"
-            ),
-            color=12,
-            npo_matrix_index=4,
+        tip_rot = cmds.createNode(
+            "transform", name=tip_npo.replace("npo", "rot"), parent=tip_ctl
         )
-        tip_npo, tip_ctl = self["controller"][6].create(
-            parent=ik_ctl,
-            shape=(
-                self["controller"][6]["shape"]
-                if "shape" in self["controller"][6]
-                else "cube"
-            ),
-            color=12,
-            npo_matrix_index=5,
-        )
-        ins = Transform(
+        cmds.addAttr(
             tip_ctl,
-            name=name,
-            side=side,
-            index=index,
-            description="tip",
-            extension="rot",
-            m=cmds.xform(tip_ctl, query=True, matrix=True, worldSpace=True),
+            longName="head_rot_fix",
+            attributeType="float",
+            minValue=0,
+            maxValue=1,
+            defaultValue=1,
+            keyable=True,
         )
-        tip_rot = ins.create()
-        cmds.connectAttr(f"{self.rig_root}.tip_matrix", f"{tip_rot}.offsetParentMatrix")
+        cmds.connectAttr(
+            f"{self.rig_root}.tip_rot_matrix", f"{tip_rot}.offsetParentMatrix"
+        )
+        cmds.addAttr(
+            tip_ctl,
+            longName="head_ctl_visibility",
+            attributeType="enum",
+            enumName="off:on",
+            defaultValue=0,
+            keyable=True,
+        )
 
         ins = Transform(
             parent=self.rig_root,
@@ -460,13 +484,13 @@ class Rig(component.Rig):
         ribbon_grp = ins.create()
 
         ins = Joint(
-            parent=hip_ctl,
+            parent=base_ctl,
             name=name,
             side=side,
             index=index,
             description="ribbonDriver0",
             extension=Name.joint_extension,
-            m=cmds.xform(hip_ctl, query=True, matrix=True, worldSpace=True),
+            m=cmds.xform(base_ctl, query=True, matrix=True, worldSpace=True),
             use_joint_convention=False,
         )
         ribbon0_jnt = ins.create()
@@ -475,13 +499,13 @@ class Rig(component.Rig):
         )
 
         ins = Joint(
-            parent=fk0_ctl,
+            parent=curvature_ctl,
             name=name,
             side=side,
             index=index,
             description="ribbonDriver1",
             extension=Name.joint_extension,
-            m=cmds.xform(fk0_ctl, query=True, matrix=True, worldSpace=True),
+            m=cmds.xform(curvature_ctl, query=True, matrix=True, worldSpace=True),
             use_joint_convention=False,
         )
         ribbon1_jnt = ins.create()
@@ -490,33 +514,18 @@ class Rig(component.Rig):
         )
 
         ins = Joint(
-            parent=ik_ctl,
+            parent=tip_ctl,
             name=name,
             side=side,
             index=index,
             description="ribbonDriver2",
             extension=Name.joint_extension,
-            m=cmds.xform(ik_ctl, query=True, matrix=True, worldSpace=True),
+            m=cmds.xform(tip_ctl, query=True, matrix=True, worldSpace=True),
             use_joint_convention=False,
         )
         ribbon2_jnt = ins.create()
         cmds.connectAttr(
             f"{self.rig_root}.driver_matrix[2]", f"{ribbon2_jnt}.offsetParentMatrix"
-        )
-
-        ins = Joint(
-            parent=tip_ctl,
-            name=name,
-            side=side,
-            index=index,
-            description="ribbonDriver3",
-            extension=Name.joint_extension,
-            m=cmds.xform(tip_ctl, query=True, matrix=True, worldSpace=True),
-            use_joint_convention=False,
-        )
-        ribbon3_jnt = ins.create()
-        cmds.connectAttr(
-            f"{self.rig_root}.driver_matrix[3]", f"{ribbon3_jnt}.offsetParentMatrix"
         )
 
         ins = Surface(data=self["ribbon_surface"]["value"])
@@ -577,12 +586,11 @@ class Rig(component.Rig):
 
         ribbon_surface, ribbon_outputs = rigkit.ribbon_spline_ik(
             ribbon_grp,
-            driver_joints=[ribbon0_jnt, ribbon1_jnt, ribbon2_jnt, ribbon3_jnt],
+            driver_joints=[ribbon0_jnt, ribbon1_jnt, ribbon2_jnt],
             driver_inverse_plugs=[
                 f"{self.rig_root}.driver_inverse_matrix[0]",
                 f"{self.rig_root}.driver_inverse_matrix[1]",
                 f"{self.rig_root}.driver_inverse_matrix[2]",
-                f"{self.rig_root}.driver_inverse_matrix[3]",
             ],
             surface=ribbon_surface,
             main_ik_joints=main_ik_joints,
@@ -608,50 +616,81 @@ class Rig(component.Rig):
         sc = cmds.findDeformers(ribbon_surface)[0]
         cmds.sets(sc, edit=True, addElement="_deformerWeights_sets")
 
-        cmds.hide(ribbon_grp, ribbon0_jnt, ribbon1_jnt, ribbon2_jnt, ribbon3_jnt)
+        cmds.hide(ribbon_grp, ribbon0_jnt, ribbon1_jnt, ribbon2_jnt)
         cmds.skinPercent(
-            sc, f"{ribbon_surface}.cv[*][0]", transformValue=[ribbon0_jnt, 1]
-        )
-        cmds.skinPercent(
-            sc,
-            f"{ribbon_surface}.cv[*][1]",
-            transformValue=[(ribbon0_jnt, 0.65), (ribbon1_jnt, 0.35)],
+            sc, f"{ribbon_surface}.cv[*][0:1]", transformValue=[ribbon0_jnt, 1]
         )
         cmds.skinPercent(
-            sc,
-            f"{ribbon_surface}.cv[*][2]",
-            transformValue=[
-                (ribbon0_jnt, 0.25),
-                (ribbon1_jnt, 0.55),
-                (ribbon2_jnt, 0.2),
-            ],
+            sc, f"{ribbon_surface}.cv[*][2]", transformValue=[ribbon1_jnt, 1]
         )
         cmds.skinPercent(
-            sc, f"{ribbon_surface}.cv[*][3]", transformValue=[ribbon2_jnt, 1]
+            sc, f"{ribbon_surface}.cv[*][3:4]", transformValue=[ribbon2_jnt, 1]
         )
-        cmds.skinPercent(
-            sc, f"{ribbon_surface}.cv[*][4]", transformValue=[ribbon3_jnt, 1]
-        )
-        ins = Transform(
-            ribbon_outputs[-1],
-            name=name,
-            side=side,
-            index=index,
-            description="tip",
-            extension="output",
-            m=cmds.xform(ribbon_outputs[-1], query=True, matrix=True, worldSpace=True),
-        )
-        tip_output = ins.create()
-        cmds.orientConstraint(tip_rot, tip_output)
 
-        output_sources = ribbon_outputs[:-1] + [tip_output]
+        head_rot_fix = cmds.createNode(
+            "transform",
+            name=Name.create(
+                Name.controller_name_convention,
+                name=name,
+                side=side,
+                index=index,
+                description="head",
+                extension="rotFix",
+            ),
+            parent=self.rig_root,
+        )
+        head_npo, head_ctl = self["controller"][5].create(
+            parent=head_rot_fix,
+            shape=(
+                self["controller"][5]["shape"]
+                if "shape" in self["controller"][5]
+                else "cube"
+            ),
+            color=12,
+        )
+        head_loc = cmds.createNode(
+            "transform",
+            name=Name.create(
+                Name.controller_name_convention,
+                name=name,
+                side=side,
+                index=index,
+                description="head",
+                extension="loc",
+            ),
+            parent=head_ctl,
+        )
+        condition = cmds.createNode("condition")
+        cmds.connectAttr(f"{self.rig_root}.side", f"{condition}.firstTerm")
+        cmds.setAttr(f"{condition}.secondTerm", 2)
+        cmds.setAttr(f"{condition}.colorIfTrueR", -1)
+        cmds.setAttr(f"{condition}.colorIfFalseR", 1)
+        cmds.setAttr(f"{condition}.colorIfTrueG", 180)
+        cmds.setAttr(f"{condition}.colorIfFalseG", 0)
+        cmds.connectAttr(f"{condition}.outColorR", f"{head_loc}.sz")
+        cmds.connectAttr(f"{condition}.outColorG", f"{head_loc}.ry")
+
+        cmds.connectAttr(f"{tip_ctl}.head_ctl_visibility", f"{head_npo}.v")
+        cmds.pointConstraint(ribbon_outputs[-1], head_rot_fix)
+        cons = cmds.orientConstraint(tip_rot, ribbon_outputs[-1], head_rot_fix)[0]
+        attrs = cmds.orientConstraint(cons, query=True, weightAliasList=True)
+        cmds.connectAttr(f"{tip_ctl}.head_rot_fix", f"{cons}.{attrs[0]}")
+        rev = cmds.createNode("reverse")
+        cmds.connectAttr(f"{tip_ctl}.head_rot_fix", f"{rev}.inputX")
+        cmds.connectAttr(f"{rev}.outputX", f"{cons}.{attrs[1]}")
+        decom_m = cmds.createNode("decomposeMatrix")
+        cmds.connectAttr(f"{self.rig_root}.head_matrix", f"{decom_m}.inputMatrix")
+        cmds.connectAttr(f"{decom_m}.outputRotate", f"{head_npo}.r")
+        cmds.connectAttr(f"{decom_m}.outputScale", f"{head_npo}.s")
+
+        output_sources = ribbon_outputs[:-1] + [head_loc]
         outputs = []
         for i in range(self["output_count"]["value"]):
-            output_npo, output_ctl = self["controller"][7 + i].create(
+            output_npo, output_ctl = self["controller"][6 + i].create(
                 parent=self.rig_root,
                 shape=(
-                    self["controller"][7 + i]["shape"]
-                    if "shape" in self["controller"][7 + i]
+                    self["controller"][5 + i]["shape"]
+                    if "shape" in self["controller"][6 + i]
                     else "sphere"
                 ),
                 color=12,
@@ -724,11 +763,6 @@ class Rig(component.Rig):
             "/output",
             createInputPort=("driver_inverse_matrix", "array<Math::float4x4>"),
         )
-        cmds.vnnNode(
-            graph,
-            "/output",
-            createInputPort=("tip_matrix", "Math::double4x4"),
-        )
         cmds.vnnConnect(
             graph,
             "/input.main_transforms",
@@ -754,11 +788,6 @@ class Rig(component.Rig):
             f"/{guide_compound}.driver_inverse_matrix",
             f"/output.driver_inverse_matrix",
         )
-        cmds.vnnConnect(
-            graph,
-            f"/{guide_compound}.tip_matrix",
-            f"/output.tip_matrix",
-        )
 
         condition = cmds.createNode("condition")
         cmds.connectAttr(f"{self.rig_root}.side", f"{condition}.firstTerm")
@@ -768,70 +797,46 @@ class Rig(component.Rig):
         cmds.connectAttr(f"{condition}.outColorR", f"{self.guide_graph}.negate")
 
         # guide
-        upper_body_guide = self.add_guide(
+        base_guide = self.add_guide(
             parent=self.guide_root,
-            description="upperBody",
+            description="base",
             m=self["guide_matrix"]["value"][0],
             mirror_type=self["guide_mirror_type"]["value"][0],
         )
-        hip_guide = self.add_guide(
-            parent=upper_body_guide,
-            description="hip",
+        mid_guide = self.add_guide(
+            parent=base_guide,
+            description="curvature",
             m=self["guide_matrix"]["value"][1],
             mirror_type=self["guide_mirror_type"]["value"][1],
         )
-        fk0_guide = self.add_guide(
-            parent=upper_body_guide,
-            description="fk0",
+        tip_guide = self.add_guide(
+            parent=mid_guide,
+            description="tip",
             m=self["guide_matrix"]["value"][2],
             mirror_type=self["guide_mirror_type"]["value"][2],
         )
-        fk1_guide = self.add_guide(
-            parent=fk0_guide,
-            description="fk1",
+        driver0_guide = self.add_guide(
+            parent=base_guide,
+            description="driver0",
             m=self["guide_matrix"]["value"][3],
             mirror_type=self["guide_mirror_type"]["value"][3],
         )
-        ik_guide = self.add_guide(
-            parent=fk1_guide,
-            description="ik",
+        driver1_guide = self.add_guide(
+            parent=base_guide,
+            description="driver1",
             m=self["guide_matrix"]["value"][4],
             mirror_type=self["guide_mirror_type"]["value"][4],
         )
-        tip_guide = self.add_guide(
-            parent=ik_guide,
-            description="tip",
+        driver2_guide = self.add_guide(
+            parent=base_guide,
+            description="driver2",
             m=self["guide_matrix"]["value"][5],
             mirror_type=self["guide_mirror_type"]["value"][5],
-        )
-        driver0_guide = self.add_guide(
-            parent=upper_body_guide,
-            description="driver0",
-            m=self["guide_matrix"]["value"][6],
-            mirror_type=self["guide_mirror_type"]["value"][6],
-        )
-        driver1_guide = self.add_guide(
-            parent=upper_body_guide,
-            description="driver1",
-            m=self["guide_matrix"]["value"][7],
-            mirror_type=self["guide_mirror_type"]["value"][7],
-        )
-        driver2_guide = self.add_guide(
-            parent=upper_body_guide,
-            description="driver2",
-            m=self["guide_matrix"]["value"][8],
-            mirror_type=self["guide_mirror_type"]["value"][8],
-        )
-        driver3_guide = self.add_guide(
-            parent=upper_body_guide,
-            description="driver3",
-            m=self["guide_matrix"]["value"][9],
-            mirror_type=self["guide_mirror_type"]["value"][9],
         )
 
         ins = Surface(data=self["ribbon_surface"]["value"])
         surface = ins.create_from_data()
-        surface = cmds.parent(surface, upper_body_guide)[0]
+        surface = cmds.parent(surface, base_guide)[0]
         surface = cmds.rename(surface, tip_guide.replace("tip", "surface"))
         cmds.setAttr(f"{surface}.t", lock=True)
         cmds.setAttr(f"{surface}.r", lock=True)
@@ -854,6 +859,25 @@ class Rig(component.Rig):
                 f"{uvpin}.outputMatrix[{c}]", f"{graph}.main_transforms[{i}]"
             )
             c += 1
+
+        head_guide = self.add_guide(
+            parent=self.guide_root,
+            description="head",
+            m=self["guide_matrix"]["value"][6],
+            mirror_type=self["guide_mirror_type"]["value"][6],
+        )
+        mult_m = cmds.createNode("multMatrix")
+        cmds.connectAttr(f"{uvpin}.outputMatrix[{c-1}]", f"{mult_m}.matrixIn[0]")
+        cmds.connectAttr(
+            f"{head_guide}.parentInverseMatrix[0]", f"{mult_m}.matrixIn[1]"
+        )
+
+        decom_m = cmds.createNode("decomposeMatrix")
+        cmds.connectAttr(f"{mult_m}.matrixSum", f"{decom_m}.inputMatrix")
+        cmds.connectAttr(f"{decom_m}.outputTranslate", f"{head_guide}.t")
+        cmds.setAttr(f"{head_guide}.tx", lock=True, keyable=False)
+        cmds.setAttr(f"{head_guide}.ty", lock=True, keyable=False)
+        cmds.setAttr(f"{head_guide}.tz", lock=True, keyable=False)
         for i in range(len(self["output_u_values"]["value"])):
             cmds.connectAttr(
                 f"{self.guide_root}.output_u_values[{i}]",
@@ -879,6 +903,42 @@ class Rig(component.Rig):
                 f"{self.guide_graph}.initialize_output_inverse_matrix[{i}]",
                 f"{self.guide_root}.initialize_output_inverse_matrix[{i}]",
             )
+        mult_m = cmds.createNode("multMatrix")
+        cmds.connectAttr(
+            f"{self.guide_graph}.initialize_output_matrix[{i}]",
+            f"{mult_m}.matrixIn[0]",
+        )
+        cmds.connectAttr(f"{tip_guide}.worldInverseMatrix[0]", f"{mult_m}.matrixIn[1]")
+        cmds.connectAttr(
+            f"{mult_m}.matrixSum",
+            f"{self.guide_root}.tip_rot_matrix",
+        )
+
+        mult_m = cmds.createNode("multMatrix")
+        cmds.connectAttr(f"{head_guide}.worldMatrix[0]", f"{mult_m}.matrixIn[0]")
+        cmds.connectAttr(
+            f"{self.guide_root}.initialize_output_inverse_matrix[{i}]",
+            f"{mult_m}.matrixIn[1]",
+        )
+
+        decom_m = cmds.createNode("decomposeMatrix")
+        cmds.connectAttr(f"{mult_m}.matrixSum", f"{decom_m}.inputMatrix")
+
+        com_m = cmds.createNode("composeMatrix")
+        cmds.connectAttr(f"{decom_m}.outputRotate", f"{com_m}.inputRotate")
+        cmds.connectAttr(f"{decom_m}.outputShear", f"{com_m}.inputShear")
+
+        condition = cmds.createNode("condition")
+        cmds.connectAttr(f"{self.rig_root}.side", f"{condition}.firstTerm")
+        cmds.setAttr(f"{condition}.secondTerm", 2)
+        cmds.setAttr(f"{condition}.colorIfTrueR", -1)
+        cmds.setAttr(f"{condition}.colorIfFalseR", 1)
+        cmds.connectAttr(f"{condition}.outColorR", f"{com_m}.inputScaleZ")
+
+        cmds.connectAttr(
+            f"{com_m}.outputMatrix",
+            f"{self.guide_root}.head_matrix",
+        )
 
         for i in range(4):
             cmds.connectAttr(
@@ -889,8 +949,5 @@ class Rig(component.Rig):
                 f"{self.guide_graph}.driver_inverse_matrix[{i}]",
                 f"{self.guide_root}.driver_inverse_matrix[{i}]",
             )
-        cmds.connectAttr(
-            f"{self.guide_graph}.tip_matrix", f"{self.guide_root}.tip_matrix"
-        )
 
     # endregion

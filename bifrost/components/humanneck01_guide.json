@@ -11,8 +11,8 @@
     "types": [],
     "compounds": [
         {
-            "name": "Domino::Components::humanspine01_guide",
-            "uriImported": "file:///humanspine01_guide.json",
+            "name": "Domino::Components::humanneck01_guide",
+            "uriImported": "file:///humanneck01_guide.json",
             "metadata": [
                 {
                     "metaName": "io_nodes",
@@ -60,14 +60,14 @@
                                             "metaValue": "-349.417"
                                         },
                                         {
-                                            "metaName": "LayoutPos",
-                                            "metaType": "string",
-                                            "metaValue": "-1113.82 281.075"
-                                        },
-                                        {
                                             "metaName": "zValue",
                                             "metaType": "string",
-                                            "metaValue": "35.000000"
+                                            "metaValue": "96.000000"
+                                        },
+                                        {
+                                            "metaName": "LayoutPos",
+                                            "metaType": "string",
+                                            "metaValue": "-1031.49 773"
                                         }
                                     ]
                                 }
@@ -83,11 +83,6 @@
                                             "metaName": "DisplayMode",
                                             "metaType": "string",
                                             "metaValue": "2"
-                                        },
-                                        {
-                                            "metaName": "LayoutPos",
-                                            "metaType": "string",
-                                            "metaValue": "2332.02 195.859"
                                         },
                                         {
                                             "metaName": "io_ports",
@@ -115,7 +110,12 @@
                                         {
                                             "metaName": "zValue",
                                             "metaType": "string",
-                                            "metaValue": "37.000000"
+                                            "metaValue": "126.000000"
+                                        },
+                                        {
+                                            "metaName": "LayoutPos",
+                                            "metaType": "string",
+                                            "metaValue": "3358.1 186.774"
                                         }
                                     ]
                                 }
@@ -131,17 +131,17 @@
                 {
                     "metaName": "_recentNode_",
                     "metaType": "string",
-                    "metaValue": "BifrostGraph,Diagnostic::Display,transform_scope"
+                    "metaValue": "BifrostGraph,Domino::Compounds,offset_matrix"
                 },
                 {
                     "metaName": "_recentNode_",
                     "metaType": "string",
-                    "metaValue": "BifrostGraph,Core::Graph,terminal"
+                    "metaValue": "BifrostGraph,Core::Math,SRT_to_matrix"
                 },
                 {
                     "metaName": "_recentNode_",
                     "metaType": "string",
-                    "metaValue": "BifrostGraph,Core::Constants,float"
+                    "metaValue": "BifrostGraph,Core::Math,matrix_to_SRT"
                 },
                 {
                     "metaName": "_recentNode_",
@@ -151,12 +151,12 @@
                 {
                     "metaName": "_recentNode_",
                     "metaType": "string",
-                    "metaValue": "BifrostGraph,Domino::Compounds,offset_matrix"
+                    "metaValue": "BifrostGraph,Core::Math,matrix_is_singular"
                 },
                 {
                     "metaName": "ViewportRect",
                     "metaType": "string",
-                    "metaValue": "17.5783 21.3838 1289.98 1131.73"
+                    "metaValue": "562.862 6.9712 2321.19 2059.54"
                 },
                 {
                     "metaName": "DisplayMode",
@@ -166,12 +166,12 @@
                 {
                     "metaName": "LayoutPos",
                     "metaType": "string",
-                    "metaValue": "-121 -197"
+                    "metaValue": "-135 -191"
                 },
                 {
                     "metaName": "zValue",
                     "metaType": "string",
-                    "metaValue": "36.000000"
+                    "metaValue": "35.000000"
                 }
             ],
             "terminalStates": [
@@ -262,7 +262,7 @@
             "compounds": [
                 {
                     "name": "npo_matrix_compound",
-                    "uriImported": "file:///humanspine01_guide.json",
+                    "uriImported": "file:///humanneck01_guide.json",
                     "metadata": [
                         {
                             "metaName": "io_nodes",
@@ -289,12 +289,12 @@
                                                 {
                                                     "metaName": "zValue",
                                                     "metaType": "string",
-                                                    "metaValue": "68.000000"
+                                                    "metaValue": "77.000000"
                                                 },
                                                 {
                                                     "metaName": "LayoutPos",
                                                     "metaType": "string",
-                                                    "metaValue": "-1659.19 561.865"
+                                                    "metaValue": "-2135.48 554.964"
                                                 }
                                             ]
                                         }
@@ -328,12 +328,12 @@
                                                 {
                                                     "metaName": "LayoutPos",
                                                     "metaType": "string",
-                                                    "metaValue": "3697.24 -255.622"
+                                                    "metaValue": "3230.06 -212.816"
                                                 },
                                                 {
                                                     "metaName": "zValue",
                                                     "metaType": "string",
-                                                    "metaValue": "60.000000"
+                                                    "metaValue": "39.000000"
                                                 }
                                             ]
                                         }
@@ -357,7 +357,7 @@
                                 {
                                     "metaName": "coords",
                                     "metaType": "string",
-                                    "metaValue": "-14.7225 -841.068 1456.76 2050"
+                                    "metaValue": "-32.3571 -288.517 1456.76 1197.66"
                                 }
                             ]
                         },
@@ -377,49 +377,29 @@
                                 {
                                     "metaName": "coords",
                                     "metaType": "string",
-                                    "metaValue": "1595.35 -117.912 1179.35 1206.69"
-                                }
-                            ]
-                        },
-                        {
-                            "metaName": "backdrop2",
-                            "metadata": [
-                                {
-                                    "metaName": "type",
-                                    "metaType": "string",
-                                    "metaValue": "backdrop"
-                                },
-                                {
-                                    "metaName": "title",
-                                    "metaType": "string",
-                                    "metaValue": "Backdrop 2"
-                                },
-                                {
-                                    "metaName": "coords",
-                                    "metaType": "string",
-                                    "metaValue": "2127.59 1121.23 1457.13 1064.62"
+                                    "metaValue": "1551.43 -257.011 1537.02 1214.01"
                                 }
                             ]
                         },
                         {
                             "metaName": "_recentNode_",
                             "metaType": "string",
-                            "metaValue": "BifrostGraph,Core::Math,SRT_to_matrix"
+                            "metaValue": "BifrostGraph,Core::Math,normalize"
                         },
                         {
                             "metaName": "_recentNode_",
                             "metaType": "string",
-                            "metaValue": "BifrostGraph,Core::Math,matrix_to_SRT"
+                            "metaValue": "BifrostGraph,Core::Conversion,scalar_to_vector3"
                         },
                         {
                             "metaName": "_recentNode_",
                             "metaType": "string",
-                            "metaValue": "BifrostGraph,Core::Math,inverse_matrix"
+                            "metaValue": "BifrostGraph,Core::Conversion,vector3_to_scalar"
                         },
                         {
                             "metaName": "_recentNode_",
                             "metaType": "string",
-                            "metaValue": "BifrostGraph,Core::Array,build_array"
+                            "metaValue": "BifrostGraph,Core::Logic,if"
                         },
                         {
                             "metaName": "_recentNode_",
@@ -429,7 +409,7 @@
                         {
                             "metaName": "ViewportRect",
                             "metaType": "string",
-                            "metaValue": "-2243.2 -436.621 2803.1 2487.13"
+                            "metaValue": "-1317.04 245.916 1449.85 1286.42"
                         }
                     ],
                     "ports": [
@@ -458,10 +438,7 @@
                             "multiInPortNames": [
                                 "value",
                                 "matrix",
-                                "matrix1",
-                                "matrix2",
-                                "matrix3",
-                                "matrix4"
+                                "matrix1"
                             ],
                             "metadata": [
                                 {
@@ -472,12 +449,12 @@
                                 {
                                     "metaName": "LayoutPos",
                                     "metaType": "string",
-                                    "metaValue": "1207.04 -275.2"
+                                    "metaValue": "1129.26 -202.902"
                                 },
                                 {
                                     "metaName": "zValue",
                                     "metaType": "string",
-                                    "metaValue": "39.000000"
+                                    "metaValue": "32.000000"
                                 }
                             ]
                         },
@@ -498,12 +475,12 @@
                                 {
                                     "metaName": "LayoutPos",
                                     "metaType": "string",
-                                    "metaValue": "8.49982 -762.068"
+                                    "metaValue": "-11.9503 -187.6"
                                 },
                                 {
                                     "metaName": "zValue",
                                     "metaType": "string",
-                                    "metaValue": "31.000000"
+                                    "metaValue": "40.000000"
                                 }
                             ]
                         },
@@ -524,12 +501,12 @@
                                 {
                                     "metaName": "LayoutPos",
                                     "metaType": "string",
-                                    "metaValue": "-1.49458 -441.321"
+                                    "metaValue": "-8.06462 102.932"
                                 },
                                 {
                                     "metaName": "zValue",
                                     "metaType": "string",
-                                    "metaValue": "32.000000"
+                                    "metaValue": "41.000000"
                                 }
                             ]
                         },
@@ -550,90 +527,12 @@
                                 {
                                     "metaName": "LayoutPos",
                                     "metaType": "string",
-                                    "metaValue": "5.03532 -116.156"
+                                    "metaValue": "-14.0249 409.473"
                                 },
                                 {
                                     "metaName": "zValue",
                                     "metaType": "string",
-                                    "metaValue": "36.000000"
-                                }
-                            ]
-                        },
-                        {
-                            "nodeName": "get_from_array3",
-                            "nodeType": "Core::Array::get_from_array",
-                            "metadata": [
-                                {
-                                    "metaName": "DisplayMode",
-                                    "metaType": "string",
-                                    "metaValue": "2"
-                                },
-                                {
-                                    "metaName": "NodeWidthOffset",
-                                    "metaType": "string",
-                                    "metaValue": "0"
-                                },
-                                {
-                                    "metaName": "LayoutPos",
-                                    "metaType": "string",
-                                    "metaValue": "-3.62918 201.201"
-                                },
-                                {
-                                    "metaName": "zValue",
-                                    "metaType": "string",
-                                    "metaValue": "37.000000"
-                                }
-                            ]
-                        },
-                        {
-                            "nodeName": "get_from_array4",
-                            "nodeType": "Core::Array::get_from_array",
-                            "metadata": [
-                                {
-                                    "metaName": "DisplayMode",
-                                    "metaType": "string",
-                                    "metaValue": "2"
-                                },
-                                {
-                                    "metaName": "NodeWidthOffset",
-                                    "metaType": "string",
-                                    "metaValue": "0"
-                                },
-                                {
-                                    "metaName": "LayoutPos",
-                                    "metaType": "string",
-                                    "metaValue": "-4.72248 638.371"
-                                },
-                                {
-                                    "metaName": "zValue",
-                                    "metaType": "string",
-                                    "metaValue": "38.000000"
-                                }
-                            ]
-                        },
-                        {
-                            "nodeName": "get_from_array5",
-                            "nodeType": "Core::Array::get_from_array",
-                            "metadata": [
-                                {
-                                    "metaName": "DisplayMode",
-                                    "metaType": "string",
-                                    "metaValue": "2"
-                                },
-                                {
-                                    "metaName": "NodeWidthOffset",
-                                    "metaType": "string",
-                                    "metaValue": "0"
-                                },
-                                {
-                                    "metaName": "LayoutPos",
-                                    "metaType": "string",
-                                    "metaValue": "-3.57457 992.471"
-                                },
-                                {
-                                    "metaName": "zValue",
-                                    "metaType": "string",
-                                    "metaValue": "40.000000"
+                                    "metaValue": "42.000000"
                                 }
                             ]
                         },
@@ -649,12 +548,12 @@
                                 {
                                     "metaName": "LayoutPos",
                                     "metaType": "string",
-                                    "metaValue": "284.108 -595.997"
+                                    "metaValue": "287.993 -26.801"
                                 },
                                 {
                                     "metaName": "zValue",
                                     "metaType": "string",
-                                    "metaValue": "35.000000"
+                                    "metaValue": "44.000000"
                                 }
                             ]
                         },
@@ -670,64 +569,12 @@
                                 {
                                     "metaName": "LayoutPos",
                                     "metaType": "string",
-                                    "metaValue": "306.465 -22.515"
+                                    "metaValue": "300.568 522.659"
                                 },
                                 {
                                     "metaName": "zValue",
                                     "metaType": "string",
-                                    "metaValue": "46.000000"
-                                }
-                            ]
-                        },
-                        {
-                            "nodeName": "inverse_matrix2",
-                            "nodeType": "Core::Math::inverse_matrix",
-                            "metadata": [
-                                {
-                                    "metaName": "DisplayMode",
-                                    "metaType": "string",
-                                    "metaValue": "2"
-                                },
-                                {
-                                    "metaName": "NodeWidthOffset",
-                                    "metaType": "string",
-                                    "metaValue": "-109.566"
-                                },
-                                {
-                                    "metaName": "LayoutPos",
-                                    "metaType": "string",
-                                    "metaValue": "292.175 349.244"
-                                },
-                                {
-                                    "metaName": "zValue",
-                                    "metaType": "string",
-                                    "metaValue": "45.000000"
-                                }
-                            ]
-                        },
-                        {
-                            "nodeName": "inverse_matrix3",
-                            "nodeType": "Core::Math::inverse_matrix",
-                            "metadata": [
-                                {
-                                    "metaName": "DisplayMode",
-                                    "metaType": "string",
-                                    "metaValue": "2"
-                                },
-                                {
-                                    "metaName": "NodeWidthOffset",
-                                    "metaType": "string",
-                                    "metaValue": "-109.566"
-                                },
-                                {
-                                    "metaName": "LayoutPos",
-                                    "metaType": "string",
-                                    "metaValue": "280.506 852.726"
-                                },
-                                {
-                                    "metaName": "zValue",
-                                    "metaType": "string",
-                                    "metaValue": "43.000000"
+                                    "metaValue": "50.000000"
                                 }
                             ]
                         },
@@ -747,12 +594,12 @@
                                 {
                                     "metaName": "LayoutPos",
                                     "metaType": "string",
-                                    "metaValue": "607.346 -455.734"
+                                    "metaValue": "628.022 -140.024"
                                 },
                                 {
                                     "metaName": "zValue",
                                     "metaType": "string",
-                                    "metaValue": "41.000000"
+                                    "metaValue": "48.000000"
                                 }
                             ]
                         },
@@ -772,87 +619,12 @@
                                 {
                                     "metaName": "LayoutPos",
                                     "metaType": "string",
-                                    "metaValue": "605.093 -135.839"
+                                    "metaValue": "617.529 112.075"
                                 },
                                 {
                                     "metaName": "zValue",
                                     "metaType": "string",
-                                    "metaValue": "33.000000"
-                                }
-                            ]
-                        },
-                        {
-                            "nodeName": "matrix_multiply2",
-                            "nodeType": "Core::Math::matrix_multiply",
-                            "multiInPortNames": [
-                                "value",
-                                "inverted"
-                            ],
-                            "metadata": [
-                                {
-                                    "metaName": "DisplayMode",
-                                    "metaType": "string",
-                                    "metaValue": "2"
-                                },
-                                {
-                                    "metaName": "LayoutPos",
-                                    "metaType": "string",
-                                    "metaValue": "596.429 181.522"
-                                },
-                                {
-                                    "metaName": "zValue",
-                                    "metaType": "string",
-                                    "metaValue": "34.000000"
-                                }
-                            ]
-                        },
-                        {
-                            "nodeName": "matrix_multiply3",
-                            "nodeType": "Core::Math::matrix_multiply",
-                            "multiInPortNames": [
-                                "value",
-                                "value1"
-                            ],
-                            "metadata": [
-                                {
-                                    "metaName": "DisplayMode",
-                                    "metaType": "string",
-                                    "metaValue": "2"
-                                },
-                                {
-                                    "metaName": "LayoutPos",
-                                    "metaType": "string",
-                                    "metaValue": "595.335 540.858"
-                                },
-                                {
-                                    "metaName": "zValue",
-                                    "metaType": "string",
-                                    "metaValue": "42.000000"
-                                }
-                            ]
-                        },
-                        {
-                            "nodeName": "matrix_multiply4",
-                            "nodeType": "Core::Math::matrix_multiply",
-                            "multiInPortNames": [
-                                "value",
-                                "inverted"
-                            ],
-                            "metadata": [
-                                {
-                                    "metaName": "DisplayMode",
-                                    "metaType": "string",
-                                    "metaValue": "2"
-                                },
-                                {
-                                    "metaName": "LayoutPos",
-                                    "metaType": "string",
-                                    "metaValue": "598.948 1016.77"
-                                },
-                                {
-                                    "metaName": "zValue",
-                                    "metaType": "string",
-                                    "metaValue": "44.000000"
+                                    "metaValue": "49.000000"
                                 }
                             ]
                         },
@@ -868,12 +640,12 @@
                                 {
                                     "metaName": "LayoutPos",
                                     "metaType": "string",
-                                    "metaValue": "1618.83 171.412"
+                                    "metaValue": "1593.25 48.1794"
                                 },
                                 {
                                     "metaName": "zValue",
                                     "metaType": "string",
-                                    "metaValue": "47.000000"
+                                    "metaValue": "35.000000"
                                 }
                             ]
                         },
@@ -889,12 +661,12 @@
                                 {
                                     "metaName": "LayoutPos",
                                     "metaType": "string",
-                                    "metaValue": "1613.06 396.858"
+                                    "metaValue": "1593.84 336.39"
                                 },
                                 {
                                     "metaName": "zValue",
                                     "metaType": "string",
-                                    "metaValue": "48.000000"
+                                    "metaValue": "36.000000"
                                 }
                             ]
                         },
@@ -910,33 +682,12 @@
                                 {
                                     "metaName": "LayoutPos",
                                     "metaType": "string",
-                                    "metaValue": "1605.35 628.079"
+                                    "metaValue": "1591.99 602.893"
                                 },
                                 {
                                     "metaName": "zValue",
                                     "metaType": "string",
-                                    "metaValue": "49.000000"
-                                }
-                            ]
-                        },
-                        {
-                            "nodeName": "get_from_array9",
-                            "nodeType": "Core::Array::get_from_array",
-                            "metadata": [
-                                {
-                                    "metaName": "DisplayMode",
-                                    "metaType": "string",
-                                    "metaValue": "2"
-                                },
-                                {
-                                    "metaName": "LayoutPos",
-                                    "metaType": "string",
-                                    "metaValue": "1610.15 879.782"
-                                },
-                                {
-                                    "metaName": "zValue",
-                                    "metaType": "string",
-                                    "metaValue": "51.000000"
+                                    "metaValue": "43.000000"
                                 }
                             ]
                         },
@@ -946,8 +697,7 @@
                             "multiInPortNames": [
                                 "matrix",
                                 "matrix1",
-                                "matrix2",
-                                "matrix3"
+                                "matrix2"
                             ],
                             "metadata": [
                                 {
@@ -958,12 +708,12 @@
                                 {
                                     "metaName": "LayoutPos",
                                     "metaType": "string",
-                                    "metaValue": "2539.7 335.548"
+                                    "metaValue": "2797.14 194.193"
                                 },
                                 {
                                     "metaName": "zValue",
                                     "metaType": "string",
-                                    "metaValue": "52.000000"
+                                    "metaValue": "34.000000"
                                 }
                             ]
                         },
@@ -979,12 +729,12 @@
                                 {
                                     "metaName": "LayoutPos",
                                     "metaType": "string",
-                                    "metaValue": "1852.89 -38.912"
+                                    "metaValue": "296.963 258.116"
                                 },
                                 {
                                     "metaName": "zValue",
                                     "metaType": "string",
-                                    "metaValue": "50.000000"
+                                    "metaValue": "45.000000"
                                 }
                             ]
                         },
@@ -1004,12 +754,12 @@
                                 {
                                     "metaName": "LayoutPos",
                                     "metaType": "string",
-                                    "metaValue": "2498.39 1200.23"
+                                    "metaValue": "2049.71 -89.3603"
                                 },
                                 {
                                     "metaName": "zValue",
                                     "metaType": "string",
-                                    "metaValue": "57.000000"
+                                    "metaValue": "46.000000"
                                 }
                             ]
                         },
@@ -1029,12 +779,12 @@
                                 {
                                     "metaName": "LayoutPos",
                                     "metaType": "string",
-                                    "metaValue": "2499.07 1430.77"
+                                    "metaValue": "2046.86 185.406"
                                 },
                                 {
                                     "metaName": "zValue",
                                     "metaType": "string",
-                                    "metaValue": "58.000000"
+                                    "metaValue": "47.000000"
                                 }
                             ]
                         },
@@ -1043,7 +793,7 @@
                             "nodeType": "Core::Math::matrix_multiply",
                             "multiInPortNames": [
                                 "value",
-                                "value1"
+                                "value2"
                             ],
                             "metadata": [
                                 {
@@ -1054,58 +804,12 @@
                                 {
                                     "metaName": "LayoutPos",
                                     "metaType": "string",
-                                    "metaValue": "2499.54 1711.48"
+                                    "metaValue": "2246.96 442.161"
                                 },
                                 {
                                     "metaName": "zValue",
                                     "metaType": "string",
-                                    "metaValue": "53.000000"
-                                }
-                            ]
-                        },
-                        {
-                            "nodeName": "matrix_multiply8",
-                            "nodeType": "Core::Math::matrix_multiply",
-                            "multiInPortNames": [
-                                "value",
-                                "value1"
-                            ],
-                            "metadata": [
-                                {
-                                    "metaName": "DisplayMode",
-                                    "metaType": "string",
-                                    "metaValue": "2"
-                                },
-                                {
-                                    "metaName": "LayoutPos",
-                                    "metaType": "string",
-                                    "metaValue": "2490.05 1952.85"
-                                },
-                                {
-                                    "metaName": "zValue",
-                                    "metaType": "string",
-                                    "metaValue": "54.000000"
-                                }
-                            ]
-                        },
-                        {
-                            "nodeName": "inverse_matrix5",
-                            "nodeType": "Core::Math::inverse_matrix",
-                            "metadata": [
-                                {
-                                    "metaName": "DisplayMode",
-                                    "metaType": "string",
-                                    "metaValue": "2"
-                                },
-                                {
-                                    "metaName": "LayoutPos",
-                                    "metaType": "string",
-                                    "metaValue": "2137.59 1771.92"
-                                },
-                                {
-                                    "metaName": "zValue",
-                                    "metaType": "string",
-                                    "metaValue": "59.000000"
+                                    "metaValue": "33.000000"
                                 }
                             ]
                         },
@@ -1115,8 +819,7 @@
                             "multiInPortNames": [
                                 "value",
                                 "value1",
-                                "value2",
-                                "value3"
+                                "value2"
                             ],
                             "metadata": [
                                 {
@@ -1127,12 +830,12 @@
                                 {
                                     "metaName": "LayoutPos",
                                     "metaType": "string",
-                                    "metaValue": "3024.29 1651.14"
+                                    "metaValue": "2240.85 718.005"
                                 },
                                 {
                                     "metaName": "zValue",
                                     "metaType": "string",
-                                    "metaValue": "55.000000"
+                                    "metaValue": "38.000000"
                                 }
                             ]
                         },
@@ -1148,12 +851,12 @@
                                 {
                                     "metaName": "LayoutPos",
                                     "metaType": "string",
-                                    "metaValue": "3349.72 1617.64"
+                                    "metaValue": "2620.63 696.575"
                                 },
                                 {
                                     "metaName": "zValue",
                                     "metaType": "string",
-                                    "metaValue": "56.000000"
+                                    "metaValue": "37.000000"
                                 }
                             ]
                         },
@@ -1167,14 +870,14 @@
                                     "metaValue": "2"
                                 },
                                 {
-                                    "metaName": "zValue",
-                                    "metaType": "string",
-                                    "metaValue": "69.000000"
-                                },
-                                {
                                     "metaName": "LayoutPos",
                                     "metaType": "string",
-                                    "metaValue": "-1363.38 573.064"
+                                    "metaValue": "-1820.5 568.657"
+                                },
+                                {
+                                    "metaName": "zValue",
+                                    "metaType": "string",
+                                    "metaValue": "52.000000"
                                 }
                             ]
                         },
@@ -1190,12 +893,33 @@
                                 {
                                     "metaName": "zValue",
                                     "metaType": "string",
-                                    "metaValue": "76.000000"
+                                    "metaValue": "78.000000"
                                 },
                                 {
                                     "metaName": "LayoutPos",
                                     "metaType": "string",
-                                    "metaValue": "-341.766 554.605"
+                                    "metaValue": "-549.183 543.628"
+                                }
+                            ]
+                        },
+                        {
+                            "nodeName": "scalar_to_vector3_1",
+                            "nodeType": "Core::Conversion::scalar_to_vector3",
+                            "metadata": [
+                                {
+                                    "metaName": "DisplayMode",
+                                    "metaType": "string",
+                                    "metaValue": "2"
+                                },
+                                {
+                                    "metaName": "zValue",
+                                    "metaType": "string",
+                                    "metaValue": "75.000000"
+                                },
+                                {
+                                    "metaName": "LayoutPos",
+                                    "metaType": "string",
+                                    "metaValue": "-1213.12 787.816"
                                 }
                             ]
                         },
@@ -1215,33 +939,12 @@
                                 {
                                     "metaName": "zValue",
                                     "metaType": "string",
-                                    "metaValue": "81.000000"
+                                    "metaValue": "76.000000"
                                 },
                                 {
                                     "metaName": "LayoutPos",
                                     "metaType": "string",
-                                    "metaValue": "-554.293 906.973"
-                                }
-                            ]
-                        },
-                        {
-                            "nodeName": "scalar_to_vector3_1",
-                            "nodeType": "Core::Conversion::scalar_to_vector3",
-                            "metadata": [
-                                {
-                                    "metaName": "DisplayMode",
-                                    "metaType": "string",
-                                    "metaValue": "2"
-                                },
-                                {
-                                    "metaName": "zValue",
-                                    "metaType": "string",
-                                    "metaValue": "82.000000"
-                                },
-                                {
-                                    "metaName": "LayoutPos",
-                                    "metaType": "string",
-                                    "metaValue": "-842.657 825.292"
+                                    "metaValue": "-929.671 882.6"
                                 }
                             ]
                         },
@@ -1257,12 +960,12 @@
                                 {
                                     "metaName": "zValue",
                                     "metaType": "string",
-                                    "metaValue": "80.000000"
+                                    "metaValue": "74.000000"
                                 },
                                 {
                                     "metaName": "LayoutPos",
                                     "metaType": "string",
-                                    "metaValue": "-1128 881.375"
+                                    "metaValue": "-1523.03 843.9"
                                 }
                             ]
                         }
@@ -1277,40 +980,12 @@
                             "target": "build_array.first.matrix"
                         },
                         {
-                            "source": "matrix_multiply1.matrix",
-                            "target": "build_array.first.matrix1"
-                        },
-                        {
-                            "source": "matrix_multiply2.matrix",
-                            "target": "build_array.first.matrix2"
-                        },
-                        {
-                            "source": "matrix_multiply3.matrix",
-                            "target": "build_array.first.matrix3"
-                        },
-                        {
-                            "source": "matrix_multiply4.matrix",
-                            "target": "build_array.first.matrix4"
-                        },
-                        {
                             "source": "build_array.array",
                             "target": ".npo_matrix"
                         },
                         {
                             "source": "get_from_array.value",
                             "target": "inverse_matrix.matrix"
-                        },
-                        {
-                            "source": "get_from_array2.value",
-                            "target": "inverse_matrix1.matrix"
-                        },
-                        {
-                            "source": "get_from_array3.value",
-                            "target": "inverse_matrix2.matrix"
-                        },
-                        {
-                            "source": "get_from_array4.value",
-                            "target": "inverse_matrix3.matrix"
                         },
                         {
                             "source": "get_from_array1.value",
@@ -1329,14 +1004,6 @@
                             "target": "build_array1.first.matrix2"
                         },
                         {
-                            "source": "get_from_array5.value",
-                            "target": "inverse_matrix5.matrix"
-                        },
-                        {
-                            "source": "matrix_multiply8.matrix",
-                            "target": "build_array1.first.matrix3"
-                        },
-                        {
                             "source": "get_from_array6.value",
                             "target": "build_array2.first.value"
                         },
@@ -1347,10 +1014,6 @@
                         {
                             "source": "get_from_array8.value",
                             "target": "build_array2.first.value2"
-                        },
-                        {
-                            "source": "get_from_array9.value",
-                            "target": "build_array2.first.value3"
                         },
                         {
                             "source": "build_array2.array",
@@ -1365,10 +1028,6 @@
                             "target": ".driver_inverse_matrix"
                         },
                         {
-                            "source": "inverse_matrix.inverted",
-                            "target": "matrix_multiply1.first.value"
-                        },
-                        {
                             "source": "get_from_array2.value",
                             "target": "matrix_multiply1.first.value1"
                         },
@@ -1381,60 +1040,12 @@
                             "target": "matrix_multiply.first.value1"
                         },
                         {
-                            "source": "inverse_matrix2.inverted",
-                            "target": "matrix_multiply3.first.value"
-                        },
-                        {
-                            "source": "get_from_array4.value",
-                            "target": "matrix_multiply3.first.value1"
-                        },
-                        {
-                            "source": "inverse_matrix3.inverted",
-                            "target": "matrix_multiply4.first.value"
-                        },
-                        {
-                            "source": "get_from_array5.value",
-                            "target": "matrix_multiply4.first.inverted"
-                        },
-                        {
-                            "source": "inverse_matrix1.inverted",
-                            "target": "matrix_multiply2.first.value"
-                        },
-                        {
-                            "source": "get_from_array3.value",
-                            "target": "matrix_multiply2.first.inverted"
-                        },
-                        {
-                            "source": "inverse_matrix4.inverted",
-                            "target": "matrix_multiply5.first.value"
-                        },
-                        {
                             "source": "get_from_array6.value",
                             "target": "matrix_multiply5.first.value1"
                         },
                         {
                             "source": "get_from_array7.value",
                             "target": "matrix_multiply6.first.value1"
-                        },
-                        {
-                            "source": "inverse_matrix3.inverted",
-                            "target": "matrix_multiply7.first.value"
-                        },
-                        {
-                            "source": "get_from_array8.value",
-                            "target": "matrix_multiply7.first.value1"
-                        },
-                        {
-                            "source": "inverse_matrix5.inverted",
-                            "target": "matrix_multiply8.first.value"
-                        },
-                        {
-                            "source": "get_from_array9.value",
-                            "target": "matrix_multiply8.first.value1"
-                        },
-                        {
-                            "source": "inverse_matrix1.inverted",
-                            "target": "matrix_multiply6.first.value"
                         },
                         {
                             "source": ".guide_matrix",
@@ -1454,19 +1065,7 @@
                         },
                         {
                             "source": "SRT_to_matrix.transform",
-                            "target": "get_from_array5.array"
-                        },
-                        {
-                            "source": "SRT_to_matrix.transform",
-                            "target": "get_from_array4.array"
-                        },
-                        {
-                            "source": "SRT_to_matrix.transform",
                             "target": "get_from_array7.array"
-                        },
-                        {
-                            "source": "SRT_to_matrix.transform",
-                            "target": "get_from_array9.array"
                         },
                         {
                             "source": "SRT_to_matrix.transform",
@@ -1475,10 +1074,6 @@
                         {
                             "source": "SRT_to_matrix.transform",
                             "target": "get_from_array8.array"
-                        },
-                        {
-                            "source": "SRT_to_matrix.transform",
-                            "target": "get_from_array3.array"
                         },
                         {
                             "source": "SRT_to_matrix.transform",
@@ -1493,8 +1088,32 @@
                             "target": "get_from_array.array"
                         },
                         {
-                            "source": "scalar_to_vector3_1.vector3",
-                            "target": "divide.first.scale"
+                            "source": "inverse_matrix.inverted",
+                            "target": "matrix_multiply5.first.value"
+                        },
+                        {
+                            "source": "inverse_matrix4.inverted",
+                            "target": "matrix_multiply6.first.value"
+                        },
+                        {
+                            "source": "get_from_array8.value",
+                            "target": "matrix_multiply7.first.value2"
+                        },
+                        {
+                            "source": "inverse_matrix1.inverted",
+                            "target": "matrix_multiply7.first.value"
+                        },
+                        {
+                            "source": "matrix_multiply1.matrix",
+                            "target": "build_array.first.matrix1"
+                        },
+                        {
+                            "source": "inverse_matrix4.inverted",
+                            "target": "matrix_multiply1.first.value"
+                        },
+                        {
+                            "source": "get_from_array2.value",
+                            "target": "inverse_matrix1.matrix"
                         },
                         {
                             "source": "vector3_to_scalar1.x",
@@ -1513,12 +1132,16 @@
                             "target": "vector3_to_scalar1.vector3"
                         },
                         {
-                            "source": "divide.output",
-                            "target": "SRT_to_matrix.scale"
+                            "source": "scalar_to_vector3_1.vector3",
+                            "target": "divide.first.scale"
                         },
                         {
                             "source": "matrix_to_SRT.scale",
                             "target": "divide.first.vector3"
+                        },
+                        {
+                            "source": "divide.output",
+                            "target": "SRT_to_matrix.scale"
                         }
                     ],
                     "values": [
@@ -1533,39 +1156,19 @@
                             "value": "2"
                         },
                         {
-                            "valueName": "get_from_array3.index",
+                            "valueName": "get_from_array6.index",
                             "valueType": "long",
                             "value": "3"
                         },
                         {
-                            "valueName": "get_from_array4.index",
+                            "valueName": "get_from_array7.index",
                             "valueType": "long",
                             "value": "4"
                         },
                         {
-                            "valueName": "get_from_array5.index",
-                            "valueType": "long",
-                            "value": "5"
-                        },
-                        {
-                            "valueName": "get_from_array6.index",
-                            "valueType": "long",
-                            "value": "6"
-                        },
-                        {
-                            "valueName": "get_from_array7.index",
-                            "valueType": "long",
-                            "value": "7"
-                        },
-                        {
                             "valueName": "get_from_array8.index",
                             "valueType": "long",
-                            "value": "8"
-                        },
-                        {
-                            "valueName": "get_from_array9.index",
-                            "valueType": "long",
-                            "value": "9"
+                            "value": "5"
                         }
                     ],
                     "reservedNodeNames": [
@@ -1579,8 +1182,48 @@
                 },
                 {
                     "name": "for_each",
-                    "uriImported": "file:///humanspine01_guide.json",
+                    "uriImported": "file:///humanneck01_guide.json",
                     "metadata": [
+                        {
+                            "metaName": "icon",
+                            "metaType": "string",
+                            "metaValue": "<NATIVE>../icons/LoopForEach.svg"
+                        },
+                        {
+                            "metaName": "icon",
+                            "metaType": "string",
+                            "metaValue": "<NATIVE>../icons/LoopForEach.svg"
+                        },
+                        {
+                            "metaName": "icon",
+                            "metaType": "string",
+                            "metaValue": "<NATIVE>../icons/LoopForEach.svg"
+                        },
+                        {
+                            "metaName": "icon",
+                            "metaType": "string",
+                            "metaValue": "<NATIVE>../icons/LoopForEach.svg"
+                        },
+                        {
+                            "metaName": "icon",
+                            "metaType": "string",
+                            "metaValue": "<NATIVE>../icons/LoopForEach.svg"
+                        },
+                        {
+                            "metaName": "icon",
+                            "metaType": "string",
+                            "metaValue": "<NATIVE>../icons/LoopForEach.svg"
+                        },
+                        {
+                            "metaName": "icon",
+                            "metaType": "string",
+                            "metaValue": "<NATIVE>../icons/LoopForEach.svg"
+                        },
+                        {
+                            "metaName": "icon",
+                            "metaType": "string",
+                            "metaValue": "<NATIVE>../icons/LoopForEach.svg"
+                        },
                         {
                             "metaName": "icon",
                             "metaType": "string",
@@ -1646,7 +1289,7 @@
                                                 {
                                                     "metaName": "zValue",
                                                     "metaType": "string",
-                                                    "metaValue": "46.000000"
+                                                    "metaValue": "35.000000"
                                                 }
                                             ]
                                         }
@@ -1690,6 +1333,16 @@
                         {
                             "metaName": "_recentNode_",
                             "metaType": "string",
+                            "metaValue": "BifrostGraph,Core::Math,SRT_to_matrix"
+                        },
+                        {
+                            "metaName": "_recentNode_",
+                            "metaType": "string",
+                            "metaValue": "BifrostGraph,Core::Math,matrix_to_SRT"
+                        },
+                        {
+                            "metaName": "_recentNode_",
+                            "metaType": "string",
                             "metaValue": "BifrostGraph,Core::Constants,float"
                         },
                         {
@@ -1703,19 +1356,9 @@
                             "metaValue": "BifrostGraph,Core::Math,multiply"
                         },
                         {
-                            "metaName": "_recentNode_",
-                            "metaType": "string",
-                            "metaValue": "BifrostGraph,Core::Math,subtract"
-                        },
-                        {
-                            "metaName": "_recentNode_",
-                            "metaType": "string",
-                            "metaValue": "BifrostGraph,Core::Logic,equal"
-                        },
-                        {
                             "metaName": "ViewportRect",
                             "metaType": "string",
-                            "metaValue": "1299.39 -543.08 957.235 839.81"
+                            "metaValue": "294.827 -1152.03 1278.21 1095.02"
                         }
                     ],
                     "ports": [
@@ -1772,7 +1415,7 @@
                                 {
                                     "metaName": "zValue",
                                     "metaType": "string",
-                                    "metaValue": "39.000000"
+                                    "metaValue": "32.000000"
                                 }
                             ]
                         },
@@ -1793,7 +1436,7 @@
                                 {
                                     "metaName": "zValue",
                                     "metaType": "string",
-                                    "metaValue": "40.000000"
+                                    "metaValue": "33.000000"
                                 }
                             ]
                         },
@@ -1822,14 +1465,14 @@
                                     ]
                                 },
                                 {
-                                    "metaName": "NodeWidthOffset",
-                                    "metaType": "string",
-                                    "metaValue": "0"
-                                },
-                                {
                                     "metaName": "LayoutPos",
                                     "metaType": "string",
-                                    "metaValue": "1860.77 -335.409"
+                                    "metaValue": "1860.77 -337.081"
+                                },
+                                {
+                                    "metaName": "NodeWidthOffset",
+                                    "metaType": "string",
+                                    "metaValue": "58.0967"
                                 },
                                 {
                                     "metaName": "zValue",
@@ -1860,7 +1503,7 @@
                                 {
                                     "metaName": "zValue",
                                     "metaType": "string",
-                                    "metaValue": "41.000000"
+                                    "metaValue": "34.000000"
                                 }
                             ]
                         },
@@ -1876,12 +1519,12 @@
                                 {
                                     "metaName": "LayoutPos",
                                     "metaType": "string",
-                                    "metaValue": "1001.23 -1013.87"
+                                    "metaValue": "977.55 -1508.53"
                                 },
                                 {
                                     "metaName": "zValue",
                                     "metaType": "string",
-                                    "metaValue": "34.000000"
+                                    "metaValue": "38.000000"
                                 }
                             ]
                         },
@@ -1901,12 +1544,12 @@
                                 {
                                     "metaName": "LayoutPos",
                                     "metaType": "string",
-                                    "metaValue": "650.669 -983.122"
+                                    "metaValue": "626.989 -1477.78"
                                 },
                                 {
                                     "metaName": "zValue",
                                     "metaType": "string",
-                                    "metaValue": "33.000000"
+                                    "metaValue": "37.000000"
                                 }
                             ]
                         },
@@ -1922,12 +1565,12 @@
                                 {
                                     "metaName": "LayoutPos",
                                     "metaType": "string",
-                                    "metaValue": "303.872 -938.373"
+                                    "metaValue": "280.192 -1433.03"
                                 },
                                 {
                                     "metaName": "zValue",
                                     "metaType": "string",
-                                    "metaValue": "32.000000"
+                                    "metaValue": "36.000000"
                                 }
                             ]
                         },
@@ -1943,12 +1586,12 @@
                                 {
                                     "metaName": "LayoutPos",
                                     "metaType": "string",
-                                    "metaValue": "1383.59 -860.092"
+                                    "metaValue": "1359.91 -1356.84"
                                 },
                                 {
                                     "metaName": "zValue",
                                     "metaType": "string",
-                                    "metaValue": "35.000000"
+                                    "metaValue": "45.000000"
                                 }
                             ]
                         },
@@ -1974,12 +1617,12 @@
                                 {
                                     "metaName": "LayoutPos",
                                     "metaType": "string",
-                                    "metaValue": "635.98 -589.888"
+                                    "metaValue": "612.3 -1084.54"
                                 },
                                 {
                                     "metaName": "zValue",
                                     "metaType": "string",
-                                    "metaValue": "37.000000"
+                                    "metaValue": "50.000000"
                                 }
                             ]
                         },
@@ -2005,12 +1648,12 @@
                                 {
                                     "metaName": "LayoutPos",
                                     "metaType": "string",
-                                    "metaValue": "632.58 -754.626"
+                                    "metaValue": "608.9 -1249.28"
                                 },
                                 {
                                     "metaName": "zValue",
                                     "metaType": "string",
-                                    "metaValue": "36.000000"
+                                    "metaValue": "39.000000"
                                 }
                             ]
                         },
@@ -2028,19 +1671,19 @@
                                     "metaValue": "2"
                                 },
                                 {
-                                    "metaName": "LayoutPos",
-                                    "metaType": "string",
-                                    "metaValue": "996.173 -780.578"
-                                },
-                                {
                                     "metaName": "NodeWidthOffset",
                                     "metaType": "string",
                                     "metaValue": "0"
                                 },
                                 {
+                                    "metaName": "LayoutPos",
+                                    "metaType": "string",
+                                    "metaValue": "972.493 -1275.23"
+                                },
+                                {
                                     "metaName": "zValue",
                                     "metaType": "string",
-                                    "metaValue": "38.000000"
+                                    "metaValue": "40.000000"
                                 }
                             ]
                         },
@@ -2056,12 +1699,12 @@
                                 {
                                     "metaName": "LayoutPos",
                                     "metaType": "string",
-                                    "metaValue": "635.448 -431.941"
+                                    "metaValue": "611.768 -926.597"
                                 },
                                 {
                                     "metaName": "zValue",
                                     "metaType": "string",
-                                    "metaValue": "42.000000"
+                                    "metaValue": "41.000000"
                                 }
                             ]
                         },
@@ -2077,12 +1720,12 @@
                                 {
                                     "metaName": "LayoutPos",
                                     "metaType": "string",
-                                    "metaValue": "281.495 -399.464"
+                                    "metaValue": "257.815 -894.12"
                                 },
                                 {
                                     "metaName": "zValue",
                                     "metaType": "string",
-                                    "metaValue": "45.000000"
+                                    "metaValue": "44.000000"
                                 }
                             ]
                         },
@@ -2098,12 +1741,12 @@
                                 {
                                     "metaName": "LayoutPos",
                                     "metaType": "string",
-                                    "metaValue": "277.261 -241.404"
+                                    "metaValue": "253.581 -736.06"
                                 },
                                 {
                                     "metaName": "zValue",
                                     "metaType": "string",
-                                    "metaValue": "44.000000"
+                                    "metaValue": "43.000000"
                                 }
                             ]
                         },
@@ -2128,12 +1771,12 @@
                                 {
                                     "metaName": "LayoutPos",
                                     "metaType": "string",
-                                    "metaValue": "995.378 -564.416"
+                                    "metaValue": "971.698 -1059.07"
                                 },
                                 {
                                     "metaName": "zValue",
                                     "metaType": "string",
-                                    "metaValue": "43.000000"
+                                    "metaValue": "42.000000"
                                 }
                             ]
                         },
@@ -2149,12 +1792,12 @@
                                 {
                                     "metaName": "zValue",
                                     "metaType": "string",
-                                    "metaValue": "51.000000"
+                                    "metaValue": "49.000000"
                                 },
                                 {
                                     "metaName": "LayoutPos",
                                     "metaType": "string",
-                                    "metaValue": "1397.52 -362.178"
+                                    "metaValue": "1107.34 -566.877"
                                 }
                             ]
                         },
@@ -2180,12 +1823,12 @@
                                 {
                                     "metaName": "zValue",
                                     "metaType": "string",
-                                    "metaValue": "52.000000"
+                                    "metaValue": "53.000000"
                                 },
                                 {
                                     "metaName": "LayoutPos",
                                     "metaType": "string",
-                                    "metaValue": "996.73 -420.635"
+                                    "metaValue": "706.555 -625.334"
                                 }
                             ]
                         },
@@ -2211,12 +1854,12 @@
                                 {
                                     "metaName": "zValue",
                                     "metaType": "string",
-                                    "metaValue": "53.000000"
+                                    "metaValue": "55.000000"
                                 },
                                 {
                                     "metaName": "LayoutPos",
                                     "metaType": "string",
-                                    "metaValue": "996.732 -220.979"
+                                    "metaValue": "706.557 -425.678"
                                 }
                             ]
                         }
@@ -2237,10 +1880,6 @@
                         {
                             "source": ".main_transforms",
                             "target": "get_from_array.array"
-                        },
-                        {
-                            "source": "get_from_array2.value",
-                            "target": "aim_matrix.primary_target_matrix"
                         },
                         {
                             "source": "aim_matrix.out_transform",
@@ -2283,10 +1922,6 @@
                             "target": "if.condition"
                         },
                         {
-                            "source": "if.output",
-                            "target": "aim_matrix.primary_input_axis"
-                        },
-                        {
                             "source": "value2.output",
                             "target": "multiply.first.output1"
                         },
@@ -2323,12 +1958,12 @@
                             "target": "if.false_case"
                         },
                         {
-                            "source": "value5.output",
-                            "target": "if2.true_case"
+                            "source": "get_from_array2.value",
+                            "target": "aim_matrix.primary_target_matrix"
                         },
                         {
-                            "source": "value6.output",
-                            "target": "if2.false_case"
+                            "source": "if.output",
+                            "target": "aim_matrix.primary_input_axis"
                         },
                         {
                             "source": ".negate",
@@ -2337,6 +1972,14 @@
                         {
                             "source": "if2.output",
                             "target": "aim_matrix.secondary_input_axis"
+                        },
+                        {
+                            "source": "value5.output",
+                            "target": "if2.true_case"
+                        },
+                        {
+                            "source": "value6.output",
+                            "target": "if2.false_case"
                         }
                     ],
                     "values": [
@@ -2355,6 +1998,15 @@
                             "valueType": "Math::double3",
                             "value": {
                                 "x": "1",
+                                "y": "0",
+                                "z": "0"
+                            }
+                        },
+                        {
+                            "valueName": "aim_matrix.primary_target_vector",
+                            "valueType": "Math::double3",
+                            "value": {
+                                "x": "0",
                                 "y": "0",
                                 "z": "0"
                             }
@@ -2460,12 +2112,12 @@
                         {
                             "metaName": "LayoutPos",
                             "metaType": "string",
-                            "metaValue": "588.627 137.22"
+                            "metaValue": "587.234 35.2871"
                         },
                         {
                             "metaName": "zValue",
                             "metaType": "string",
-                            "metaValue": "48.000000"
+                            "metaValue": "47.000000"
                         }
                     ]
                 },
@@ -2486,7 +2138,7 @@
                         {
                             "metaName": "zValue",
                             "metaType": "string",
-                            "metaValue": "49.000000"
+                            "metaValue": "46.000000"
                         }
                     ]
                 },
@@ -2667,7 +2319,7 @@
                         {
                             "metaName": "zValue",
                             "metaType": "string",
-                            "metaValue": "46.000000"
+                            "metaValue": "45.000000"
                         }
                     ]
                 },
@@ -2681,14 +2333,14 @@
                             "metaValue": "2"
                         },
                         {
-                            "metaName": "LayoutPos",
-                            "metaType": "string",
-                            "metaValue": "1663.17 502.356"
-                        },
-                        {
                             "metaName": "zValue",
                             "metaType": "string",
-                            "metaValue": "38.000000"
+                            "metaValue": "127.000000"
+                        },
+                        {
+                            "metaName": "LayoutPos",
+                            "metaType": "string",
+                            "metaValue": "2864.47 1036.65"
                         }
                     ]
                 },
@@ -2709,7 +2361,7 @@
                         {
                             "metaName": "zValue",
                             "metaType": "string",
-                            "metaValue": "42.000000"
+                            "metaValue": "41.000000"
                         }
                     ]
                 },
@@ -2730,7 +2382,7 @@
                         {
                             "metaName": "zValue",
                             "metaType": "string",
-                            "metaValue": "45.000000"
+                            "metaValue": "44.000000"
                         }
                     ]
                 },
@@ -2751,7 +2403,7 @@
                         {
                             "metaName": "zValue",
                             "metaType": "string",
-                            "metaValue": "43.000000"
+                            "metaValue": "42.000000"
                         }
                     ]
                 },
@@ -2776,7 +2428,225 @@
                         {
                             "metaName": "zValue",
                             "metaType": "string",
-                            "metaValue": "44.000000"
+                            "metaValue": "43.000000"
+                        }
+                    ]
+                },
+                {
+                    "nodeName": "get_from_array2",
+                    "nodeType": "Core::Array::get_from_array",
+                    "metadata": [
+                        {
+                            "metaName": "DisplayMode",
+                            "metaType": "string",
+                            "metaValue": "2"
+                        },
+                        {
+                            "metaName": "zValue",
+                            "metaType": "string",
+                            "metaValue": "122.000000"
+                        },
+                        {
+                            "metaName": "LayoutPos",
+                            "metaType": "string",
+                            "metaValue": "1078.08 1385.46"
+                        }
+                    ]
+                },
+                {
+                    "nodeName": "array_size1",
+                    "nodeType": "Core::Array::array_size",
+                    "metadata": [
+                        {
+                            "metaName": "DisplayMode",
+                            "metaType": "string",
+                            "metaValue": "2"
+                        },
+                        {
+                            "metaName": "zValue",
+                            "metaType": "string",
+                            "metaValue": "75.000000"
+                        },
+                        {
+                            "metaName": "LayoutPos",
+                            "metaType": "string",
+                            "metaValue": "1235.1 853.989"
+                        }
+                    ]
+                },
+                {
+                    "nodeName": "subtract1",
+                    "nodeType": "Core::Math::subtract",
+                    "multiInPortNames": [
+                        "size",
+                        "output1"
+                    ],
+                    "metadata": [
+                        {
+                            "metaName": "DisplayMode",
+                            "metaType": "string",
+                            "metaValue": "2"
+                        },
+                        {
+                            "metaName": "zValue",
+                            "metaType": "string",
+                            "metaValue": "76.000000"
+                        },
+                        {
+                            "metaName": "LayoutPos",
+                            "metaType": "string",
+                            "metaValue": "1551.86 927.009"
+                        }
+                    ]
+                },
+                {
+                    "nodeName": "slice_array2",
+                    "nodeType": "Core::Array::slice_array",
+                    "metadata": [
+                        {
+                            "metaName": "DisplayMode",
+                            "metaType": "string",
+                            "metaValue": "2"
+                        },
+                        {
+                            "metaName": "zValue",
+                            "metaType": "string",
+                            "metaValue": "78.000000"
+                        },
+                        {
+                            "metaName": "LayoutPos",
+                            "metaType": "string",
+                            "metaValue": "1882.55 820.082"
+                        }
+                    ]
+                },
+                {
+                    "nodeName": "value1",
+                    "valueType": "long",
+                    "metadata": [
+                        {
+                            "metaName": "DisplayMode",
+                            "metaType": "string",
+                            "metaValue": "2"
+                        },
+                        {
+                            "metaName": "LayoutPos",
+                            "metaType": "string",
+                            "metaValue": "1237.33 1067.29"
+                        },
+                        {
+                            "metaName": "zValue",
+                            "metaType": "string",
+                            "metaValue": "124.000000"
+                        }
+                    ]
+                },
+                {
+                    "nodeName": "build_array1",
+                    "nodeType": "Core::Array::build_array",
+                    "multiInPortNames": [
+                        "slice",
+                        "value"
+                    ],
+                    "metadata": [
+                        {
+                            "metaName": "DisplayMode",
+                            "metaType": "string",
+                            "metaValue": "2"
+                        },
+                        {
+                            "metaName": "zValue",
+                            "metaType": "string",
+                            "metaValue": "120.000000"
+                        },
+                        {
+                            "metaName": "LayoutPos",
+                            "metaType": "string",
+                            "metaValue": "2491.54 957.709"
+                        }
+                    ]
+                },
+                {
+                    "nodeName": "if",
+                    "nodeType": "Core::Logic::if",
+                    "metadata": [
+                        {
+                            "metaName": "DisplayMode",
+                            "metaType": "string",
+                            "metaValue": "2"
+                        },
+                        {
+                            "metaName": "zValue",
+                            "metaType": "string",
+                            "metaValue": "121.000000"
+                        },
+                        {
+                            "metaName": "LayoutPos",
+                            "metaType": "string",
+                            "metaValue": "2217.34 1341.99"
+                        }
+                    ]
+                },
+                {
+                    "nodeName": "matrix_to_SRT",
+                    "nodeType": "Core::Math::matrix_to_SRT",
+                    "metadata": [
+                        {
+                            "metaName": "DisplayMode",
+                            "metaType": "string",
+                            "metaValue": "2"
+                        },
+                        {
+                            "metaName": "LayoutPos",
+                            "metaType": "string",
+                            "metaValue": "1369.72 1570.53"
+                        },
+                        {
+                            "metaName": "zValue",
+                            "metaType": "string",
+                            "metaValue": "123.000000"
+                        }
+                    ]
+                },
+                {
+                    "nodeName": "SRT_to_matrix",
+                    "nodeType": "Core::Math::SRT_to_matrix",
+                    "metadata": [
+                        {
+                            "metaName": "DisplayMode",
+                            "metaType": "string",
+                            "metaValue": "2"
+                        },
+                        {
+                            "metaName": "zValue",
+                            "metaType": "string",
+                            "metaValue": "112.000000"
+                        },
+                        {
+                            "metaName": "LayoutPos",
+                            "metaType": "string",
+                            "metaValue": "1656.12 1547.3"
+                        }
+                    ]
+                },
+                {
+                    "nodeName": "offset_matrix1",
+                    "nodeType": "Domino::Compounds::offset_matrix",
+                    "metadata": [
+                        {
+                            "metaName": "DisplayMode",
+                            "metaType": "string",
+                            "metaValue": "2"
+                        },
+                        {
+                            "metaName": "LayoutPos",
+                            "metaType": "string",
+                            "metaValue": "1929.48 1543.3"
+                        },
+                        {
+                            "metaName": "zValue",
+                            "metaType": "string",
+                            "metaValue": "125.000000"
                         }
                     ]
                 }
@@ -2871,14 +2741,6 @@
                     "target": "offset_matrix.offset_rotate"
                 },
                 {
-                    "source": "offset_matrix.matrix",
-                    "target": ".initialize_output_matrix"
-                },
-                {
-                    "source": "offset_matrix.matrix",
-                    "target": "inverse_matrix.matrix"
-                },
-                {
                     "source": "inverse_matrix.inverted",
                     "target": ".initialize_output_inverse_matrix"
                 },
@@ -2909,6 +2771,82 @@
                 {
                     "source": "last_in_array.last",
                     "target": "matrix_multiply.first.inverted"
+                },
+                {
+                    "source": ".guide_matrix",
+                    "target": "get_from_array2.array"
+                },
+                {
+                    "source": "offset_matrix.matrix",
+                    "target": "array_size1.array"
+                },
+                {
+                    "source": "array_size1.size",
+                    "target": "subtract1.first.size"
+                },
+                {
+                    "source": "offset_matrix.matrix",
+                    "target": "slice_array2.array"
+                },
+                {
+                    "source": "subtract1.output",
+                    "target": "slice_array2.stop"
+                },
+                {
+                    "source": "value1.output",
+                    "target": "subtract1.first.output1"
+                },
+                {
+                    "source": "slice_array2.slice",
+                    "target": "build_array1.first.slice"
+                },
+                {
+                    "source": "build_array1.array",
+                    "target": "inverse_matrix.matrix"
+                },
+                {
+                    "source": "build_array1.array",
+                    "target": ".initialize_output_matrix"
+                },
+                {
+                    "source": ".negate",
+                    "target": "if.condition"
+                },
+                {
+                    "source": "get_from_array2.value",
+                    "target": "if.false_case"
+                },
+                {
+                    "source": "get_from_array2.value",
+                    "target": "matrix_to_SRT.transform"
+                },
+                {
+                    "source": "matrix_to_SRT.shear",
+                    "target": "SRT_to_matrix.shear"
+                },
+                {
+                    "source": "matrix_to_SRT.quaternion",
+                    "target": "SRT_to_matrix.quaternion"
+                },
+                {
+                    "source": "matrix_to_SRT.translation",
+                    "target": "SRT_to_matrix.translation"
+                },
+                {
+                    "source": "SRT_to_matrix.transform",
+                    "target": "offset_matrix1.parent_matrix"
+                },
+                {
+                    "source": "offset_matrix1.matrix",
+                    "target": "if.true_case"
+                },
+                {
+                    "source": "matrix_to_SRT.scale",
+                    "target": "SRT_to_matrix.scale"
+                },
+                {
+                    "source": "if.output",
+                    "target": "build_array1.first.value"
                 }
             ],
             "values": [
@@ -2936,6 +2874,34 @@
                     "valueName": "get_from_array1.index",
                     "valueType": "long",
                     "value": "5"
+                },
+                {
+                    "valueName": "get_from_array2.index",
+                    "valueType": "long",
+                    "value": "6"
+                },
+                {
+                    "valueName": "value1.value",
+                    "valueType": "long",
+                    "value": "1"
+                },
+                {
+                    "valueName": "offset_matrix1.offset_rotate",
+                    "valueType": "Math::float3",
+                    "value": {
+                        "x": "-180f",
+                        "y": "0f",
+                        "z": "0f"
+                    }
+                },
+                {
+                    "valueName": "offset_matrix1.offset_scale",
+                    "valueType": "Math::float3",
+                    "value": {
+                        "x": "1f",
+                        "y": "1f",
+                        "z": "1f"
+                    }
                 }
             ],
             "reservedNodeNames": [
