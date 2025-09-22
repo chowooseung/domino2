@@ -126,7 +126,7 @@ class Rig(component.Rig):
     def populate_output(self):
         if not self["output"]:
             for i in range(3):
-                self.add_output(description=i, extension="output")
+                self.add_output(description=i, extension=Name.output_extension)
 
     def populate_output_joint(self):
         if not self["output_joint"]:
@@ -709,7 +709,7 @@ class Rig(component.Rig):
             side=side,
             index=index,
             description=0,
-            extension="output",
+            extension=Name.output_extension,
             m=ORIGINMATRIX,
         )
         fkik0_loc = ins.create()
@@ -723,7 +723,7 @@ class Rig(component.Rig):
             side=side,
             index=index,
             description=1,
-            extension="output",
+            extension=Name.output_extension,
             m=ORIGINMATRIX,
         )
         fkik1_loc = ins.create()
@@ -737,7 +737,7 @@ class Rig(component.Rig):
             side=side,
             index=index,
             description=2,
-            extension="output",
+            extension=Name.output_extension,
             m=ORIGINMATRIX,
         )
         fkik2_loc = ins.create()

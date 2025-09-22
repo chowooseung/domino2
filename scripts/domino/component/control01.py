@@ -77,7 +77,7 @@ class Rig(component.Rig):
     def populate_output(self):
         if not self["output"]:
             for i in range(len(self["guide_matrix"]["value"])):
-                self.add_output(description=i, extension=Name.loc_extension)
+                self.add_output(description=i, extension=Name.output_extension)
 
     def populate_output_joint(self):
         if not self["output_joint"]:
@@ -138,7 +138,7 @@ class Rig(component.Rig):
                 side=side,
                 index=index,
                 description=i,
-                extension="output",
+                extension=Name.output_extension,
                 m=ORIGINMATRIX,
             )
             output = ins.create()

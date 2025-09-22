@@ -5,6 +5,7 @@ from PySide6 import QtCore, QtWidgets
 # domino
 from domino.component import SKEL
 from domino.core.utils import logger
+from domino.core import center, left, right
 
 # maya
 from maya import cmds
@@ -110,7 +111,7 @@ class UIGenerator:
             settings_ui.refresh()
 
         def edit_side(new_side):
-            new_side_str = ["C", "L", "R"][new_side]
+            new_side_str = [center, left, right][new_side]
             if old_side == new_side:
                 logger.warning(f"이전과 같습니다.")
                 settings_ui.refresh()
@@ -263,12 +264,12 @@ class UIGenerator:
 
         old_name = cmds.getAttr(f"{root}.name")
         old_side = cmds.getAttr(f"{root}.side")
-        old_side_str = ["C", "L", "R"][old_side]
+        old_side_str = [center, left, right][old_side]
         old_index = cmds.getAttr(f"{root}.index")
         name_line_edit = QtWidgets.QLineEdit(old_name)
         name_line_edit.editingFinished.connect(partial(edit_name))
         side_combo_box = QtWidgets.QComboBox()
-        side_combo_box.addItems(["C", "L", "R"])
+        side_combo_box.addItems([center, left, right])
         side_combo_box.setCurrentIndex(old_side)
         side_combo_box.setSizePolicy(
             QtWidgets.QSizePolicy.Policy.Expanding,

@@ -31,7 +31,7 @@ DATA = [
         multi=True,
         value=matrices,
     ),
-    attribute.Integer(longName="guide_mirror_type", multi=True, value=[1, 1]),
+    attribute.Integer(longName="guide_mirror_type", multi=True, value=[1]),
     # 부모로 사용할 상위 component 의 output index
     attribute.Integer(
         longName="parent_output_index", minValue=-1, defaultValue=-1, value=-1
@@ -50,11 +50,10 @@ DATA = [
     ),
 ]
 
-description = """## control01
+description = """## COG01
 ---
 
-COG 컨트롤러 입니다.
-pivot 을 움직여 회전 할 수 있는 컨트롤러가 있습니다."""
+COG 컨트롤러 입니다."""
 
 # endregion
 
@@ -67,13 +66,10 @@ class Rig(component.Rig):
     def populate_controller(self):
         if not self["controller"]:
             self.add_controller(description="", parent_controllers=[])
-            self.add_controller(
-                description="pivot", parent_controllers=[(self.identifier, "")]
-            )
 
     def populate_output(self):
         if not self["output"]:
-            self.add_output(description="", extension="output")
+            self.add_output(description="", extension=Name.output_extension)
 
     def populate_output_joint(self):
         if not self["output_joint"]:
@@ -100,36 +96,24 @@ class Rig(component.Rig):
         cmds.connectAttr(
             f"{self.rig_root}.guide_mirror_type[0]", f"{cog_ctl}.mirror_type"
         )
-        cmds.addAttr(
-            cog_ctl,
-            longName="pivot_ctl_visibility",
-            attributeType="enum",
-            enumName="off:on",
-            keyable=True,
-            defaultValue=0,
-        )
-        cog_pivot_npo, cog_pivot_ctl = self["controller"][1].create(
-            parent=cog_ctl,
-            shape=(
-                self["controller"][1]["shape"]
-                if "shape" in self["controller"][1]
-                else "sphere"
+        loc = cmds.createNode(
+            "transform",
+            name=Name.create(
+                Name.controller_name_convention,
+                name=name,
+                side=side,
+                index=index,
+                description=Name.loc_extension,
             ),
-            color=12,
+            parent=cog_ctl,
         )
-        cmds.setAttr(f"{cog_pivot_ctl}.rx", lock=True, keyable=False)
-        cmds.setAttr(f"{cog_pivot_ctl}.ry", lock=True, keyable=False)
-        cmds.setAttr(f"{cog_pivot_ctl}.rz", lock=True, keyable=False)
-        cmds.connectAttr(
-            f"{self.rig_root}.guide_mirror_type[0]", f"{cog_pivot_ctl}.mirror_type"
-        )
-        cmds.connectAttr(f"{cog_pivot_ctl}.t", f"{cog_ctl}.rotatePivot")
-        cmds.connectAttr(f"{cog_ctl}.pivot_ctl_visibility", f"{cog_pivot_npo}.v")
-
-        shapes = cmds.listRelatives(cog_ctl, shapes=True)
-        cmds.cluster(
-            shapes, bindState=1, weightedNode=(cog_pivot_ctl, cog_pivot_ctl), relative=1
-        )
+        condition = cmds.createNode("condition")
+        cmds.setAttr(f"{condition}.operation", 0)
+        cmds.connectAttr(f"{self.rig_root}.side", f"{condition}.firstTerm")
+        cmds.setAttr(f"{condition}.secondTerm", 2)
+        cmds.setAttr(f"{condition}.colorIfTrueR", -1)
+        cmds.setAttr(f"{condition}.colorIfFalseR", 1)
+        cmds.connectAttr(f"{condition}.outColorR", f"{loc}.sz")
 
         # output
         ins = Joint(
@@ -137,13 +121,12 @@ class Rig(component.Rig):
             name=name,
             side=side,
             index=index,
-            description="",
-            extension="output",
+            extension=Name.output_extension,
             m=ORIGINMATRIX,
         )
         output = ins.create()
         mult_m = cmds.createNode("multMatrix")
-        cmds.connectAttr(f"{cog_ctl}.worldMatrix[0]", f"{mult_m}.matrixIn[0]")
+        cmds.connectAttr(f"{loc}.worldMatrix[0]", f"{mult_m}.matrixIn[0]")
         cmds.connectAttr(
             f"{self.rig_root}.worldInverseMatrix[0]", f"{mult_m}.matrixIn[1]"
         )
@@ -161,23 +144,37 @@ class Rig(component.Rig):
     @build_log(logging.INFO)
     def guide(self):
         super().guide(description=description)
-        guide_count = len(self["guide_matrix"]["value"])
-        if len(self["guide_mirror_type"]["value"]) != guide_count:
-            self["guide_mirror_type"]["value"] = [1 for _ in range(guide_count)]
 
         # guide
         guide = self.add_guide(
             parent=self.guide_root,
             description="",
-            m=ORIGINMATRIX,
+            m=self["guide_matrix"]["value"][0],
             mirror_type=self["guide_mirror_type"]["value"][0],
+        )
+
+        decom_m = cmds.createNode("decomposeMatrix")
+        cmds.connectAttr(f"{guide}.worldMatrix[0]", f"{decom_m}.inputMatrix")
+
+        condition = cmds.createNode("condition")
+        cmds.setAttr(f"{condition}.operation", 4)
+        cmds.connectAttr(f"{decom_m}.outputScaleZ", f"{condition}.firstTerm")
+        cmds.setAttr(f"{condition}.secondTerm", 0)
+        cmds.setAttr(f"{condition}.colorIfTrue", 1, 1, -1)
+        cmds.setAttr(f"{condition}.colorIfFalse", 1, 1, 1)
+
+        compose_m = cmds.createNode("composeMatrix")
+        cmds.connectAttr(f"{decom_m}.outputTranslate", f"{compose_m}.inputTranslate")
+        cmds.connectAttr(f"{decom_m}.outputRotate", f"{compose_m}.inputRotate")
+        cmds.connectAttr(f"{condition}.outColor", f"{compose_m}.inputScale")
+        cmds.connectAttr(
+            f"{compose_m}.outputMatrix", f"{self.guide_root}.npo_matrix[0]"
         )
 
         pick_m = cmds.createNode("pickMatrix")
         cmds.setAttr(f"{pick_m}.useScale", 0)
         cmds.setAttr(f"{pick_m}.useShear", 0)
         cmds.connectAttr(f"{guide}.worldMatrix[0]", f"{pick_m}.inputMatrix")
-        cmds.connectAttr(f"{pick_m}.outputMatrix", f"{self.guide_root}.npo_matrix[0]")
         cmds.connectAttr(
             f"{pick_m}.outputMatrix",
             f"{self.guide_root}.initialize_output_matrix[0]",

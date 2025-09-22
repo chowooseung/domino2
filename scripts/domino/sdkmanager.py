@@ -6,11 +6,11 @@ from maya.app.general.mayaMixin import MayaQWidgetDockableMixin
 import json
 from pathlib import Path
 
-# gui
+# Qt
 from PySide6 import QtWidgets, QtCore, QtGui
 
 # domino
-from domino.core import anim
+from domino.core import anim, left, right
 
 
 SDK_NODE_NAME = "sdk_manager"
@@ -225,11 +225,11 @@ def mirror_sdk_driver(drivers):
             continue
 
         _, side, *_ = driver.split("_")
-        if not side.startswith("L") and not side.startswith("R"):
+        if not side.startswith(left) and not side.startswith(right):
             cmds.warning(f"{driver} 는 Mirror 할 수 없습니다.")
             continue
 
-        mirror_side = "_R" if side.startswith("L") else "_L"
+        mirror_side = f"_{right}" if side.startswith(left) else f"_{left}"
         side = f"_{side[0]}"
 
         # mirror data["sdk"][driver]
@@ -504,14 +504,11 @@ class SDKManager(MayaQWidgetDockableMixin, QtWidgets.QDialog):
     _instance = None
 
     ui_name = "domino_sdk_ui"
-    control_name = ui_name + "WorkspaceControl"
+    control_name = f"{ui_name}WorkspaceControl"
 
     ui_script = """from maya import cmds
 command = "from domino.sdkmanager import SDKManager;ui=SDKManager.get_instance();ui.show(dockable=True)"
 cmds.evalDeferred(command)"""
-
-    # callback
-    callback_id = None
 
     def __init__(self, parent=None):
         if cmds.workspaceControl(self.control_name, query=True, exists=True):

@@ -90,7 +90,7 @@ class Rig(component.Rig):
                 for chain_i in range(self["chain_count"]["value"][root_i]):
                     self.add_output(
                         description=f"{root_i}fk{chain_i}",
-                        extension="output",
+                        extension=Name.output_extension,
                     )
 
     def populate_output_joint(self):
@@ -164,7 +164,7 @@ class Rig(component.Rig):
                     side=side,
                     index=index,
                     description=f"{root_i}fk{chain_i}",
-                    extension="output",
+                    extension=Name.output_extension,
                     m=ORIGINMATRIX,
                 )
                 output = ins.create()

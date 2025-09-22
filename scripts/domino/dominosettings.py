@@ -9,9 +9,10 @@ from maya.app.general.mayaMixin import MayaQWidgetDockableMixin
 # domino
 from domino.core.utils import logger
 from domino.component.assemblyui import Assembly
+from domino.component.pivot01ui import Pivot01
+from domino.component.cog01ui import COG01
 from domino.component.control01ui import Control01
 from domino.component.uicontainer01ui import UIContainer01
-from domino.component.cog01ui import COG01
 from domino.component.fk01ui import Fk01
 from domino.component.fkik2jnt01ui import Fkik2Jnt01
 from domino.component.humanspine01ui import HumanSpine01
@@ -21,9 +22,10 @@ from domino.component.humanarm01ui import HumanArm01
 
 UITABLE = {
     "assembly": Assembly,
+    "pivot01": Pivot01,
+    "cog01": COG01,
     "control01": Control01,
     "uicontainer01": UIContainer01,
-    "cog01": COG01,
     "fk01": Fk01,
     "fkik2jnt01": Fkik2Jnt01,
     "humanspine01": HumanSpine01,

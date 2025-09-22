@@ -4,6 +4,9 @@ from maya import cmds
 # built-ins
 import math
 
+# domino
+from domino.core import left, right
+
 
 ID = "domino_controller_panel_ui"
 
@@ -136,8 +139,8 @@ def ui(*args, **kwargs) -> None:
         columnWidth3=(w - 2, w - 2, w * 3 - 2),
         margins=1,
     )
-    cmds.textField("domino_left_mirror_string", text="_L")
-    cmds.textField("domino_right_mirror_string", text="_R")
+    cmds.textField("domino_left_mirror_string", text=f"_{left}")
+    cmds.textField("domino_right_mirror_string", text=f"_{right}")
     cmds.button(
         label="Mirror",
         width=w * 3 - 2,

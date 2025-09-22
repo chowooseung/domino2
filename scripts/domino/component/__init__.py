@@ -36,10 +36,11 @@ import sys
 
 COMPONENTLIST = [
     "assembly",
+    "pivot01",
     "cog01",
     "control01",
-    "fk01",
     "uicontainer01",
+    "fk01",
     "fkik2jnt01",
     "humanspine01",
     "humanneck01",

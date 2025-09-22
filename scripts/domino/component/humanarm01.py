@@ -379,15 +379,19 @@ class Rig(component.Rig):
 
     def populate_output(self):
         if not self["output"]:
-            self.add_output(description="clavicle", extension="output")
-            self.add_output(description="shoulder", extension="output")
+            self.add_output(description="clavicle", extension=Name.output_extension)
+            self.add_output(description="shoulder", extension=Name.output_extension)
             for i in range(self["twist_joint_count"]["value"]):
-                self.add_output(description=f"upperTwist{i}", extension="output")
-            self.add_output(description="elbow", extension="output")
+                self.add_output(
+                    description=f"upperTwist{i}", extension=Name.output_extension
+                )
+            self.add_output(description="elbow", extension=Name.output_extension)
             for i in range(self["twist_joint_count"]["value"]):
-                self.add_output(description=f"lowerTwist{i}", extension="output")
-            self.add_output(description="wrist", extension="output")
-            self.add_output(description="scapular", extension="output")
+                self.add_output(
+                    description=f"lowerTwist{i}", extension=Name.output_extension
+                )
+            self.add_output(description="wrist", extension=Name.output_extension)
+            self.add_output(description="scapular", extension=Name.output_extension)
 
     def populate_output_joint(self):
         if not self["output_joint"]:
@@ -2086,7 +2090,7 @@ class Rig(component.Rig):
             side=side,
             index=index,
             description="clavicle",
-            extension="output",
+            extension=Name.output_extension,
             m=ORIGINMATRIX,
         )
         clavicle_output = ins.create()
@@ -2106,7 +2110,7 @@ class Rig(component.Rig):
             side=side,
             index=index,
             description="shoulder",
-            extension="output",
+            extension=Name.output_extension,
             m=ORIGINMATRIX,
         )
         shoulder_output = ins.create()
@@ -2130,7 +2134,7 @@ class Rig(component.Rig):
                 side=side,
                 index=index,
                 description=f"upperTwist{i}",
-                extension="output",
+                extension=Name.output_extension,
                 m=ORIGINMATRIX,
             )
             twist_output = ins.create()
@@ -2155,7 +2159,7 @@ class Rig(component.Rig):
             side=side,
             index=index,
             description="elbow",
-            extension="output",
+            extension=Name.output_extension,
             m=ORIGINMATRIX,
         )
         elbow_output = ins.create()
@@ -2179,7 +2183,7 @@ class Rig(component.Rig):
                 side=side,
                 index=index,
                 description=f"lowerTwist{i}",
-                extension="output",
+                extension=Name.output_extension,
                 m=ORIGINMATRIX,
             )
             twist_output = ins.create()
@@ -2204,7 +2208,7 @@ class Rig(component.Rig):
             side=side,
             index=index,
             description="wrist",
-            extension="output",
+            extension=Name.output_extension,
             m=ORIGINMATRIX,
         )
         wrist_output = ins.create()
@@ -2224,7 +2228,7 @@ class Rig(component.Rig):
             side=side,
             index=index,
             description="scapular",
-            extension="output",
+            extension=Name.output_extension,
             m=ORIGINMATRIX,
         )
         scapular_output = ins.create()
