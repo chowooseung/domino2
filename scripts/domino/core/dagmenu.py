@@ -594,21 +594,6 @@ for mesh in meshes:
     cmds.setAttr(sc + ".relativeSpaceMode", 1)
 cmds.select(selected)"""
 
-disconnect_command = """from maya import cmds
-
-joints = [
-    x for x in cmds.ls("*", type="joint") if cmds.objExists(x + ".is_domino_skel")
-]
-for jnt in joints:
-    plugs = (
-        cmds.listConnections(
-            jnt, source=True, destination=False, plugs=True, connections=True
-        )
-        or []
-    )
-    for i in range(int(len(plugs) / 2)):
-        cmds.disconnectAttr(plugs[i * 2 + 1], plugs[i * 2])"""
-
 bake_command = """from maya import cmds
 
 selected = cmds.ls(selection=True)[0]
