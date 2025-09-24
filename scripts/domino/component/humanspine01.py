@@ -645,7 +645,6 @@ class Rig(component.Rig):
         cmds.orientConstraint(tip_rot, tip_output)
 
         output_sources = ribbon_outputs[:-1] + [tip_output]
-        outputs = []
         for i in range(self["output_count"]["value"]):
             output_npo, output_ctl = self["controller"][7 + i].create(
                 parent=self.rig_root,
@@ -678,14 +677,7 @@ class Rig(component.Rig):
             )
             output = ins.create()
             cmds.setAttr(f"{output}.drawStyle", 2)
-            mult_m = cmds.createNode("multMatrix")
-            cmds.connectAttr(f"{output_ctl}.worldMatrix[0]", f"{mult_m}.matrixIn[0]")
-            cmds.connectAttr(
-                f"{self.rig_root}.worldInverseMatrix[0]", f"{mult_m}.matrixIn[1]"
-            )
-            cmds.connectAttr(f"{mult_m}.matrixSum", f"{output}.offsetParentMatrix")
-            outputs.append(output)
-            self["output"][i].connect()
+            self["output"][i].connect(output_ctl)
 
             # output joint
             if self["create_output_joint"]["value"]:

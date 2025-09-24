@@ -542,7 +542,7 @@ class Rig(dict):
         def data(self, d):
             self.update(d)
 
-        def connect(self):
+        def connect(self, source=None):
             next_index = len(
                 cmds.listConnections(
                     f"{self.instance.rig_root}.output",
@@ -556,18 +556,31 @@ class Rig(dict):
                 f"{self.instance.rig_root}.output[{next_index}]",
             )
             if "offset_output_rotate_x" in self.instance:
+                comp_m = cmds.createNode("composeMatrix")
                 cmds.connectAttr(
                     f"{self.instance.rig_root}.offset_output_rotate_x",
-                    f"{self.name}.rx",
+                    f"{comp_m}.inputRotateX",
                 )
                 cmds.connectAttr(
                     f"{self.instance.rig_root}.offset_output_rotate_y",
-                    f"{self.name}.ry",
+                    f"{comp_m}.inputRotateY",
                 )
                 cmds.connectAttr(
                     f"{self.instance.rig_root}.offset_output_rotate_z",
-                    f"{self.name}.rz",
+                    f"{comp_m}.inputRotateZ",
                 )
+                mult_m = cmds.createNode("multMatrix")
+                cmds.connectAttr(f"{comp_m}.outputMatrix", f"{mult_m}.matrixIn[0]")
+                cmds.connectAttr(f"{source}.worldMatrix[0]", f"{mult_m}.matrixIn[1]")
+                cmds.connectAttr(
+                    f"{self.instance.rig_root}.worldInverseMatrix[0]",
+                    f"{mult_m}.matrixIn[2]",
+                )
+                decom_m = cmds.createNode("decomposeMatrix")
+                cmds.connectAttr(f"{mult_m}.matrixSum", f"{decom_m}.inputMatrix")
+                cmds.connectAttr(f"{decom_m}.outputTranslate", f"{self.name}.t")
+                cmds.connectAttr(f"{decom_m}.outputRotate", f"{self.name}.r")
+                cmds.connectAttr(f"{decom_m}.outputScale", f"{self.name}.s")
 
         def __init__(self, description, extension, rig_instance):
             self.instance = rig_instance

@@ -149,13 +149,13 @@ class Rig(component.Rig):
                     plugs=True,
                 )[0]
                 decom_m = cmds.createNode("decomposeMatrix")
-                cmds.connectAttr(source, decom_m + ".inputMatrix")
+                cmds.connectAttr(source, f"{decom_m}.inputMatrix")
 
                 condition = cmds.createNode("condition")
-                cmds.setAttr(condition + ".operation", 4)
-                cmds.setAttr(condition + ".colorIfTrueR", -1)
-                cmds.connectAttr(decom_m + ".outputScaleZ", condition + ".firstTerm")
-                cmds.connectAttr(condition + ".outColorR", loc + ".sz")
+                cmds.setAttr(f"{condition}.operation", 4)
+                cmds.setAttr(f"{condition}.colorIfTrueR", -1)
+                cmds.connectAttr(f"{decom_m}.outputScaleZ", f"{condition}.firstTerm")
+                cmds.connectAttr(f"{condition}.outColorR", f"{loc}.sz")
 
                 # output
                 ins = Joint(
@@ -167,15 +167,9 @@ class Rig(component.Rig):
                     extension=Name.output_extension,
                     m=ORIGINMATRIX,
                 )
-                output = ins.create()
-                mult_m = cmds.createNode("multMatrix")
-                cmds.connectAttr(f"{loc}.worldMatrix[0]", f"{mult_m}.matrixIn[0]")
-                cmds.connectAttr(
-                    f"{self.rig_root}.worldInverseMatrix[0]", f"{mult_m}.matrixIn[1]"
-                )
-                cmds.connectAttr(f"{mult_m}.matrixSum", f"{output}.offsetParentMatrix")
+                output = ins.create(loc)
                 cmds.setAttr(f"{output}.drawStyle", 2)
-                self["output"][count].connect()
+                self["output"][count].connect(loc)
 
                 # output joint
                 if self["create_output_joint"]["value"]:

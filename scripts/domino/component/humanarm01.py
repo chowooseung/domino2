@@ -2095,13 +2095,7 @@ class Rig(component.Rig):
         )
         clavicle_output = ins.create()
         cmds.setAttr(f"{clavicle_output}.drawStyle", 2)
-        self["output"][c].connect()
-        mult_m = cmds.createNode("multMatrix")
-        cmds.connectAttr(f"{clavicle_bone_ctl}.worldMatrix[0]", f"{mult_m}.matrixIn[0]")
-        cmds.connectAttr(
-            f"{self.rig_root}.worldInverseMatrix[0]", f"{mult_m}.matrixIn[1]"
-        )
-        cmds.connectAttr(f"{mult_m}.matrixSum", f"{clavicle_output}.offsetParentMatrix")
+        self["output"][c].connect(clavicle_bone_ctl)
 
         c += 1
         ins = Joint(
@@ -2115,15 +2109,7 @@ class Rig(component.Rig):
         )
         shoulder_output = ins.create()
         cmds.setAttr(f"{shoulder_output}.drawStyle", 2)
-        self["output"][c].connect()
-        mult_m = cmds.createNode("multMatrix")
-        cmds.connectAttr(
-            f"{upper_ribbon_outputs[0]}.worldMatrix[0]", f"{mult_m}.matrixIn[0]"
-        )
-        cmds.connectAttr(
-            f"{self.rig_root}.worldInverseMatrix[0]", f"{mult_m}.matrixIn[1]"
-        )
-        cmds.connectAttr(f"{mult_m}.matrixSum", f"{shoulder_output}.offsetParentMatrix")
+        self["output"][c].connect(upper_ribbon_outputs[0])
 
         upper_twist_outputs = []
         for i in range(self["twist_joint_count"]["value"]):
@@ -2140,17 +2126,7 @@ class Rig(component.Rig):
             twist_output = ins.create()
             upper_twist_outputs.append(twist_output)
             cmds.setAttr(f"{twist_output}.drawStyle", 2)
-            self["output"][c].connect()
-            mult_m = cmds.createNode("multMatrix")
-            cmds.connectAttr(
-                f"{upper_ribbon_outputs[i + 1]}.worldMatrix[0]", f"{mult_m}.matrixIn[0]"
-            )
-            cmds.connectAttr(
-                f"{self.rig_root}.worldInverseMatrix[0]", f"{mult_m}.matrixIn[1]"
-            )
-            cmds.connectAttr(
-                f"{mult_m}.matrixSum", f"{twist_output}.offsetParentMatrix"
-            )
+            self["output"][c].connect(upper_ribbon_outputs[i + 1])
 
         c += 1
         ins = Joint(
@@ -2164,15 +2140,7 @@ class Rig(component.Rig):
         )
         elbow_output = ins.create()
         cmds.setAttr(f"{elbow_output}.drawStyle", 2)
-        self["output"][c].connect()
-        mult_m = cmds.createNode("multMatrix")
-        cmds.connectAttr(
-            f"{lower_ribbon_outputs[0]}.worldMatrix[0]", f"{mult_m}.matrixIn[0]"
-        )
-        cmds.connectAttr(
-            f"{self.rig_root}.worldInverseMatrix[0]", f"{mult_m}.matrixIn[1]"
-        )
-        cmds.connectAttr(f"{mult_m}.matrixSum", f"{elbow_output}.offsetParentMatrix")
+        self["output"][c].connect(lower_ribbon_outputs[0])
 
         lower_twist_outputs = []
         for i in range(self["twist_joint_count"]["value"]):
@@ -2189,17 +2157,7 @@ class Rig(component.Rig):
             twist_output = ins.create()
             lower_twist_outputs.append(twist_output)
             cmds.setAttr(f"{twist_output}.drawStyle", 2)
-            self["output"][c].connect()
-            mult_m = cmds.createNode("multMatrix")
-            cmds.connectAttr(
-                f"{lower_ribbon_outputs[i + 1]}.worldMatrix[0]", f"{mult_m}.matrixIn[0]"
-            )
-            cmds.connectAttr(
-                f"{self.rig_root}.worldInverseMatrix[0]", f"{mult_m}.matrixIn[1]"
-            )
-            cmds.connectAttr(
-                f"{mult_m}.matrixSum", f"{twist_output}.offsetParentMatrix"
-            )
+            self["output"][c].connect(lower_ribbon_outputs[i + 1])
 
         c += 1
         ins = Joint(
@@ -2213,13 +2171,7 @@ class Rig(component.Rig):
         )
         wrist_output = ins.create()
         cmds.setAttr(f"{wrist_output}.drawStyle", 2)
-        self["output"][c].connect()
-        mult_m = cmds.createNode("multMatrix")
-        cmds.connectAttr(f"{wrist_loc}.worldMatrix[0]", f"{mult_m}.matrixIn[0]")
-        cmds.connectAttr(
-            f"{self.rig_root}.worldInverseMatrix[0]", f"{mult_m}.matrixIn[1]"
-        )
-        cmds.connectAttr(f"{mult_m}.matrixSum", f"{wrist_output}.offsetParentMatrix")
+        self["output"][c].connect(wrist_loc)
 
         c += 1
         ins = Joint(
@@ -2233,15 +2185,7 @@ class Rig(component.Rig):
         )
         scapular_output = ins.create()
         cmds.setAttr(f"{scapular_output}.drawStyle", 2)
-        self["output"][c].connect()
-        mult_m = cmds.createNode("multMatrix")
-        cmds.connectAttr(
-            f"{scapular_negate_inverse}.worldMatrix[0]", f"{mult_m}.matrixIn[0]"
-        )
-        cmds.connectAttr(
-            f"{self.rig_root}.worldInverseMatrix[0]", f"{mult_m}.matrixIn[1]"
-        )
-        cmds.connectAttr(f"{mult_m}.matrixSum", f"{scapular_output}.offsetParentMatrix")
+        self["output"][c].connect(scapular_negate_inverse)
 
         # output joint
         if self["create_output_joint"]["value"]:

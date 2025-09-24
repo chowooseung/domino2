@@ -125,13 +125,7 @@ class Rig(component.Rig):
             m=ORIGINMATRIX,
         )
         output = ins.create()
-        mult_m = cmds.createNode("multMatrix")
-        cmds.connectAttr(f"{loc}.worldMatrix[0]", f"{mult_m}.matrixIn[0]")
-        cmds.connectAttr(
-            f"{self.rig_root}.worldInverseMatrix[0]", f"{mult_m}.matrixIn[1]"
-        )
-        cmds.connectAttr(f"{mult_m}.matrixSum", f"{output}.offsetParentMatrix")
-        self["output"][0].connect()
+        self["output"][0].connect(loc)
         cmds.setAttr(f"{output}.drawStyle", 2)
 
         # output joint

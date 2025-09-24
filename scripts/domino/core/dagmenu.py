@@ -658,17 +658,10 @@ def skel_menu(parent_menu):
     )
     cmds.menuItem(
         parent=parent_menu,
-        label="Disconnect From Controller",
-        radialPosition="E",
-        command=disconnect_command,
-        image="resetSettings.svg",
-    )
-    cmds.menuItem(
-        parent=parent_menu,
         label="Bake(Time slider)",
         radialPosition="SE",
         command=bake_command,
-        image="resetSettings.svg",
+        image="bakeAnimation.png",
     )
 
 

@@ -648,12 +648,6 @@ class Rig(component.Rig):
         cmds.connectAttr(f"{host_ctl}.fkik", f"{pair_b}.weight")
         cmds.connectAttr(f"{pair_b}.outTranslate", f"{blend0_jnt}.t")
         cmds.connectAttr(f"{pair_b}.outRotate", f"{blend0_jnt}.r")
-        mult_m = cmds.createNode("multMatrix")
-        cmds.connectAttr(f"{start_roll}.worldMatrix[0]", f"{mult_m}.matrixIn[0]")
-        cmds.connectAttr(
-            f"{self.rig_root}.worldInverseMatrix[0]", f"{mult_m}.matrixIn[1]"
-        )
-        blend0_jnt_input_matrix = f"{mult_m}.matrixSum"
 
         pair_b = cmds.createNode("pairBlend")
         cmds.setAttr(f"{pair_b}.rotInterpolation", 1)
@@ -669,12 +663,6 @@ class Rig(component.Rig):
         cmds.connectAttr(f"{host_ctl}.fkik", f"{pair_b}.weight")
         cmds.connectAttr(f"{pair_b}.outTranslate", f"{blend1_jnt}.t")
         cmds.connectAttr(f"{pair_b}.outRotate", f"{blend1_jnt}.r")
-        mult_m = cmds.createNode("multMatrix")
-        cmds.connectAttr(f"{blend1_jnt}.worldMatrix[0]", f"{mult_m}.matrixIn[0]")
-        cmds.connectAttr(
-            f"{self.rig_root}.worldInverseMatrix[0]", f"{mult_m}.matrixIn[1]"
-        )
-        blend1_jnt_input_matrix = f"{mult_m}.matrixSum"
 
         pair_b = cmds.createNode("pairBlend")
         cmds.setAttr(f"{pair_b}.rotInterpolation", 1)
@@ -695,12 +683,6 @@ class Rig(component.Rig):
         cmds.connectAttr(f"{fk2_ctl}.s", f"{blend_color}.color2")
         cmds.connectAttr(f"{host_ctl}.fkik", f"{blend_color}.blender")
         cmds.connectAttr(f"{blend_color}.output", f"{blend2_jnt}.s")
-        mult_m = cmds.createNode("multMatrix")
-        cmds.connectAttr(f"{blend2_jnt}.worldMatrix[0]", f"{mult_m}.matrixIn[0]")
-        cmds.connectAttr(
-            f"{self.rig_root}.worldInverseMatrix[0]", f"{mult_m}.matrixIn[1]"
-        )
-        blend2_jnt_input_matrix = f"{mult_m}.matrixSum"
 
         # output
         ins = Joint(
@@ -714,8 +696,7 @@ class Rig(component.Rig):
         )
         fkik0_loc = ins.create()
         cmds.setAttr(f"{fkik0_loc}.drawStyle", 2)
-        self["output"][0].connect()
-        cmds.connectAttr(blend0_jnt_input_matrix, f"{fkik0_loc}.offsetParentMatrix")
+        self["output"][0].connect(start_roll)
 
         ins = Joint(
             parent=self.rig_root,
@@ -728,8 +709,7 @@ class Rig(component.Rig):
         )
         fkik1_loc = ins.create()
         cmds.setAttr(f"{fkik1_loc}.drawStyle", 2)
-        self["output"][1].connect()
-        cmds.connectAttr(blend1_jnt_input_matrix, f"{fkik1_loc}.offsetParentMatrix")
+        self["output"][1].connect(blend1_jnt)
 
         ins = Joint(
             parent=self.rig_root,
@@ -742,8 +722,7 @@ class Rig(component.Rig):
         )
         fkik2_loc = ins.create()
         cmds.setAttr(f"{fkik2_loc}.drawStyle", 2)
-        self["output"][2].connect()
-        cmds.connectAttr(blend2_jnt_input_matrix, f"{fkik2_loc}.offsetParentMatrix")
+        self["output"][2].connect(blend2_jnt)
 
         # output joint
         if self["create_output_joint"]["value"]:
