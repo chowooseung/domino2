@@ -211,7 +211,7 @@ class Manager(MayaQWidgetDockableMixin, QtWidgets.QDialog):
     ui_script = """from maya import cmds
 command = "from domino.dominomanager import Manager;ui=Manager.get_instance();ui.show(dockable=True)"
 cmds.evalDeferred(command)"""
-    control_name = ui_name + "WorkspaceControl"
+    control_name = f"{ui_name}WorkspaceControl"
 
     # callback
     callback_id = None
@@ -223,8 +223,8 @@ cmds.evalDeferred(command)"""
             cmds.deleteUI(self.control_name, control=True)
 
         super(Manager, self).__init__(parent=parent)
-        self.expand_state = []
         self.setObjectName(self.ui_name)
+        self.expand_state = []
         self.setWindowTitle("Domino Manager")
 
         layout = QtWidgets.QVBoxLayout(self)
@@ -507,7 +507,7 @@ QTreeView::branch:open:has-children  {{
                 return
             module_name = items[0].text()
             try:
-                module = importlib.import_module("domino.component." + module_name)
+                module = importlib.import_module(f"domino.component.{module_name}")
             except ModuleNotFoundError:
                 return
             component = module.Rig()
@@ -742,7 +742,9 @@ QTreeView::branch:open:has-children  {{
             if new_scene:
                 cmds.file(newFile=True, force=True)
                 build({}, rig)
+        orig_path = self.domino_path_line_edit.text()
         self.refresh()
+        self.domino_path_line_edit.setText(orig_path)
 
     def showEvent(self, e):
         cmds.workspaceControl(self.control_name, edit=True, uiScript=self.ui_script)
