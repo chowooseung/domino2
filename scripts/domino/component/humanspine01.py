@@ -866,7 +866,7 @@ class Rig(component.Rig):
             cmds.connectAttr(
                 f"{decom_m}.outputTranslate", f"{compose_m}.inputTranslate"
             )
-            cmds.connectAttr(f"{decom_m}.outputQuat", f"{compose_m}.inputQuat")
+            cmds.connectAttr(f"{decom_m}.outputRotate", f"{compose_m}.inputRotate")
             cmds.connectAttr(f"{decom_m}.outputShear", f"{compose_m}.inputShear")
             for z in range(3):
                 output_s = [".outputScaleX", ".outputScaleY", ".outputScaleZ"]
