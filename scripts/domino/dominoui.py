@@ -61,6 +61,8 @@ class UIGenerator:
         settings_ui = get_settings_ui()
 
         def edit_name():
+            if not cmds.objExists(root):
+                return
 
             new_name = name_line_edit.text()
 
@@ -111,6 +113,9 @@ class UIGenerator:
             settings_ui.refresh()
 
         def edit_side(new_side):
+            if not cmds.objExists(root):
+                return
+
             new_side_str = [center, left, right][new_side]
             if old_side == new_side:
                 logger.warning(f"이전과 같습니다.")
@@ -146,6 +151,9 @@ class UIGenerator:
             settings_ui.refresh()
 
         def edit_index():
+            if not cmds.objExists(root):
+                return
+
             index = index_spin_box.value()
             manager_ui = get_manager_ui()
             rig = manager_ui.rig_tree_model.rig
@@ -175,6 +183,9 @@ class UIGenerator:
             settings_ui.refresh()
 
         def set_parent_output_index():
+            if not cmds.objExists(root):
+                return
+
             manager_ui = get_manager_ui()
             rig = manager_ui.rig_tree_model.rig
 
@@ -214,6 +225,9 @@ class UIGenerator:
             settings_ui.refresh()
 
         def toggle_create_output_joint(state):
+            if not cmds.objExists(root):
+                return
+
             manager_ui = get_manager_ui()
             rig = manager_ui.rig_tree_model.rig
 
@@ -256,6 +270,9 @@ class UIGenerator:
             settings_ui.refresh()
 
         def change_offset_output_rotate(spin_box, attr):
+            if not cmds.objExists(root):
+                return
+
             manager_ui = get_manager_ui()
             cmds.setAttr(f"{root}.{attr}", spin_box.value())
             # manager ui refresh
@@ -363,10 +380,16 @@ class UIGenerator:
     def add_ribbon_settings(cls, parent, attribute):
 
         def change_output_index():
+            if not cmds.objExists(attribute):
+                return
+
             index = combo_box.currentIndex()
             slider.setValue(int(u_values[index] * 100))
 
         def edit_u_value():
+            if not cmds.objExists(attribute):
+                return
+
             index = combo_box.currentIndex()
             value = slider.value()
             cmds.setAttr(f"{attribute}[{index}]", value / 100)
@@ -408,6 +431,9 @@ class UIGenerator:
     def add_line_edit(cls, parent, label, attribute):
 
         def change_attribute() -> None:
+            if not cmds.objExists(attribute):
+                return
+
             text = line_edit.text()
             cmds.setAttr(attribute, text, type="string")
 
@@ -424,6 +450,9 @@ class UIGenerator:
     def add_check_box(cls, parent, label, attribute):
 
         def toggle_attribute():
+            if not cmds.objExists(attribute):
+                return
+
             checked = check_box.isChecked()
             cmds.setAttr(attribute, checked)
 
@@ -444,6 +473,9 @@ class UIGenerator:
     def add_spin_box(cls, parent, label, attribute, slider, min_value, max_value):
 
         def change_attribute():
+            if not cmds.objExists(attribute):
+                return
+
             value = spin_box.value()
             cmds.setAttr(attribute, value)
 
@@ -483,6 +515,9 @@ class UIGenerator:
     def add_combo_box(cls, parent, label, attribute):
 
         def change_index():
+            if not cmds.objExists(attribute):
+                return
+
             value = combo_box.currentIndex()
             cmds.setAttr(attribute, value)
 
@@ -525,7 +560,8 @@ class UIGenerator:
 
 class DynamicWidget(QtWidgets.QWidget):
 
-    def __init__(self, parent=None, root: str = None) -> None:
+    def __init__(self, parent=None, root=None) -> None:
+        # root is guide root
         super(DynamicWidget, self).__init__(parent=parent)
 
         layout = QtWidgets.QVBoxLayout(self)
