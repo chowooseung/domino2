@@ -196,17 +196,9 @@ def check_output_joint():
     attrs = [".rx", ".ry", ".rz", ".sx", ".sy", ".sz"]
     result = []
     for joint in output_joints:
-        for attr in attrs:
-            rx, ry, rz = [round(x, 3) for x in cmds.getAttr(joint + ".r")[0]]
-            sx, sy, sz = [round(x, 3) for x in cmds.getAttr(joint + ".s")[0]]
-            if (
-                rx != 0.0
-                or ry != 0.0
-                or rz != 0.0
-                or sx != 1.0
-                or sy != 1.0
-                or sz != 1.0
-            ):
+        for attr, check_value in zip(attrs, [0.0, 0.0, 0.0, 1.0, 1.0, 1.0]):
+            value = round(cmds.getAttr(f"{joint}{attr}"), 3)
+            if value != check_value:
                 result.append(f"{joint}{attr}")
     return (
         SUCCESS if not result else WARNING,
@@ -226,7 +218,7 @@ def check_output_joint_hierarchy():
         [] if len(joints) == 1 and joints[0] == "origin_jnt" else joints,
         "output joints hierarchy error!",
         "skel 하위의 output joint hierarchy 를 검사합니다.",
-        "모든 output joint 는 origin_jnt 를 root 로 만들어 주세요.",
+        "origin_jnt 가 모든 output joint 의 최상위여야 합니다.",
     )
 
 
