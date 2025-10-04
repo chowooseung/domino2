@@ -202,6 +202,7 @@ DATA = [
                 0.0,
                 1.0,
             ],
+            "visibility": True,
             "surface": {
                 "form_u": 0,
                 "form_v": 0,
@@ -252,6 +253,7 @@ DATA = [
                 0.0,
                 1.0,
             ],
+            "visibility": True,
             "surface": {
                 "form_u": 0,
                 "form_v": 0,
@@ -545,6 +547,7 @@ class Rig(component.Rig):
             color=12,
             npo_matrix_index=0,
         )
+        cmds.setAttr(f"{clavicle_ctl}.mirror_type", 2)
         cmds.addAttr(
             clavicle_ctl,
             longName="roll",
@@ -1852,6 +1855,7 @@ class Rig(component.Rig):
             color=12,
             npo_matrix_index=8,
         )
+        cmds.setAttr(f"{scapular_ctl}.mirror_type", 2)
         ins = Transform(
             scapular_ctl,
             name=name,
@@ -2724,9 +2728,24 @@ class Rig(component.Rig):
         )
 
         for i in range(9):
+            decom_m = cmds.createNode("decomposeMatrix")
             cmds.connectAttr(
-                f"{self.guide_graph}.npo_matrix[{i}]",
-                f"{self.guide_root}.npo_matrix[{i}]",
+                f"{self.guide_graph}.npo_matrix[{i}]", f"{decom_m}.inputMatrix"
+            )
+            compose_m = cmds.createNode("composeMatrix")
+            cmds.connectAttr(
+                f"{decom_m}.outputTranslate", f"{compose_m}.inputTranslate"
+            )
+            cmds.connectAttr(f"{decom_m}.outputQuat", f"{compose_m}.inputQuat")
+            cmds.connectAttr(f"{decom_m}.outputShear", f"{compose_m}.inputShear")
+            for z in range(3):
+                output_s = [".outputScaleX", ".outputScaleY", ".outputScaleZ"]
+                input_s = [".inputScaleX", ".inputScaleY", ".inputScaleZ"]
+                round = cmds.createNode("round")
+                cmds.connectAttr(f"{decom_m}{output_s[z]}", f"{round}.input")
+                cmds.connectAttr(f"{round}.output", f"{compose_m}{input_s[z]}")
+            cmds.connectAttr(
+                f"{compose_m}.outputMatrix", f"{self.guide_root}.npo_matrix[{i}]"
             )
         for i in range(6):
             cmds.connectAttr(

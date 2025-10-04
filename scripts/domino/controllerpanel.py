@@ -110,7 +110,8 @@ scale_value = cmds.floatField("controller_scale_float_field", query=True, value=
 cmds.scale(1, 1, scale_value, selected, relative=True)"""
 
 generate_curve_command = """from domino.core import nurbscurve
-nurbscurve.create("{0}", 17)"""
+from maya import cmds
+cmds.select(nurbscurve.create("{0}", 17))"""
 
 
 def ui(*args, **kwargs) -> None:
@@ -241,7 +242,7 @@ def ui(*args, **kwargs) -> None:
                 cmds.symbolButton(
                     width=w,
                     height=height,
-                    image=shapes[i * 6 + x] + "_shape",
+                    image=f"{shapes[i * 6 + x]}_shape",
                     command=generate_curve_command.format(shapes[i * 6 + x]),
                 )
         cmds.setParent(column_layout)

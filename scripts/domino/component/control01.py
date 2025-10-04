@@ -169,10 +169,26 @@ class Rig(component.Rig):
                 mirror_type=self["guide_mirror_type"]["value"][i],
             )
 
+            decom_m = cmds.createNode("decomposeMatrix")
             cmds.connectAttr(
-                f"{self.guide_graph}.npo_matrix[{i}]",
-                f"{self.guide_root}.npo_matrix[{i}]",
+                f"{self.guide_graph}.npo_matrix[{i}]", f"{decom_m}.inputMatrix"
             )
+            compose_m = cmds.createNode("composeMatrix")
+            cmds.connectAttr(
+                f"{decom_m}.outputTranslate", f"{compose_m}.inputTranslate"
+            )
+            cmds.connectAttr(f"{decom_m}.outputQuat", f"{compose_m}.inputQuat")
+            cmds.connectAttr(f"{decom_m}.outputShear", f"{compose_m}.inputShear")
+            for z in range(3):
+                output_s = [".outputScaleX", ".outputScaleY", ".outputScaleZ"]
+                input_s = [".inputScaleX", ".inputScaleY", ".inputScaleZ"]
+                round = cmds.createNode("round")
+                cmds.connectAttr(f"{decom_m}{output_s[z]}", f"{round}.input")
+                cmds.connectAttr(f"{round}.output", f"{compose_m}{input_s[z]}")
+            cmds.connectAttr(
+                f"{compose_m}.outputMatrix", f"{self.guide_root}.npo_matrix[{i}]"
+            )
+
             cmds.connectAttr(
                 f"{self.guide_graph}.initialize_output_matrix[{i}]",
                 f"{self.guide_root}.initialize_output_matrix[{i}]",

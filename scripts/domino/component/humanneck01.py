@@ -176,6 +176,7 @@ DATA = [
                 -2.7755575615628914e-16,
                 1.0,
             ],
+            "visibility": True,
             "surface": {
                 "form_u": 0,
                 "form_v": 0,
@@ -881,9 +882,24 @@ class Rig(component.Rig):
             c += 1
 
         for i in range(6):
+            decom_m = cmds.createNode("decomposeMatrix")
             cmds.connectAttr(
-                f"{self.guide_graph}.npo_matrix[{i}]",
-                f"{self.guide_root}.npo_matrix[{i}]",
+                f"{self.guide_graph}.npo_matrix[{i}]", f"{decom_m}.inputMatrix"
+            )
+            compose_m = cmds.createNode("composeMatrix")
+            cmds.connectAttr(
+                f"{decom_m}.outputTranslate", f"{compose_m}.inputTranslate"
+            )
+            cmds.connectAttr(f"{decom_m}.outputQuat", f"{compose_m}.inputQuat")
+            cmds.connectAttr(f"{decom_m}.outputShear", f"{compose_m}.inputShear")
+            for z in range(3):
+                output_s = [".outputScaleX", ".outputScaleY", ".outputScaleZ"]
+                input_s = [".inputScaleX", ".inputScaleY", ".inputScaleZ"]
+                round = cmds.createNode("round")
+                cmds.connectAttr(f"{decom_m}{output_s[z]}", f"{round}.input")
+                cmds.connectAttr(f"{round}.output", f"{compose_m}{input_s[z]}")
+            cmds.connectAttr(
+                f"{compose_m}.outputMatrix", f"{self.guide_root}.npo_matrix[{i}]"
             )
 
         for i in range(self["output_count"]["value"]):

@@ -896,6 +896,7 @@ class Curve:
             "curve_name": n,
             "curve_matrix": cmds.xform(n, query=True, matrix=True, worldSpace=True),
             "shapes": {},
+            "visibility": cmds.getAttr(f"{n}.v"),
         }
 
         for shape in cmds.listRelatives(n, shapes=True, fullPath=True) or []:
@@ -912,6 +913,7 @@ class Curve:
                 "color_rgb": cmds.getAttr(f"{shape}.overrideColorRGB")[0],
                 "color_index": cmds.getAttr(f"{shape}.overrideColor"),
                 "always_draw_on_top": cmds.getAttr(f"{shape}.alwaysDrawOnTop"),
+                "visibility": cmds.getAttr(f"{shape}.v"),
             }
         self._node = n
 
@@ -922,6 +924,7 @@ class Curve:
             str: new node
         """
         transform = cmds.createNode("transform", name=self._data["curve_name"])
+        cmds.setAttr(f"{transform}.v", self._data["visibility"])
 
         for data in self._data["shapes"].values():
             shape_transform = cmds.curve(
@@ -937,6 +940,7 @@ class Curve:
             cmds.setAttr(f"{shape}.overrideColorRGB", *data["color_rgb"])
             cmds.setAttr(f"{shape}.overrideColor", data["color_index"])
             cmds.setAttr(f"{shape}.alwaysDrawOnTop", data["always_draw_on_top"])
+            cmds.setAttr(f"{shape}.v", data["visibility"])
             shape = cmds.rename(shape, f"{transform.split('|')[-1]}Shape")
             cmds.parent(shape, transform, relative=True, shape=True)
             cmds.delete(shape_transform)
@@ -1010,6 +1014,7 @@ class Surface:
             "parent_name": parent[0] if parent else "",
             "surface_name": n,
             "surface_matrix": cmds.xform(n, query=True, matrix=True, worldSpace=True),
+            "visibility": cmds.getAttr(f"{n}.v"),
         }
         shape = cmds.listRelatives(n, shapes=True, fullPath=True)[0]
         fn_surface = self.get_fn_surface(shape)
@@ -1039,6 +1044,7 @@ class Surface:
         )
         transform = cmds.listRelatives(shape, parent=True)[0]
         transform = cmds.rename(transform, self._data["surface_name"])
+        cmds.setAttr(f"{transform}.v", self._data["visibility"])
         cmds.xform(transform, matrix=[float(x) for x in self._data["surface_matrix"]])
         if self._data["parent_name"] and cmds.objExists(self._data["parent_name"]):
             transform = cmds.parent(transform, self._data["parent_name"])[0]
@@ -1089,6 +1095,7 @@ class Polygon:
             "parent_name": parent[0] if parent else "",
             "mesh_name": n,
             "mesh_matrix": cmds.xform(n, query=True, matrix=True, worldSpace=True),
+            "visibility": cmds.getAttr(f"{n}.v"),
         }
         shape = cmds.listRelatives(n, shapes=True, fullPath=True)[0]
         fn_mesh = self.get_fn_mesh(shape)
@@ -1126,6 +1133,7 @@ class Polygon:
 
         transform = om.MFnDagNode(fn_mesh.parent(0)).name()
         transform = cmds.rename(transform, self._data["mesh_name"])
+        cmds.setAttr(f"{transform}.v", self._data["visibility"])
         cmds.xform(transform, matrix=[float(x) for x in self._data["mesh_matrix"]])
         if self._data["parent_name"] and cmds.objExists(self._data["parent_name"]):
             transform = cmds.parent(transform, self._data["parent_name"])[0]
