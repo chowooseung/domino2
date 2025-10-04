@@ -1,6 +1,5 @@
 # maya
 from maya import cmds
-from maya.app.general.mayaMixin import MayaQWidgetDockableMixin
 
 # built-ins
 import json
@@ -498,27 +497,16 @@ def export_sdk(file_path):
         json.dump(data, f, indent=4)
 
 
-class SDKManager(MayaQWidgetDockableMixin, QtWidgets.QDialog):
+class SDKManager(QtWidgets.QDialog):
 
     # 싱글톤 패턴
     _instance = None
 
     ui_name = "domino_sdk_ui"
-    control_name = f"{ui_name}WorkspaceControl"
-
-    ui_script = """from maya import cmds
-command = "from domino.sdkmanager import SDKManager;ui=SDKManager.get_instance();ui.show(dockable=True)"
-cmds.evalDeferred(command)"""
 
     def __init__(self, parent=None):
-        if cmds.workspaceControl(self.control_name, query=True, exists=True):
-            cmds.workspaceControl(self.control_name, edit=True, restore=True)
-            cmds.workspaceControl(self.control_name, edit=True, close=True)
-            cmds.deleteUI(self.control_name, control=True)
-
+        super(SDKManager, self).__init__(parent=parent)
         self.current_driver = None
-
-        super(SDKManager, self).__init__(parent)
         self.setObjectName(self.ui_name)
         self.setWindowTitle("SDK Manager")
         self.setWindowFlags(
@@ -944,10 +932,3 @@ cmds.evalDeferred(command)"""
         if cls._instance is None:
             cls._instance = cls()
         return cls._instance
-
-    def showEvent(self, e):
-        cmds.workspaceControl(self.control_name, edit=True, uiScript=self.ui_script)
-        super(SDKManager, self).showEvent(e)
-
-    def hideEvent(self, e):
-        super(SDKManager, self).hideEvent(e)
