@@ -699,6 +699,9 @@ li {
         for check_list in self._check_list:
             check_list.set_state(INITIALIZE)
 
+        for t in self._targets:
+            t.result = []
+
         self.timer.start(20)
 
     def clear_layout(self):
