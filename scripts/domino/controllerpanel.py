@@ -55,8 +55,11 @@ from domino.core import nurbscurve
 selected = cmds.ls(selection=True)
 left_str = cmds.textField("domino_left_mirror_string", query=True, text=True)
 right_str = cmds.textField("domino_right_mirror_string", query=True, text=True)
+mirrored_shapes = []
 for sel in selected:
-    nurbscurve.mirror_shape(sel, left_str, right_str)"""
+    mirrored_shapes.append(nurbscurve.mirror_shape(sel, left_str, right_str))
+if mirrored_shapes:
+    cmds.select(mirrored_shapes)"""
 
 color_command = """from maya import cmds
 
@@ -151,7 +154,7 @@ def ui(*args, **kwargs) -> None:
     cmds.setParent(column_layout)
 
     w = width / 6 - 2
-    indexes = [13, 20, 17, 21, 6, 29]
+    indexes = [13, 20, 17, 26, 6, 18]
     annotations = [
         "Right Fk",
         "Right IK",

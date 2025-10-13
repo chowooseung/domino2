@@ -67,19 +67,33 @@ def mirror_shape(node, left_str="_L", right_str="_R"):
     cmds.delete(cmds.listRelatives(destination, shapes=True) or [])
     delete_list = []
     for shape in shapes:
+        override_display = cmds.getAttr(f"{shape}.overrideEnabled")
+        override_rgb = cmds.getAttr(f"{shape}.overrideRGBColors")
+        override_index = cmds.getAttr(f"{shape}.overrideColor")
         dup_curve = cmds.duplicateCurve(shape, constructionHistory=False)[0]
-        cmds.scale(-1, 1, 1, dup_curve + ".cv[*]", relative=True)
-        shapes = cmds.parent(
+        cmds.matchTransform(dup_curve, source)
+        temp_grp = cmds.createNode("transform", name="tempGrp")
+        cmds.parent(dup_curve, temp_grp)
+        cmds.setAttr(f"{temp_grp}.sx", -1)
+        cmds.parent(dup_curve, destination)
+        cmds.delete(temp_grp)
+        cmds.makeIdentity(
+            dup_curve, apply=True, translate=True, rotate=True, scale=True
+        )
+        shape = cmds.parent(
             cmds.listRelatives(dup_curve, shapes=True),
             destination,
             relative=True,
             shape=True,
-        )
-        for shape in shapes.copy():
-            shape = cmds.rename(shape, destination + "Shape")
-            cmds.setAttr(shape + ".isHistoricallyInteresting", 0)
+        )[0]
+        shape = cmds.rename(shape, f"{destination}Shape")
+        cmds.setAttr(f"{shape}.isHistoricallyInteresting", 0)
+        cmds.setAttr(f"{shape}.overrideEnabled", override_display)
+        cmds.setAttr(f"{shape}.overrideRGBColors", override_rgb)
+        cmds.setAttr(f"{shape}.overrideColor", override_index)
         delete_list.append(dup_curve)
     cmds.delete(delete_list)
+    return destination
 
 
 def create(shape, color, m=ORIGINMATRIX):
