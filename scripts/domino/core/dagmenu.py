@@ -228,29 +228,24 @@ if (
     cmds.connectAttr("space_manager.message", selected + ".space_manager", force=True)
 cmds.select(selected)"""
 
-posemanager_command = """from maya import cmds
-from domino import posemanager
+psdmanager_command = """from domino import psdmanager
 
-selected = cmds.ls(selection=True)[0]
-posemanager.show()
-posemanager.initialize()
-parent = cmds.listRelatives("pose_manager", parent=True)
-if not parent or parent[0] != "origin_sub_ctl":
-    cmds.parent("pose_manager", "origin_sub_ctl")
-if not cmds.objExists(selected + ".pose_manager"):
-    cmds.addAttr(selected, longName="pose_manager", attributeType="message")
-if (
-    cmds.connectionInfo(selected + ".pose_manager", sourceFromDestination=True)
-    != "pose_manager.message"
-):
-    cmds.connectAttr("pose_manager.message", selected + ".pose_manager", force=True)
-cmds.select(selected)"""
+ins = psdmanager.PSDManager.get_instance()
+ins.show()
+ins.refresh()"""
 
-sdkmanager_command = """from maya import cmds
-from domino import sdkmanager
+
+sdkmanager_command = """from domino import sdkmanager
 
 ins = sdkmanager.SDKManager.get_instance()
-ins.show(dockable=True)"""
+ins.show()
+ins.refresh_ui()"""
+
+dynamicmanager_command = """from domino import dynamicmanager
+
+ins = dynamicmanager.DynamicManager.get_instance()
+ins.show()
+ins.refresh()"""
 
 add_data_command = """from maya import cmds
 from maya import OpenMayaUI as omui
@@ -325,8 +320,8 @@ def rig_menu(parent_menu):
     )
     cmds.menuItem(
         parent=parent_menu,
-        label="Show Pose Manager",
-        command=posemanager_command,
+        label="Show PSD Manager",
+        command=psdmanager_command,
         image="yoga.svg",
     )
     cmds.menuItem(
@@ -334,6 +329,12 @@ def rig_menu(parent_menu):
         label="Show SDK Manager",
         command=sdkmanager_command,
         image="sdk.svg",
+    )
+    cmds.menuItem(
+        parent=parent_menu,
+        label="Show Dynamic Manager",
+        command=dynamicmanager_command,
+        image="flag.svg",
     )
     cmds.menuItem(parent=parent_menu, divider=True)
     cmds.menuItem(
@@ -379,7 +380,7 @@ from maya import cmds
 for sel in cmds.ls(selection=True):
     if not cmds.objExists(sel + ".is_domino_controller"):
         continue
-    Controller.reset(node=sel)"""
+    Controller.reset(node=sel, srt={0})"""
 
 reset_child_command = """from domino.core import Controller
 from maya import cmds
@@ -390,7 +391,7 @@ for sel in selected:
         controllers.append(sel)
         controllers.extend(Controller.get_child_controller(sel))
 for con in set(controllers):
-    Controller.reset(node=con)"""
+    Controller.reset(node=con, srt={0})"""
 
 rt_mirror_controller_command = """from maya import cmds
 from domino.core import Controller
@@ -481,9 +482,22 @@ def controller_menu(
         parent=parent_menu,
         label="Reset",
         radialPosition="NE",
-        command=reset_child_command if apply_children_state else reset_command,
+        command=(
+            reset_child_command.format(True)
+            if apply_children_state
+            else reset_command.format(True)
+        ),
         image="refresh.png",
         enableCommandRepeat=True,
+    )
+    cmds.menuItem(
+        parent=parent_menu,
+        optionBox=True,
+        command=(
+            reset_child_command.format(False)
+            if apply_children_state
+            else reset_command.format(False)
+        ),
     )
     if has_fkik_switch:
         cmds.menuItem(

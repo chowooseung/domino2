@@ -615,7 +615,7 @@ class Rig(component.Rig):
             f"{self.rig_root}.ribbon_surface", f"{ribbon_surface}ShapeOrig.create"
         )
         sc = cmds.findDeformers(ribbon_surface)[0]
-        cmds.sets(sc, edit=True, addElement="_deformerWeights_sets")
+        cmds.sets(sc, edit=True, addElement=component.DEFORMER_WEIGHTS_SETS)
 
         cmds.hide(ribbon_grp, ribbon0_jnt, ribbon1_jnt, ribbon2_jnt)
         cmds.skinPercent(
@@ -948,7 +948,7 @@ class Rig(component.Rig):
             f"{self.guide_root}.head_matrix",
         )
 
-        for i in range(4):
+        for i in range(3):
             cmds.connectAttr(
                 f"{self.guide_graph}.driver_matrix[{i}]",
                 f"{self.guide_root}.driver_matrix[{i}]",

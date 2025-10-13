@@ -1,4 +1,6 @@
 # domino
+from domino.psdmanager import PSD_MANAGER, PSD_SETS, export_psd, import_psd
+from domino.sdkmanager import SDK_MANAGER, SDK_SETS, export_sdk, import_sdk
 from domino.core import (
     Name,
     Transform,
@@ -45,11 +47,33 @@ COMPONENTLIST = [
     "humanspine01",
     "humanneck01",
     "humanarm01",
+    "psd01",
 ]
 GUIDE = "guide"
 RIG = "rig"
 SKEL = "skel"
 ORIGINMATRIX = om.MMatrix()
+
+RIG_SETS = "rig_sets"
+MODEL_SETS = "model_sets"
+SKEL_SETS = "skel_sets"
+GEOMETRY_SETS = "geometry_sets"
+CONTROLLER_SETS = "controller_sets"
+BLENDSHAPE_SETS = "blendShape_sets"
+DYNAMIC_SETS = "dynamic_sets"
+DEFORMER_WEIGHTS_SETS = "deformerWeights_sets"
+DEFORMER_ORDER_SETS = "deformerOrder_sets"
+
+BREAK_POINT_RIG = 0
+BREAK_POINT_PRECUSTOMSCRIPTS = 1
+BREAK_POINT_SPACEMANAGER = 2
+BREAK_POINT_BLENDSHAPE = 3
+BREAK_POINT_PSDMANAGER = 4
+BREAK_POINT_SDKMANAGER = 5
+BREAK_POINT_DYNAMICMANAGER = 6
+BREAK_POINT_DEFORMERWEIGHTS = 7
+BREAK_POINT_DEFORMERORDER = 8
+BREAK_POINT_POSTCUSTOMSCRIPTS = 9
 
 
 # region RIG
@@ -158,16 +182,16 @@ class Rig(dict):
             old_parent = cmds.listRelatives(self.rig_root, parent=True) or []
             if cmds.objExists(output_name) and output_name != old_parent[0]:
                 _, source = cmds.listConnections(
-                    self.rig_root + ".parent",
+                    f"{self.rig_root}.parent",
                     source=True,
                     destination=False,
                     connections=True,
                     plugs=True,
                 )
-                if source != self._parent.rig_root + ".children":
+                if source != f"{self._parent.rig_root}.children":
                     cmds.connectAttr(
-                        self._parent.rig_root + ".children",
-                        self.rig_root + ".parent",
+                        f"{self._parent.rig_root}.children",
+                        f"{self.rig_root}.parent",
                         force=True,
                     )
                 cmds.parent(self.rig_root, output_name)
@@ -359,7 +383,7 @@ class Rig(dict):
         @node.setter
         def node(self, n):
             self._node = n
-            self["description"] = cmds.getAttr(self._node + ".description")
+            self["description"] = cmds.getAttr(f"{self._node}.description")
 
             # parent controllers 데이터 구하기.
             self["parent_controllers"] = []
@@ -883,11 +907,7 @@ class Rig(dict):
 
             # connect
             index = len(
-                cmds.listConnections(
-                    f"{SKEL}.initialize_parent_inverse_matrix",
-                    source=True,
-                    destination=False,
-                )
+                cmds.listAttr(f"{SKEL}.initialize_parent_inverse_matrix", multi=True)
                 or []
             )
             cmds.setAttr(f"{output_joint}.skel_index", index)
@@ -964,16 +984,16 @@ class Rig(dict):
             rig = ins.create()
             cmds.addAttr(rig, longName="is_domino_rig", attributeType="bool")
             cmds.addAttr(
-                "rig", longName="custom_curve_data", attributeType="message", multi=True
+                RIG, longName="custom_curve_data", attributeType="message", multi=True
             )
             cmds.addAttr(
-                "rig",
+                RIG,
                 longName="custom_surface_data",
                 attributeType="message",
                 multi=True,
             )
             cmds.addAttr(
-                "rig",
+                RIG,
                 longName="custom_polygon_data",
                 attributeType="message",
                 multi=True,
@@ -981,21 +1001,30 @@ class Rig(dict):
             for attr in attrs:
                 cmds.setAttr(f"{RIG}{attr}", lock=True, keyable=False)
 
-            model_sets = cmds.sets(name="model_sets", empty=True)
-            skel_sets = cmds.sets(name="skel_sets", empty=True)
-            geo_sets = cmds.sets(name="geometry_sets", empty=True)
-            controller_sets = cmds.sets(name="controller_sets", empty=True)
-            deformer_weights_sets = cmds.sets(name="_deformerWeights_sets", empty=True)
-            cmds.setAttr(f"{deformer_weights_sets}.hiddenInOutliner", 1)
+            model_sets = cmds.sets(name=MODEL_SETS, empty=True)
+            skel_sets = cmds.sets(name=SKEL_SETS, empty=True)
+            geo_sets = cmds.sets(name=GEOMETRY_SETS, empty=True)
+            controller_sets = cmds.sets(name=CONTROLLER_SETS, empty=True)
+            blendshape_sets = cmds.sets(name=BLENDSHAPE_SETS, empty=True)
+            sdk_sets = cmds.sets(name=SDK_SETS, empty=True)
+            psd_sets = cmds.sets(name=PSD_SETS, empty=True)
+            dynamic_sets = cmds.sets(name=DYNAMIC_SETS, empty=True)
+            deformer_weights_sets = cmds.sets(name=DEFORMER_WEIGHTS_SETS, empty=True)
+            deformer_order_sets = cmds.sets(name=DEFORMER_ORDER_SETS, empty=True)
             cmds.sets(
                 [
                     model_sets,
                     skel_sets,
                     geo_sets,
                     controller_sets,
+                    blendshape_sets,
+                    sdk_sets,
+                    psd_sets,
+                    dynamic_sets,
                     deformer_weights_sets,
+                    deformer_order_sets,
                 ],
-                name="rig_sets",
+                name=RIG_SETS,
             )
         if not cmds.objExists(SKEL):
             ins = Transform(parent=RIG, name="", side="", index="", extension=SKEL)
@@ -1151,7 +1180,8 @@ class Rig(dict):
             return
 
         # rename
-        for node in cmds.ls(type="transform"):
+        # geometryFilter 는 전체 deformer
+        for node in cmds.ls(type="transform") + cmds.ls(type="geometryFilter"):
             name_list = node.split("_")
             if len(name_list) < 2:
                 continue
@@ -1487,33 +1517,8 @@ def build(context, component, attach_guide=False):
         cmds.undoInfo(openChunk=True)
         start_time = time.perf_counter()
 
-        # import modeling
-        if "modeling" in component:
-            if Path(component["modeling"]).exists():
-                cmds.file(newFile=True, force=True)
-                cmds.file(component["modeling"], i=True, namespace=":")
-
-        if component["run_import_dummy"]:
-            dummy_path = Path(component["dummy_path"]["value"])
-            for path in [
-                p
-                for p in dummy_path.iterdir()
-                if str(p).endswith(".mb") or str(p).endswith(".ma")
-            ]:
-                cmds.file(path, i=True, namespace=":")
-                logger.info(f"Imported Dummy {path}")
-
-        for script_path in component["pre_custom_scripts"]["value"]:
-            if not script_path:
-                continue
-            name = Path(script_path).name.split(".")[0]
-            spec = importlib.util.spec_from_file_location(name, script_path)
-            module = importlib.util.module_from_spec(spec)
-            spec.loader.exec_module(module)
-            sys.modules[name] = module
-
-            logger.info(f"Run {name} {script_path}")
-            module.run(context=context)
+        if "break_point" not in component:
+            component["break_point"] = BREAK_POINT_POSTCUSTOMSCRIPTS
 
         # rig build
         stack = [component]
@@ -1535,27 +1540,33 @@ def build(context, component, attach_guide=False):
             for i, data in enumerate(component["custom_curve_data"]):
                 ins = Curve(data=data)
                 crv = ins.create_from_data()
-                cmds.connectAttr(f"{crv}.message", f"rig.custom_curve_data[{i}]")
+                cmds.connectAttr(f"{crv}.message", f"{RIG}.custom_curve_data[{i}]")
         if "custom_surface_data" in component:
             for i, data in enumerate(component["custom_surface_data"]):
                 ins = Surface(data=data)
                 surface = ins.create_from_data()
-                cmds.connectAttr(f"{surface}.message", f"rig.custom_surface_data[{i}]")
+                cmds.connectAttr(
+                    f"{surface}.message", f"{RIG}.custom_surface_data[{i}]"
+                )
         if "custom_polygon_data" in component:
             for i, data in enumerate(component["custom_polygon_data"]):
                 ins = Polygon(data=data)
                 polygon = ins.create_from_data()
-                cmds.connectAttr(f"{polygon}.message", f"rig.custom_polygon_data[{i}]")
+                cmds.connectAttr(
+                    f"{polygon}.message", f"{RIG}.custom_polygon_data[{i}]"
+                )
 
         # setup controller sets
+        all_controllers = [x.split(".")[0] for x in cmds.ls("*.is_domino_controller")]
+        # remove psd controller
         domino_controllers = [
-            x.split(".")[0] for x in cmds.ls("*.is_domino_controller")
+            x for x in all_controllers if not cmds.objExists(f"{x}.is_psd_controller")
         ]
-        cmds.sets(domino_controllers, add="controller_sets")
+        cmds.sets(domino_controllers, edit=True, addElement=CONTROLLER_SETS)
 
         # setup output joint
         domino_skel = [x.split(".")[0] for x in cmds.ls("*.is_domino_skel")]
-        cmds.sets(domino_skel, add="skel_sets")
+        cmds.sets(domino_skel, edit=True, addElement=SKEL_SETS)
 
         output_joints = []
         color_index = 1
@@ -1590,6 +1601,129 @@ def build(context, component, attach_guide=False):
             stack.extend(c["children"])
         component.setup_skel(output_joints)
 
+        # BREAK POINT RIG
+        if component["break_point"] == BREAK_POINT_RIG:
+            return context
+
+        # pre custom scripts
+        for script_path in component["pre_custom_scripts"]["value"]:
+            if not script_path:
+                continue
+            name = Path(script_path).name.split(".")[0]
+            spec = importlib.util.spec_from_file_location(name, script_path)
+            module = importlib.util.module_from_spec(spec)
+            spec.loader.exec_module(module)
+            sys.modules[name] = module
+
+            logger.info(f"Run {name} {script_path}")
+            module.run(context=context)
+
+        # BREAK POINT PRECUSTOMSCRIPTS
+        if component["break_point"] == BREAK_POINT_PRECUSTOMSCRIPTS:
+            return context
+
+        # TODO SPACEMANAGER
+
+        # BREAK POINT SPACEMANAGER
+        if component["break_point"] == BREAK_POINT_SPACEMANAGER:
+            return context
+
+        # blendshape
+        if component["domino_path"]["value"]:
+            domino_path = component["domino_path"]["value"]
+            metadata_dir = Path(domino_path).parent / (
+                f"{Path(domino_path).name.split('.')[0]}.metadata"
+            )
+            blendshape_dir = metadata_dir / "blendshape"
+            if blendshape_dir.exists():
+                rigkit.import_blendshape(blendshape_dir.as_posix())
+
+            blendshape_sets = cmds.sets(BLENDSHAPE_SETS, query=True) or []
+            for bs in component["blendshape"]:
+                if not cmds.objExists(bs):
+                    logger.warning(
+                        f"{bs} 가 존재하지 않습니다. 설정이 뭔가 바뀌었나요?"
+                    )
+                    continue
+
+                if bs not in blendshape_sets:
+                    cmds.sets(bs, edit=True, addElement=BLENDSHAPE_SETS)
+
+        # BREAK POINT BLENDSHAPE
+        if component["break_point"] == BREAK_POINT_BLENDSHAPE:
+            return context
+
+        # PSD
+        if component["domino_path"]["value"]:
+            domino_path = component["domino_path"]["value"]
+            metadata_dir = Path(domino_path).parent / (
+                f"{Path(domino_path).name.split('.')[0]}.metadata"
+            )
+            psd_dir = metadata_dir / "pose"
+            if psd_dir.exists():
+                import_psd((psd_dir / "poseSpaceDeformation.psd").as_posix())
+                cmds.parent(PSD_MANAGER, RIG)
+
+        # BREAK POINT PSD
+        if component["break_point"] == BREAK_POINT_PSDMANAGER:
+            return context
+
+        # SDK
+        if component["domino_path"]["value"]:
+            domino_path = component["domino_path"]["value"]
+            metadata_dir = Path(domino_path).parent / (
+                f"{Path(domino_path).name.split('.')[0]}.metadata"
+            )
+            sdk_dir = metadata_dir / "sdk"
+            if sdk_dir.exists():
+                import_psd((sdk_dir / "setDriven.sdk").as_posix())
+                cmds.parent(SDK_MANAGER, RIG)
+
+        # BREAK POINT SDK
+        if component["break_point"] == BREAK_POINT_SDKMANAGER:
+            return context
+
+        # TODO DYNAMICMANAGER
+
+        # BREAK POINT DYNAMICMANAGER
+        if component["break_point"] == BREAK_POINT_DYNAMICMANAGER:
+            return context
+
+        # deformer weights
+        if component["domino_path"]["value"]:
+            domino_path = component["domino_path"]["value"]
+            metadata_dir = Path(domino_path).parent / (
+                f"{Path(domino_path).name.split('.')[0]}.metadata"
+            )
+            deformer_weights_dir = metadata_dir / "deformerWeights"
+            if deformer_weights_dir.exists():
+                rigkit.import_weights_from_directory(deformer_weights_dir.as_posix())
+
+            deformers_sets = cmds.sets(DEFORMER_WEIGHTS_SETS, query=True) or []
+            for deformer in component["deformer_weights"]:
+                if not cmds.objExists(deformer):
+                    logger.warning(
+                        f"{deformer} 가 존재하지 않습니다. 설정이 뭔가 바뀌었나요?"
+                    )
+                    continue
+
+                if deformer not in deformers_sets:
+                    cmds.sets(deformer, edit=True, addElement=DEFORMER_WEIGHTS_SETS)
+
+        # BREAK POINT DEFORMERWEIGHTS
+        if component["break_point"] == BREAK_POINT_DEFORMERWEIGHTS:
+            return context
+
+        # deformer order
+        if component["deformer_order"]:
+            for geo, chain in component["deformer_order"].items():
+                rigkit.set_deformer_chain(geo, chain)
+
+        # BREAK POINT DEFORMERORDER
+        if component["break_point"] == BREAK_POINT_DEFORMERORDER:
+            return context
+
+        # post custom scripts
         for script_path in component["post_custom_scripts"]["value"]:
             if not script_path:
                 continue
@@ -1602,6 +1736,9 @@ def build(context, component, attach_guide=False):
             logger.info(f"Run {name} {script_path}")
             module.run(context=context)
 
+    except Exception as e:
+        logger.error(e, exc_info=True)
+    finally:
         execution_time = time.perf_counter() - start_time
         minutes, seconds = divmod(execution_time, 60)
         hours, minutes = divmod(minutes, 60)
@@ -1615,27 +1752,27 @@ def build(context, component, attach_guide=False):
         for i in range(int(len(plugins) / 2)):
             info += f"\n\t{plugins[i * 2]:<20}{plugins[i * 2 + 1]}"
         info += f"\n\nTotal Build Time : {int(hours):01d}h {int(minutes):01d}m {seconds:4f}s"
-        cmds.addAttr("rig", longName="notes", dataType="string")
-        cmds.setAttr("rig.notes", info, type="string")
-        cmds.setAttr("rig.notes", lock=True)
-        cmds.select("rig")
-    finally:
+        cmds.addAttr(RIG, longName="notes", dataType="string")
+        cmds.setAttr(f"{RIG}.notes", info, type="string")
+        cmds.setAttr(f"{RIG}.notes", lock=True)
+        cmds.select(RIG)
+
         cmds.undoInfo(closeChunk=True)
         cmds.ogs(pause=True)
 
-    # rig result logging
-    @build_log(logging.DEBUG)
-    def print_context(*args, **kwargs): ...
+        # rig result logging
+        @build_log(logging.DEBUG)
+        def print_context(*args, **kwargs): ...
 
-    for identifier, value in {
-        k: context[k] for k in context.keys() if not k.startswith("_")
-    }.items():
-        print_context(
-            identifier=identifier,
-            controller=value["controller"],
-            output=value["output"],
-            output_joint=value["output_joint"],
-        )
+        for identifier, value in {
+            k: context[k] for k in context.keys() if not k.startswith("_")
+        }.items():
+            print_context(
+                identifier=identifier,
+                controller=value["controller"],
+                output=value["output"],
+                output_joint=value["output_joint"],
+            )
     return context
 
 
@@ -1761,23 +1898,40 @@ def serialize():
     rig["custom_surface_data"] = []
     rig["custom_polygon_data"] = []
     for n in (
-        cmds.listConnections("rig.custom_curve_data", source=True, destination=False)
+        cmds.listConnections(f"{RIG}.custom_curve_data", source=True, destination=False)
         or []
     ):
         ins = Curve(node=n)
         rig["custom_curve_data"].append(ins.data)
     for n in (
-        cmds.listConnections("rig.custom_surface_data", source=True, destination=False)
+        cmds.listConnections(
+            f"{RIG}.custom_surface_data", source=True, destination=False
+        )
         or []
     ):
         ins = Surface(node=n)
         rig["custom_surface_data"].append(ins.data)
     for n in (
-        cmds.listConnections("rig.custom_polygon_data", source=True, destination=False)
+        cmds.listConnections(
+            f"{RIG}.custom_polygon_data", source=True, destination=False
+        )
         or []
     ):
         ins = Polygon(node=n)
         rig["custom_polygon_data"].append(ins.data)
+
+    if not cmds.objExists(BLENDSHAPE_SETS):
+        rig["blendshape"] = []
+    else:
+        rig["blendshape"] = cmds.sets(BLENDSHAPE_SETS, query=True) or []
+    if not cmds.objExists(DEFORMER_WEIGHTS_SETS):
+        rig["deformer_weights"] = []
+    else:
+        rig["deformer_weights"] = cmds.sets(DEFORMER_WEIGHTS_SETS, query=True) or []
+    rig["deformer_order"] = {}
+    if cmds.objExists(DEFORMER_ORDER_SETS):
+        for geo in cmds.sets(DEFORMER_ORDER_SETS, query=True) or []:
+            rig["deformer_order"][geo] = rigkit.get_deformer_chain(geo)
     return rig
 
 
@@ -1788,7 +1942,7 @@ def deserialize(data, create=True):
     while stack:
         component_data, parent = stack.pop(0)
         module_name = component_data["component"]["value"]
-        module = importlib.import_module("domino.component." + module_name)
+        module = importlib.import_module(f"domino.component.{module_name}")
         component = module.Rig()
 
         for attr in module.DATA:
@@ -1822,6 +1976,10 @@ def deserialize(data, create=True):
     rig["custom_curve_data"] = data["custom_curve_data"]
     rig["custom_surface_data"] = data["custom_surface_data"]
     rig["custom_polygon_data"] = data["custom_polygon_data"]
+    rig["blendshape"] = data["blendshape"]
+    rig["deformer_weights"] = data["deformer_weights"]
+    rig["deformer_order"] = data["deformer_order"]
+    rig["break_point"] = data["break_point"]
 
     if create:
         build({}, component=rig)
@@ -1843,7 +2001,7 @@ def save(file_path, data=None):
     # custom scripts 를 버전 업 된 path 로 수정합니다.
     # 수동으로 모든 파일을 버전업 하지 않게 하기 위함입니다.
     path = Path(file_path)
-    metadata_dir = path.parent / (path.name.split(".")[0] + ".metadata")
+    metadata_dir = path.parent / (f"{path.name.split('.')[0]}.metadata")
     if not metadata_dir.exists():
         metadata_dir.mkdir()
 
@@ -1900,18 +2058,46 @@ def save(file_path, data=None):
         root = data.guide_root
 
     for i, path in enumerate(data["pre_custom_scripts"]["value"]):
-        cmds.setAttr(root + f".pre_custom_scripts[{i}]", path, type="string")
+        cmds.setAttr(f"{root}.pre_custom_scripts[{i}]", path, type="string")
     for i, path in enumerate(data["post_custom_scripts"]["value"]):
-        cmds.setAttr(root + f".post_custom_scripts[{i}]", path, type="string")
+        cmds.setAttr(f"{root}.post_custom_scripts[{i}]", path, type="string")
 
-    # _deformerWeights_sets
-    deformer_weights_dir = metadata_dir / "deformerWeights"
-    if not deformer_weights_dir.exists():
-        deformer_weights_dir.mkdir()
+    # blendshape
+    if data["blendshape"]:
+        blendshape_dir = metadata_dir / "blendshape"
+        if not blendshape_dir.exists():
+            blendshape_dir.mkdir()
 
-    deformers = cmds.sets("_deformerWeights_sets", query=True) or []
-    if deformers:
-        rigkit.export_weights(deformer_weights_dir.as_posix(), deformers)
+        for bs in data["blendshape"]:
+            rigkit.export_blendshape(blendshape_dir.as_posix(), bs)
+
+    # TODO space
+
+    # PSD
+    if cmds.objExists(PSD_MANAGER):
+        pose_dir = metadata_dir / "pose"
+        if not pose_dir.exists():
+            pose_dir.mkdir()
+        export_psd((pose_dir / "poseSpaceDeformation.psd").as_posix())
+
+    # SDK
+    if cmds.objExists(SDK_MANAGER):
+        sdk_dir = metadata_dir / "sdk"
+        if not sdk_dir.exists():
+            sdk_dir.mkdir()
+        export_sdk((sdk_dir / "setDriven.sdk").as_posix())
+
+    # TODO DYNAMIC
+
+    # deformerWeights
+    if data["deformer_weights"]:
+        deformer_weights_dir = metadata_dir / "deformerWeights"
+        if not deformer_weights_dir.exists():
+            deformer_weights_dir.mkdir()
+
+        rigkit.export_weights_to_directory(
+            deformer_weights_dir.as_posix(), data["deformer_weights"]
+        )
 
     with open(file_path, "w") as f:
         json.dump(data, f, indent=2, ensure_ascii=False)
@@ -1920,7 +2106,7 @@ def save(file_path, data=None):
 
 
 @build_log(logging.INFO)
-def load(file_path, create=True):
+def load(file_path, create=True, break_point=BREAK_POINT_POSTCUSTOMSCRIPTS):
     """json 을 리그로 불러옵니다."""
     if not file_path:
         return
@@ -1930,15 +2116,9 @@ def load(file_path, create=True):
 
     logger.info(f"Load filePath: {file_path}")
 
+    data["domino_path"]["value"] = file_path
+    data["break_point"] = break_point
     rig = deserialize(data, create)
-
-    # _deformerWeights_sets
-    metadata_dir = Path(file_path).parent / (
-        Path(file_path).name.split(".")[0] + ".metadata"
-    )
-    deformer_weights_dir = metadata_dir / "deformerWeights"
-    if deformer_weights_dir.exists():
-        rigkit.import_weights(deformer_weights_dir.as_posix())
 
     return rig
 

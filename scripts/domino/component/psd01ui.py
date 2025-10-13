@@ -13,22 +13,24 @@ from domino.dominoui import (
 from maya import cmds
 
 
-class Control01(DynamicWidget):
+class Psd01(DynamicWidget):
 
     def __init__(self, parent=None, root=None):
-        super(Control01, self).__init__(parent=parent, root=root)
+        super(Psd01, self).__init__(parent=parent, root=root)
         UIGenerator.add_common_component_settings(self.parent_widget, root)
 
         manager_ui = get_manager_ui()
         settings_ui = get_settings_ui()
 
         def change_controller_count():
+            if not cmds.objExists(root):
+                return
+
             rig = manager_ui.rig_tree_model.rig
 
             current_component = get_component(rig, name, side_str, index)
             if current_component["children"]:
                 logger.warning("하위 컴포넌트가 존재합니다. 확인해주세요.")
-                manager_ui.refresh()
                 settings_ui.refresh()
                 return
 
@@ -36,7 +38,6 @@ class Control01(DynamicWidget):
             count = controller_count_spin_box.value()
 
             if old_count == count:
-                manager_ui.refresh()
                 settings_ui.refresh()
                 return
 
@@ -61,11 +62,13 @@ class Control01(DynamicWidget):
                         "guide_matrix"
                     ]["value"][:count]
                     current_component["initialize_output_matrix"]["value"] = (
-                        current_component["initialize_output_matrix"]["value"][:count]
+                        current_component["initialize_output_matrix"]["value"][
+                            : int(count * 2)
+                        ]
                     )
                     current_component["initialize_output_inverse_matrix"]["value"] = (
                         current_component["initialize_output_inverse_matrix"]["value"][
-                            :count
+                            : int(count * 2)
                         ]
                     )
                 elif old_count < count:
@@ -73,12 +76,12 @@ class Control01(DynamicWidget):
                         current_component["guide_matrix"]["value"].append(
                             list(ORIGINMATRIX)
                         )
-                        current_component["initialize_output_matrix"]["value"].append(
-                            list(ORIGINMATRIX)
+                        current_component["initialize_output_matrix"]["value"].extend(
+                            [list(ORIGINMATRIX), list(ORIGINMATRIX)]
                         )
                         current_component["initialize_output_inverse_matrix"][
                             "value"
-                        ].append(list(ORIGINMATRIX))
+                        ].extend([list(ORIGINMATRIX), list(ORIGINMATRIX)])
                 current_component["controller_count"]["value"] = count
                 current_component["controller"] = []
                 current_component["output"] = []

@@ -103,9 +103,9 @@ class Assembly(DynamicWidget):
                 return
             file_path = Path(file_path[0])
 
-            _attrs = cmds.listAttr(f"{root}.{_attribute}", multi=True)
+            _attrs = cmds.listAttr(f"{root}.{_attribute}", multi=True) or []
             rig_root = cmds.connectionInfo(
-                f"{root}.{_attribute}[0]", destinationFromSource=True
+                f"{root}.guide_matrix[0]", destinationFromSource=True
             )[0].split(".")[0]
 
             _script_paths = get_script_path(_attrs)
@@ -130,13 +130,13 @@ class Assembly(DynamicWidget):
                 return
             file_path = Path(file_path[0])
 
-            content = """def run(context, *args, **kwargs):\n\t..."""
+            content = """# maya\nfrom maya import cmds\n\n\ndef run(context, *args, **kwargs):\n\t..."""
             with open(file_path, "w") as f:
                 f.write(content)
 
-            _attrs = cmds.listAttr(f"{root}.{_attribute}", multi=True)
+            _attrs = cmds.listAttr(f"{root}.{_attribute}", multi=True) or []
             rig_root = cmds.connectionInfo(
-                f"{root}.{_attribute}[0]", destinationFromSource=True
+                f"{root}.guide_matrix[0]", destinationFromSource=True
             )[0].split(".")[0]
 
             _script_paths = get_script_path(_attrs)
@@ -192,12 +192,13 @@ class Assembly(DynamicWidget):
 
             _attrs = cmds.listAttr(f"{root}.{_attribute}", multi=True)
             rig_root = cmds.connectionInfo(
-                f"{root}.{_attribute}[0]", destinationFromSource=True
+                f"{root}.guide_matrix[0]", destinationFromSource=True
             )[0].split(".")[0]
 
             # clear mult attribute
             for _attr in _attrs:
                 cmds.removeMultiInstance(f"{root}.{_attr}", b=True)
+                cmds.removeMultiInstance(f"{rig_root}.{_attr}", b=True)
             _list_widget.clear()
 
             # add
@@ -239,7 +240,7 @@ class Assembly(DynamicWidget):
 
             _attrs = cmds.listAttr(f"{root}.{_attribute}", multi=True)
             rig_root = cmds.connectionInfo(
-                f"{root}.{_attribute}[0]", destinationFromSource=True
+                f"{root}.guide_matrix[0]", destinationFromSource=True
             )[0].split(".")[0]
 
             # clear mult attribute
@@ -275,7 +276,7 @@ class Assembly(DynamicWidget):
 
             _attrs = cmds.listAttr(f"{root}.{_attribute}", multi=True)
             rig_root = cmds.connectionInfo(
-                f"{root}.{_attribute}[0]", destinationFromSource=True
+                f"{root}.guide_matrix[0]", destinationFromSource=True
             )[0].split(".")[0]
 
             # clear mult attribute
@@ -311,7 +312,7 @@ class Assembly(DynamicWidget):
 
             _attrs = cmds.listAttr(f"{root}.{_attribute}", multi=True)
             rig_root = cmds.connectionInfo(
-                f"{root}.{_attribute}[0]", destinationFromSource=True
+                f"{root}.guide_matrix[0]", destinationFromSource=True
             )[0].split(".")[0]
 
             # clear mult attribute
@@ -329,7 +330,7 @@ class Assembly(DynamicWidget):
         super(Assembly, self).__init__(parent=parent, root=root)
 
         # region -    Assembly / context menu
-        def show_context_menu(pos, _list_widget, _attribute):
+        def show_context_menu(_list_widget, _attribute, pos):
             menu = QtWidgets.QMenu(self)
 
             enable_action = menu.addAction("Enable")

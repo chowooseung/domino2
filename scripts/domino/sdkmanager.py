@@ -9,16 +9,14 @@ from pathlib import Path
 from PySide6 import QtWidgets, QtCore, QtGui
 
 # domino
-from domino.core import anim, left, right
+from domino.core import anim, left, right, nurbscurve, Name
 
-
-SDK_NODE_NAME = "sdk_manager"
 SDK_SETS = "sdk_sets"
-RIG_SETS = "rig_sets"
+SDK_MANAGER = "sdk_manager"
 
 
 def create_sdk_node():
-    sdk_node = cmds.createNode("transform", name=SDK_NODE_NAME)
+    sdk_node = cmds.createNode("transform", name=SDK_MANAGER)
     cmds.addAttr(sdk_node, longName="_data", dataType="string")
 
     data = {"controls": [], "sdk": {}}
@@ -27,7 +25,7 @@ def create_sdk_node():
 
 
 def get_sdk_node():
-    return SDK_NODE_NAME if cmds.objExists(SDK_NODE_NAME) else None
+    return SDK_MANAGER if cmds.objExists(SDK_MANAGER) else None
 
 
 def add_sdk_control(controls):
@@ -42,10 +40,11 @@ def add_sdk_control(controls):
         parent = cmds.listRelatives(control, parent=True)
         parent = parent[0] if parent else None
         m = cmds.xform(control, query=True, matrix=True, worldSpace=True)
-        if cmds.objExists(f"{control}_sdk"):
-            cmds.warning(f"이미 `{control}_sdk` 가 존재합니다.")
+        if cmds.objExists(f"{control}_{Name.sdk_extension}"):
+            cmds.warning(f"이미 `{control}_{Name.sdk_extension}` 가 존재합니다.")
             continue
-        sdk_control = cmds.circle(name=f"{control}_sdk", constructionHistory=False)[0]
+        sdk_control = nurbscurve.create("axis", None)
+        sdk_control = cmds.rename(sdk_control, f"{control}_{Name.sdk_extension}")
         for shape in cmds.listRelatives(sdk_control, shapes=True):
             cmds.setAttr(f"{shape}.overrideEnabled", 1)
             cmds.setAttr(f"{shape}.overrideColor", 14)
@@ -84,11 +83,9 @@ def add_sdk_control(controls):
         cmds.xform(sdk_control, matrix=m, worldSpace=True)
         cmds.parent(control, sdk_control)
         sdk_controls.append(sdk_control)
-    if not cmds.objExists(SDK_SETS):
-        cmds.sets(name=SDK_SETS, empty=True)
-    cmds.sets(sdk_controls, add=SDK_SETS)
-    if cmds.objExists(RIG_SETS):
-        cmds.sets(SDK_SETS, add=RIG_SETS)
+
+    cmds.sets(sdk_controls, edit=True, addElement=SDK_SETS)
+
     data["controls"].extend(sdk_controls)
     cmds.setAttr(f"{sdk_node}._data", json.dumps(data), type="string")
     cmds.select(sdk_controls)
@@ -116,8 +113,6 @@ def remove_sdk_control(controls):
     sdk_sets = set(sdk_controls)
     data["controls"] = [ctl for ctl in data["controls"] if ctl not in sdk_sets]
     cmds.setAttr(f"{sdk_node}._data", json.dumps(data), type="string")
-    if cmds.objExists(SDK_SETS) and not cmds.sets(SDK_SETS, query=True):
-        cmds.delete(SDK_SETS)
     if selected:
         cmds.select([s for s in selected if cmds.objExists(s)])
 
@@ -449,7 +444,9 @@ def import_sdk(file_path):
         data = json.load(f)
 
     create_sdk_node()
-    add_sdk_control([ctl.removesuffix("_sdk") for ctl in data["controls"]])
+    add_sdk_control(
+        [ctl.removesuffix(f"_{Name.sdk_extension}") for ctl in data["controls"]]
+    )
     add_sdk_driver(list(data["sdk"].keys()))
     for driver in data["sdk"].keys():
         add_sdk_driven(driver, data["sdk"][driver]["driven"])
@@ -717,7 +714,9 @@ class SDKManager(QtWidgets.QDialog):
                 return
 
             items = self.control_list_widget.selectedItems()
-            remove_sdk_control([i.text().removesuffix("_sdk") for i in items])
+            remove_sdk_control(
+                [i.text().removesuffix(f"_{Name.sdk_extension}") for i in items]
+            )
 
             self.refresh_ui()
         finally:

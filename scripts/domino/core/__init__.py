@@ -25,6 +25,8 @@ output_extension = "out"
 curve_extension = "crv"
 polygon_extension = "poly"
 ikh_extension = "ikh"
+sdk_extension = "sdk"
+psd_extension = "psd"
 # endregion
 
 
@@ -82,6 +84,8 @@ class Name:
     polygon_extension = polygon_extension
     ikh_extension = ikh_extension
     loc_extension = loc_extension
+    sdk_extension = sdk_extension
+    psd_extension = psd_extension
 
     @classmethod
     def create(
@@ -899,7 +903,9 @@ class Curve:
             "visibility": cmds.getAttr(f"{n}.v"),
         }
 
-        for shape in cmds.listRelatives(n, shapes=True, fullPath=True) or []:
+        for shape in (
+            cmds.listRelatives(n, shapes=True, noIntermediate=True, fullPath=True) or []
+        ):
             fn_curve = self.get_fn_curve(shape)
             self._data["shapes"][shape.split("|")[-1]] = {
                 "form": fn_curve.form,
@@ -1016,7 +1022,9 @@ class Surface:
             "surface_matrix": cmds.xform(n, query=True, matrix=True, worldSpace=True),
             "visibility": cmds.getAttr(f"{n}.v"),
         }
-        shape = cmds.listRelatives(n, shapes=True, fullPath=True)[0]
+        shape = cmds.listRelatives(n, shapes=True, noIntermediate=True, fullPath=True)[
+            0
+        ]
         fn_surface = self.get_fn_surface(shape)
         self._data["surface"] = {
             "form_u": fn_surface.formInU - 1,
@@ -1097,7 +1105,9 @@ class Polygon:
             "mesh_matrix": cmds.xform(n, query=True, matrix=True, worldSpace=True),
             "visibility": cmds.getAttr(f"{n}.v"),
         }
-        shape = cmds.listRelatives(n, shapes=True, fullPath=True)[0]
+        shape = cmds.listRelatives(n, shapes=True, noIntermediate=True, fullPath=True)[
+            0
+        ]
         fn_mesh = self.get_fn_mesh(shape)
         # 꼭짓점 좌표
         vertices = [list(x) for x in fn_mesh.getPoints(space=om.MSpace.kObject)]

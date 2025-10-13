@@ -1751,7 +1751,8 @@ class Rig(component.Rig):
             f"{upper_ribbon_surface}ShapeOrig.create",
         )
         sc = cmds.findDeformers(upper_ribbon_surface)[0]
-        cmds.sets(sc, edit=True, addElement="_deformerWeights_sets")
+        cmds.sets(sc, edit=True, addElement=component.DEFORMER_WEIGHTS_SETS)
+
         cmds.skinPercent(
             sc, f"{upper_ribbon_surface}.cv[*][0]", transformValue=[driver_joints[0], 1]
         )
@@ -1807,7 +1808,7 @@ class Rig(component.Rig):
             f"{lower_ribbon_surface}ShapeOrig.create",
         )
         sc = cmds.findDeformers(lower_ribbon_surface)[0]
-        cmds.sets(sc, edit=True, addElement="_deformerWeights_sets")
+        cmds.sets(sc, edit=True, addElement=component.DEFORMER_WEIGHTS_SETS)
 
         cmds.skinPercent(
             sc, f"{lower_ribbon_surface}.cv[*][0]", transformValue=[driver_joints[3], 1]
@@ -2543,10 +2544,16 @@ class Rig(component.Rig):
         upperline = cmds.curve(point=((0, 0, 0), (0, 0, 0)), degree=1)
         upperline = cmds.rename(upperline, shoulder_guide.replace("guide", "upperLine"))
         upperline = cmds.parent(upperline, self.guide_root)[0]
+        cmds.setAttr(f"{upperline}.t", lock=True)
+        cmds.setAttr(f"{upperline}.r", lock=True)
+        cmds.setAttr(f"{upperline}.s", lock=True)
+        cmds.setAttr(f"{upperline}.template", 1)
         lowerline = cmds.curve(point=((0, 0, 0), (0, 0, 0)), degree=1)
         lowerline = cmds.rename(lowerline, shoulder_guide.replace("guide", "lowerLine"))
         lowerline = cmds.parent(lowerline, self.guide_root)[0]
-        cmds.setAttr(f"{upperline}.template", 1)
+        cmds.setAttr(f"{lowerline}.t", lock=True)
+        cmds.setAttr(f"{lowerline}.r", lock=True)
+        cmds.setAttr(f"{lowerline}.s", lock=True)
         cmds.setAttr(f"{lowerline}.template", 1)
         cmds.connectAttr(f"{decom_m0}.outputTranslate", f"{upperline}.controlPoints[0]")
         cmds.connectAttr(f"{decom_m1}.outputTranslate", f"{upperline}.controlPoints[1]")

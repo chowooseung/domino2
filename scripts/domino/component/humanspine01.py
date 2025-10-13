@@ -476,13 +476,13 @@ class Rig(component.Rig):
         )
 
         ins = Joint(
-            parent=fk0_ctl,
+            parent=fk1_ctl,
             name=name,
             side=side,
             index=index,
             description="ribbonDriver1",
             extension=Name.joint_extension,
-            m=cmds.xform(fk0_ctl, query=True, matrix=True, worldSpace=True),
+            m=cmds.xform(fk1_ctl, query=True, matrix=True, worldSpace=True),
             use_joint_convention=False,
         )
         ribbon1_jnt = ins.create()
@@ -607,7 +607,7 @@ class Rig(component.Rig):
             f"{self.rig_root}.ribbon_surface", f"{ribbon_surface}ShapeOrig.create"
         )
         sc = cmds.findDeformers(ribbon_surface)[0]
-        cmds.sets(sc, edit=True, addElement="_deformerWeights_sets")
+        cmds.sets(sc, edit=True, addElement=component.DEFORMER_WEIGHTS_SETS)
 
         cmds.hide(ribbon_grp, ribbon0_jnt, ribbon1_jnt, ribbon2_jnt, ribbon3_jnt)
         cmds.skinPercent(

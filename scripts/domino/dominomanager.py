@@ -3,11 +3,15 @@ from PySide6 import QtWidgets, QtCore, QtGui
 
 # maya
 from maya import cmds
+from maya import mel
 from maya.api import OpenMaya as om
 from maya.app.general.mayaMixin import MayaQWidgetDockableMixin
 
 # domino
 from domino.component import (
+    RIG,
+    GUIDE,
+    RIG_SETS,
     COMPONENTLIST,
     build,
     serialize,
@@ -15,6 +19,18 @@ from domino.component import (
     load,
     Name,
     SKEL,
+    DEFORMER_WEIGHTS_SETS,
+    BLENDSHAPE_SETS,
+    BREAK_POINT_RIG,
+    BREAK_POINT_PRECUSTOMSCRIPTS,
+    BREAK_POINT_BLENDSHAPE,
+    BREAK_POINT_SPACEMANAGER,
+    BREAK_POINT_SDKMANAGER,
+    BREAK_POINT_PSDMANAGER,
+    BREAK_POINT_DYNAMICMANAGER,
+    BREAK_POINT_DEFORMERWEIGHTS,
+    BREAK_POINT_DEFORMERORDER,
+    BREAK_POINT_POSTCUSTOMSCRIPTS,
 )
 from domino.core.utils import logger
 from domino.dominosettings import Settings
@@ -23,6 +39,7 @@ from domino.dominosettings import Settings
 from functools import partial
 from pathlib import Path
 import importlib
+import pprint
 import pickle
 import os
 import re
@@ -240,9 +257,15 @@ cmds.evalDeferred(command)"""
         self.build_new_scene_action.triggered.connect(partial(self.build, True))
         self.print_component_action = QtGui.QAction("Print component")
         self.print_component_action.triggered.connect(self.print_component)
+        self.add_deformer_weights_sets_action = QtGui.QAction(
+            f"Add {DEFORMER_WEIGHTS_SETS}"
+        )
+        self.add_blendshape_sets_action = QtGui.QAction(f"Add {BLENDSHAPE_SETS}")
         self.command_menu.addAction(self.refresh_ui_action)
         self.command_menu.addAction(self.build_new_scene_action)
         self.command_menu.addAction(self.print_component_action)
+        self.command_menu.addAction(self.add_deformer_weights_sets_action)
+        self.command_menu.addAction(self.add_blendshape_sets_action)
 
         self.template_menu = self.menu_bar.addMenu("Templates")
         # endregion
@@ -366,7 +389,6 @@ QTreeView::branch:open:has-children  {{
         self.component_list_widget.doubleClicked.connect(self.add_component)
 
     def refresh(self):
-        self.domino_path_line_edit.clear()
         self.rig_tree_model.serialize()
         self.rig_tree_model.populate_model()
         self.component_list_widget.clear()
@@ -406,10 +428,10 @@ QTreeView::branch:open:has-children  {{
             fileMode=1,
         )
         if file_path:
-            cmds.setAttr("rig.modeling_path", file_path[0], type="string")
+            cmds.setAttr(f"{RIG}.modeling_path", file_path[0], type="string")
             self.modeling_path_line_edit.setText(file_path[0])
         else:
-            cmds.setAttr("rig.modeling_path", "", type="string")
+            cmds.setAttr(f"{RIG}.modeling_path", "", type="string")
             self.modeling_path_line_edit.setText("")
 
     def expand_items(self):
@@ -657,10 +679,10 @@ QTreeView::branch:open:has-children  {{
 
     # region -    Manager / Import, Export
     def save(self):
+        self.rig_tree_model.serialize()
         data = self.rig_tree_model.rig
         if not data:
             return
-        data.sync_from_scene()
 
         # region get file path
         def ensure_version_in_file_path(file_path):
@@ -675,15 +697,17 @@ QTreeView::branch:open:has-children  {{
             return file_path.replace(version, f"v{str(new_version).zfill(fill_count)}")
 
         file_path = self.domino_path_line_edit.text()
+        modifiers = QtWidgets.QApplication.keyboardModifiers()
+
         pattern = r"v\d+"
-        if file_path:
+        if file_path and modifiers == QtCore.Qt.KeyboardModifier.ControlModifier:
             match = re.search(pattern, file_path)
             if not match:
                 file_path = ensure_version_in_file_path(file_path)
             elif match:
                 version = match.group()
                 file_path = increase_version_in_file_path(file_path, version)
-        elif not file_path:
+        else:
             file_path = cmds.fileDialog2(
                 caption="Save Domino Rig",
                 startingDirectory=cmds.workspace(query=True, rootDirectory=True),
@@ -706,32 +730,102 @@ QTreeView::branch:open:has-children  {{
         ui.refresh()
 
     def load(self):
+        mel.eval(
+            """
+global proc DominoLoadOptionsUISetup(string $parent)
+{
+    setParent $parent;
+    $parent = `scrollLayout -childResizable true`;
+
+    columnLayout -adj true;
+
+    string $gDominoRadioCollection = `radioCollection`;
+
+    radioButton -l "Rig" breakpoint_rig;
+    radioButton -l "Pre Scripts" breakpoint_pre_scripts;
+    radioButton -l "BlendShape" breakpoint_blendshape;
+    radioButton -l "SpaceManager" breakpoint_spacemanager;
+    radioButton -l "PSDManager" breakpoint_psdmanager;
+    radioButton -l "SDKManager" breakpoint_sdkmanager;
+    radioButton -l "DynamicManager" breakpoint_dynamicmanager;
+    radioButton -l "DeformerWeights" breakpoint_deformerweights;
+    radioButton -l "DeformerOrder" breakpoint_deformerorder;
+    radioButton -l "Post Scripts" -select breakpoint_post_scripts;
+
+    // 컬렉션 이름을 optionVar에 저장
+    optionVar -sv "dominoBreakPointCollection" $gDominoRadioCollection;
+}
+
+global proc DominoLoadOptionsUICommit(string $parent)
+{
+    // 저장해둔 radioCollection 이름 불러오기
+    string $col = `optionVar -q "dominoBreakPointCollection"`;
+    string $sel = `radioCollection -q -select $col`;
+
+    // 선택된 버튼 이름도 optionVar 로 저장
+    optionVar -sv "dominoBreakPoint" $sel;
+}
+"""
+        )
+
         file_path = cmds.fileDialog2(
             caption="Load Domino Rig",
             startingDirectory=cmds.workspace(query=True, rootDirectory=True),
             fileFilter="Domino Rig (*.domino)",
             fileMode=1,
+            optionsUICreate="DominoLoadOptionsUISetup",
+            optionsUICommit="DominoLoadOptionsUICommit",
+            optionsUITitle="Debug Point Option",
         )
-        if file_path:
-            if cmds.objExists("rig"):
-                cmds.delete("rig")
-            if cmds.objExists("guide"):
-                cmds.delete("guide")
-            if cmds.objExists("rig_sets"):
-                cmds.delete((cmds.sets("rig_sets", query=True) or []) + ["rig_sets"])
 
-            load(file_path[0], create=True)
+        # Commit 후 Python에서 결과 확인
+        if file_path:
+            break_point = cmds.optionVar(q="dominoBreakPoint")
+            if break_point == "breakpoint_rig":
+                break_point = BREAK_POINT_RIG
+            elif break_point == "breakpoint_pre_scripts":
+                break_point = BREAK_POINT_PRECUSTOMSCRIPTS
+            elif break_point == "breakpoint_spacemanager":
+                break_point = BREAK_POINT_SPACEMANAGER
+            elif break_point == "breakpoint_blendshape":
+                break_point = BREAK_POINT_BLENDSHAPE
+            elif break_point == "breakpoint_psdmanager":
+                break_point = BREAK_POINT_PSDMANAGER
+            elif break_point == "breakpoint_sdkmanager":
+                break_point = BREAK_POINT_SDKMANAGER
+            elif break_point == "breakpoint_dynamicmanager":
+                break_point = BREAK_POINT_DYNAMICMANAGER
+            elif break_point == "breakpoint_deformerweights":
+                break_point = BREAK_POINT_DEFORMERWEIGHTS
+            elif break_point == "breakpoint_deformerorder":
+                break_point = BREAK_POINT_DEFORMERORDER
+            elif break_point == "breakpoint_post_scripts":
+                break_point = BREAK_POINT_POSTCUSTOMSCRIPTS
+            if cmds.objExists(RIG):
+                cmds.delete(RIG)
+            if cmds.objExists(GUIDE):
+                cmds.delete(GUIDE)
+            if cmds.objExists(RIG_SETS):
+                cmds.delete((cmds.sets(RIG_SETS, query=True) or []) + [RIG_SETS])
+            tags = cmds.ls(type="controller")
+            if tags:
+                cmds.delete(tags)
+
+            load(file_path[0], create=True, break_point=break_point)
             self.refresh()
             self.domino_path_line_edit.setText(file_path[0])
 
     def load_template(self, file_path, create):
         """file_line_edit 에 path 를 기록하지 않고 load 합니다."""
-        if cmds.objExists("rig"):
-            cmds.delete("rig")
-        if cmds.objExists("guide"):
-            cmds.delete("guide")
-        if cmds.objExists("rig_sets"):
-            cmds.delete((cmds.sets("rig_sets", query=True) or []) + ["rig_sets"])
+        if cmds.objExists(RIG):
+            cmds.delete(GUIDE)
+        if cmds.objExists(GUIDE):
+            cmds.delete(GUIDE)
+        if cmds.objExists(RIG_SETS):
+            cmds.delete((cmds.sets(RIG_SETS, query=True) or []) + [RIG_SETS])
+        tags = cmds.ls(type="controller")
+        if tags:
+            cmds.delete(tags)
         load(file_path, create)
         self.refresh()
 
@@ -778,7 +872,7 @@ QTreeView::branch:open:has-children  {{
             if k == "children":
                 continue
             logger.info(k)
-            logger.info("\t" + str(v))
+            logger.info(pprint.pformat(v))
 
 
 # endregion

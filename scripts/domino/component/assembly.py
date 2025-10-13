@@ -49,20 +49,6 @@ DATA = [
     attribute.String(longName="post_custom_scripts", multi=True),
     attribute.String(longName="post_custom_scripts_str", multi=True),
     attribute.String(longName="domino_path"),
-    attribute.Bool(longName="run_import_modeling", value=1),
-    attribute.String(longName="modeling_path"),
-    attribute.Bool(longName="run_import_dummy", value=1),
-    attribute.String(longName="dummy_path"),
-    attribute.Bool(longName="run_import_blendshape_manager", value=1),
-    attribute.String(longName="blendshape_manager_path"),
-    attribute.Bool(longName="run_import_deformer_weights_manager", value=1),
-    attribute.String(longName="deformer_weights_manager_path"),
-    attribute.Bool(longName="run_import_pose_manager", value=1),
-    attribute.String(longName="pose_manager_path"),
-    attribute.Bool(longName="run_import_sdk_manager", value=1),
-    attribute.String(longName="sdk_manager_path"),
-    attribute.Bool(longName="run_import_space_manager", value=1),
-    attribute.String(longName="space_manager_path"),
 ]
 
 description = """## assembly
