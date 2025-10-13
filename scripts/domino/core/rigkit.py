@@ -10,6 +10,32 @@ from domino.core.utils import logger
 from domino.core import FCurve
 
 
+def connect_blended_joint(source, destination, weight=0.5):
+    parent = cmds.listRelatives(source, parent=True)
+    if parent:
+        parent = parent[0]
+    orig = cmds.createNode(
+        "transform", name=f"blended_{destination}_orig", parent=source
+    )
+    if parent:
+        orig = cmds.parent(orig, parent)[0]
+    else:
+        orig = cmds.parent(orig, worlld=True)[0]
+
+    blend_m = cmds.createNode("blendMatrix")
+    cmds.connectAttr(f"{orig}.worldMatrix[0]", f"{blend_m}.inputMatrix")
+    cmds.connectAttr(f"{source}.worldMatrix[0]", f"{blend_m}.target[0].targetMatrix")
+    cmds.setAttr(f"{blend_m}.target[0].weight", weight)
+
+    mult_m = cmds.createNode("multMatrix")
+    cmds.connectAttr(f"{blend_m}.outputMatrix", f"{mult_m}.matrixIn[0]")
+    cmds.connectAttr(f"{destination}.parentInverseMatrix", f"{mult_m}.matrixIn[1]")
+
+    decom_m = cmds.createNode("decomposeMatrix")
+    cmds.connectAttr(f"{mult_m}.matrixSum", f"{decom_m}.inputMatrix")
+    cmds.connectAttr(f"{decom_m}.outputRotate", f"{destination}.r")
+
+
 # region IK
 def ik_sc():
     pass
