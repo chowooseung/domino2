@@ -571,27 +571,21 @@ cmds.select(
 )"""
 
 bind_command = """from maya import cmds
+from domino.core import rigkit
 
 selected = cmds.ls(selection=True)
-meshes = cmds.ls(selection=True, dagObjects=True, noIntermediate=True, type="mesh")
+geometries = cmds.ls(selection=True, dagObjects=True, noIntermediate=True, type="mesh")
 joints = cmds.ls(selection=True, type="joint")
-for mesh in meshes:
+
+for geometry in geometries:
     scs = [
         x
-        for x in cmds.findDeformers(mesh) or []
+        for x in cmds.findDeformers(geometry) or []
         if cmds.nodeType(x) == "skinCluster"
     ]
-    name = cmds.listRelatives(mesh, parent=True)[0] + str(len(scs)) + "_sc"
-    sc = cmds.skinCluster(
-        joints + [mesh],
-        name=name,
-        maximumInfluences=1,
-        normalizeWeights=True,
-        obeyMaxInfluences=False,
-        weightDistribution=1,
-        multi=True,
-    )[0]
-    cmds.setAttr(sc + ".relativeSpaceMode", 1)
+    parent = cmds.listRelatives(geometry, parent=True)[0]
+    name = parent + str(len(scs)) + "_sc"
+    sc = rigkit.bind_skincluster(parent, joints, name)
 cmds.select(selected)"""
 
 bake_command = """from maya import cmds

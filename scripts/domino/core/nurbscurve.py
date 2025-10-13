@@ -17,8 +17,8 @@ def replace_shape(source, destination):
         return
     shapes = cmds.parent(source_shapes, destination, relative=True, shape=True)
     for shape in shapes:
-        shape = cmds.rename(shape, destination + "Shape")
-        cmds.setAttr(shape + ".isHistoricallyInteresting", 0)
+        shape = cmds.rename(shape, f"{destination}Shape")
+        cmds.setAttr(f"{shape}.isHistoricallyInteresting", 0)
 
 
 def translate_shape(node, t):
@@ -26,7 +26,7 @@ def translate_shape(node, t):
     for shape in shapes:
         cmds.move(
             *t,
-            shape + ".cv[*]",
+            f"{shape}.cv[*]",
             relative=True,
             objectSpace=True,
             worldSpaceDistance=True,
@@ -39,7 +39,7 @@ def rotate_shape(node, r):
     for shape in shapes:
         cmds.rotate(
             *r,
-            shape + ".cv[*]",
+            f"{shape}.cv[*]",
             relative=True,
             pivot=t,
             objectSpace=True,
@@ -51,7 +51,7 @@ def scale_shape(node, s):
     shapes = cmds.listRelatives(node, shapes=True) or []
     t = cmds.xform(node, query=True, translation=True, worldSpace=True)
     for shape in shapes:
-        cmds.scale(*s, shape + ".cv[*]", pivot=t)
+        cmds.scale(*s, f"{shape}.cv[*]", pivot=t)
 
 
 def mirror_shape(node, left_str="_L", right_str="_R"):
@@ -101,15 +101,15 @@ def generate(destination, points, degree, color, close=False):
     cmds.delete(curve)
 
     if color:
-        cmds.setAttr(shape + ".overrideEnabled", True)
+        cmds.setAttr(f"{shape}.overrideEnabled", True)
 
     if isinstance(color, int):
-        cmds.setAttr(shape + ".overrideRGBColors", 0)
-        cmds.setAttr(shape + ".overrideColor", color)
+        cmds.setAttr(f"{shape}.overrideRGBColors", 0)
+        cmds.setAttr(f"{shape}.overrideColor", color)
     elif isinstance(color, om.MColor):
-        cmds.setAttr(shape + ".overrideRGBColors", 1)
-        cmds.setAttr(shape + ".overrideColorRGB", *color)
-    cmds.setAttr(shape + ".isHistoricallyInteresting", 0)
+        cmds.setAttr(f"{shape}.overrideRGBColors", 1)
+        cmds.setAttr(f"{shape}.overrideColorRGB", *color)
+    cmds.setAttr(f"{shape}.isHistoricallyInteresting", 0)
 
 
 def origin(color, m):

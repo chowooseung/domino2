@@ -1459,12 +1459,12 @@ def export_blendshape(directory, bs):
         exportSelected=True,
         options="groups=0;ptgroups=0;materials=0;smoothing=0;normals=0",
     )
-    logger.indo(f"Exported original mesh to `{original_obj_path}`")
+    logger.info(f"Exported original mesh to `{original_obj_path}`")
     cmds.delete(new_transform)
 
     shp_path = directory_path / f"{bs}.shp"
     cmds.blendShape(bs, edit=True, export=shp_path)
-    logger.indo(f"Exported blendShape(.shp) to `{shp_path}`")
+    logger.info(f"Exported blendShape(.shp) to `{shp_path}`")
 
 
 def import_blendshape(directory):
@@ -1588,7 +1588,72 @@ DEFORMER_TYPE_TABLE = {
 }
 
 
-def export_weights(directory, deformers):
+def bind_skincluster(geometry, joints, name=""):
+    sc = cmds.skinCluster(
+        joints + [geometry],
+        maximumInfluences=1,
+        normalizeWeights=True,
+        obeyMaxInfluences=False,
+        weightDistribution=1,
+        multi=True,
+        toSelectedBones=True,
+    )[0]
+    cmds.setAttr(f"{sc}.relativeSpaceMode", 1)
+    if name:
+        sc = cmds.rename(sc, name)
+    return sc
+
+
+def export_weight(path, deformer):
+    directory = Path(path).parent.as_posix()
+    file_name = Path(path).name
+    deformer_type = cmds.nodeType(deformer)
+    if deformer_type not in DEFORMER_TYPE_TABLE:
+        return logger.warning(f"{deformer_type} 을 지원하지 않습니다.")
+    objs = cmds.deformer(deformer, geometry=True, query=True) or []
+    for obj in objs:
+        all_deformer = cmds.deformableShape(obj) or []
+        all_deformer.remove(deformer)
+        skip_objs = objs.copy()
+        skip_objs.remove(obj)
+        flags = {
+            "export": True,
+            "deformer": deformer,
+            "shape": obj,
+            "skip": skip_objs + all_deformer,
+            "format": "JSON",
+            "path": directory,
+            "vertexConnections": True if cmds.nodeType(obj) == "mesh" else False,
+            "weightTolerance": 0.0,
+            "attribute": (
+                DEFORMER_TYPE_TABLE[deformer_type]
+                if deformer_type in DEFORMER_TYPE_TABLE
+                else []
+            ),
+            "defaultValue": 0 if deformer_type == "skinCluster" else 1,
+        }
+        cmds.deformerWeights(file_name, **flags)
+        with open(path, "r") as f:
+            data = json.load(f)
+
+        # weight 수정을 하지않는 경우 제대로 export 되지 않음. 수동으로 추가.
+        if "weights" not in data["deformerWeight"]:
+            data["deformerWeight"]["weights"] = [
+                {
+                    "deformer": deformer,
+                    "source": "baseLayer",
+                    "shape": obj,
+                    "layer": 0,
+                    "defaultValue": 1.0,
+                    "size": 0,
+                    "max": 0,
+                }
+            ]
+        with open(path, "w") as f:
+            json.dump(data, f, indent=2)
+
+
+def export_weights_to_directory(directory, deformers):
     if not Path(directory).exists():
         logger.info(f"{directory} 가 존재하지 않습니다.")
 
@@ -1599,96 +1664,61 @@ def export_weights(directory, deformers):
             continue
         objs = cmds.deformer(deformer, geometry=True, query=True) or []
         for obj in objs:
-            all_deformer = cmds.deformableShape(obj) or []
-            all_deformer.remove(deformer)
-            skip_objs = objs.copy()
-            skip_objs.remove(obj)
-            flags = {
-                "export": True,
-                "deformer": deformer,
-                "shape": obj,
-                "skip": skip_objs + all_deformer,
-                "format": "JSON",
-                "path": directory,
-                "vertexConnections": True if cmds.nodeType(obj) == "mesh" else False,
-                "attribute": (
-                    DEFORMER_TYPE_TABLE[deformer_type]
-                    if deformer_type in DEFORMER_TYPE_TABLE
-                    else []
-                ),
-                "defaultValue": 0 if deformer_type == "skinCluster" else 1,
-            }
             file_name = f"{obj}__{deformer}__{deformer_type}.json"
-            cmds.deformerWeights(file_name, **flags)
-            with open(Path(directory) / file_name, "r") as f:
-                data = json.load(f)
-
-            # weight 수정을 하지않는 경우 제대로 export 되지 않음. 수동으로 추가.
-            if "weights" not in data["deformerWeight"]:
-                data["deformerWeight"]["weights"] = [
-                    {
-                        "deformer": deformer,
-                        "source": "baseLayer",
-                        "shape": obj,
-                        "layer": 0,
-                        "defaultValue": 1.0,
-                        "size": 0,
-                        "max": 0,
-                    }
-                ]
-            with open(Path(directory) / file_name, "w") as f:
-                json.dump(data, f, indent=2)
+            export_weight((Path(directory) / file_name).as_posix(), deformer)
 
 
-def import_weights(directory):
+def import_weight(file_path):
+    directory = Path(file_path).parent
+    file_name = Path(file_path).name
+    with open(file_path, "r") as f:
+        data = json.load(f)
+
+    deformer_name = data["deformerWeight"]["deformers"][0]["name"]
+    deformer_type = data["deformerWeight"]["deformers"][0]["type"]
+    shape_name = data["deformerWeight"]["shapes"][0]["name"]
+
+    flags = {
+        "im": True,
+        "deformer": deformer_name,
+        "format": "JSON",
+        "path": directory,
+        "attribute": DEFORMER_TYPE_TABLE[deformer_type],
+    }
+    # skincluster 의 경우 없으면 생성하는것이 작업하기 편함.
+    try:
+        if deformer_type == "skinCluster" and not cmds.objExists(deformer_name):
+            joints = [d["source"] for d in data["deformerWeight"]["weights"]]
+            deformer_name = bind_skincluster(shape_name, joints, deformer_name)
+            logger.info(f"Create {deformer_name}")
+    except Exception as e:
+        return logger.warning(
+            f"skinCluster 생성 실패: `{deformer_name}` {joints + [shape_name]}"
+        )
+
+    cmds.deformerWeights(file_name, **flags)
+
+    # 이유를 모르겠지만 attribute flag 가 작동하지 않음. 수동으로 적용.
+    for attr in data["deformerWeight"]["deformers"][0]["attributes"]:
+        if "multi" in attr:
+            multi_indexes = attr["multi"].split(" ")
+            value_indexes = attr["value"].split(" ")
+            for m_i, v_i in zip(multi_indexes, value_indexes):
+                cmds.setAttr(f"{deformer_name}.{attr['name']}[{m_i}]", float(v_i))
+        else:
+            cmds.setAttr(f"{deformer_name}.{attr['name']}", float(attr["value"]))
+    logger.info(f"Imported {deformer_name} weights")
+
+
+def import_weights_from_directory(directory):
     path = Path(directory)
     if not path.exists():
         logger.info(f"{directory} 가 존재하지 않습니다.")
 
     for f in path.iterdir():
-        # 파일 이름이 형식에 맞지 않다면 continue
-        try:
-            name, ext = f.name.split(".")
-            obj, deformer_name, deformer_type = name.split("__")
-        except:
+        if f.suffix != ".json":
             continue
-
-        flags = {
-            "im": True,
-            "deformer": deformer_name,
-            "format": "JSON",
-            "path": directory,
-            "attribute": DEFORMER_TYPE_TABLE[deformer_type],
-        }
-        with open(Path(directory) / f.name, "r") as _f:
-            data = json.load(_f)
-
-        # skincluster 의 경우 없으면 생성하는것이 작업하기 편함.
-        if deformer_type == "skinCluster" and not cmds.objExists(deformer_name):
-            joints = [d["source"] for d in data["deformerWeight"]["weights"]]
-            cmds.skinCluster(
-                joints + [obj],
-                name=deformer_name,
-                maximumInfluences=1,
-                normalizeWeights=True,
-                obeyMaxInfluences=False,
-                weightDistribution=1,
-                multi=True,
-            )
-            logger.info(f"Create {deformer_name}")
-
-        cmds.deformerWeights(f.name, **flags)
-
-        # 이유를 모르겠지만 attribute flag 가 작동하지 않음. 수동으로 적용.
-        for attr in data["deformerWeight"]["deformers"][0]["attributes"]:
-            if "multi" in attr:
-                multi_indexes = attr["multi"].split(" ")
-                value_indexes = attr["value"].split(" ")
-                for m_i, v_i in zip(multi_indexes, value_indexes):
-                    cmds.setAttr(f"{deformer_name}.{attr['name']}[{m_i}]", float(v_i))
-            else:
-                cmds.setAttr(f"{deformer_name}.{attr['name']}", float(attr["value"]))
-        logger.info(f"Imported {deformer_name} weights")
+        import_weight(f.as_posix())
 
 
 # endregion
