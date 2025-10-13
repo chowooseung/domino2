@@ -1716,8 +1716,18 @@ def build(context, component, attach_guide=False):
 
         # deformer order
         if component["deformer_order"]:
+            order_sets = cmds.sets(DEFORMER_ORDER_SETS, query=True) or []
             for geo, chain in component["deformer_order"].items():
+                if not cmds.objExists(geo):
+                    logger.warning(
+                        f"{geo} 가 존재하지 않습니다. 설정이 뭔가 바뀌었나요?"
+                    )
+                    continue
+
                 rigkit.set_deformer_chain(geo, chain)
+
+                if geo not in order_sets:
+                    cmds.sets(geo, edit=True, addElement=DEFORMER_ORDER_SETS)
 
         # BREAK POINT DEFORMERORDER
         if component["break_point"] == BREAK_POINT_DEFORMERORDER:
