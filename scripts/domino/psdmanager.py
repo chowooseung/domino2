@@ -26,6 +26,7 @@ R_MIRROR_TOKEN = f"_{right}"
 ## undo 시 maya 가 crash 나는 문제가 있음.
 ## 이것이 maya 의 버그인지 코드의 문제인지 모르겠지만 maya 의 버그일 가능성이 높음.
 ## DG 에서는 문제가 없기 때문.
+## 해결방법을 찾으면 수정한다.
 
 
 def initialize():
@@ -86,14 +87,14 @@ def set_data(data):
 
 def add_intp(driver, controller, description="", swing=True, blendshape=""):
     if not cmds.objExists(driver):
-        return cmds.warning(f"`{driver}` 존재하지 않습니다.")
+        return logger.warning(f"`{driver}` 존재하지 않습니다.")
     if not cmds.objExists(controller):
-        return cmds.warning(f"`{controller}` 존재하지 않습니다.")
+        return logger.warning(f"`{controller}` 존재하지 않습니다.")
     if blendshape and not cmds.objExists(blendshape):
-        return cmds.warning(f"`{blendshape}` 존재하지 않습니다.")
+        return logger.warning(f"`{blendshape}` 존재하지 않습니다.")
     intp_name = "_".join([x for x in [driver, description, "intp"] if x])
     if cmds.objExists(intp_name):
-        return cmds.warning(f"{intp_name} 이미 존재합니다.")
+        return logger.warning(f"{intp_name} 이미 존재합니다.")
 
     initialize()
 
@@ -154,7 +155,7 @@ def add_intp(driver, controller, description="", swing=True, blendshape=""):
 
 def add_pose(intp_name, pose):
     if not cmds.objExists(intp_name):
-        return cmds.warning(f"`{intp_name}` 존재하지 않습니다.")
+        return logger.warning(f"`{intp_name}` 존재하지 않습니다.")
     interpolator = cmds.listRelatives(intp_name, shapes=True)[0]
 
     data = get_data()
@@ -162,12 +163,12 @@ def add_pose(intp_name, pose):
     if data[intp_name]["is_blendshape"] and not cmds.objExists(
         data[intp_name]["driven"]
     ):
-        return cmds.warning(f"`{data[intp_name]['driven']}` 존재하지 않습니다.")
+        return logger.warning(f"`{data[intp_name]['driven']}` 존재하지 않습니다.")
 
     if pose in data[intp_name]["pose"] or pose in (
         cmds.poseInterpolator(interpolator, query=True, poseNames=True) or []
     ):
-        return cmds.warning(f"{pose} 이미 존재합니다.")
+        return logger.warning(f"{pose} 이미 존재합니다.")
 
     data[intp_name]["pose"][pose] = {
         "t": cmds.getAttr(f"{data[intp_name]['controller']}.t")[0],
@@ -265,7 +266,7 @@ def add_pose(intp_name, pose):
 
 def add_driven(intp_name, driven):
     if not cmds.objExists(intp_name):
-        return cmds.warning(f"`{intp_name}` 존재하지 않습니다.")
+        return logger.warning(f"`{intp_name}` 존재하지 않습니다.")
     interpolator = cmds.listRelatives(intp_name, shapes=True)[0]
 
     data = get_data()
@@ -274,7 +275,7 @@ def add_driven(intp_name, driven):
     blend_m = f"{driven}_bm"
 
     if driven in data[intp_name]["driven"]:
-        return cmds.warning(f"'{driven}' 이미 존재합니다.")
+        return logger.warning(f"'{driven}' 이미 존재합니다.")
 
     data[intp_name]["driven"].append(driven)
 
@@ -314,13 +315,13 @@ def add_driven(intp_name, driven):
 
 def update_pose(intp_name, pose):
     if not cmds.objExists(intp_name):
-        return cmds.warning(f"`{intp_name}` 존재하지 않습니다.")
+        return logger.warning(f"`{intp_name}` 존재하지 않습니다.")
     interpolator = cmds.listRelatives(intp_name, shapes=True)[0]
 
     data = get_data()
 
     if pose not in data[intp_name]["pose"]:
-        return cmds.warning(f"존재하지 않습니다. '{pose}'")
+        return logger.warning(f"존재하지 않습니다. '{pose}'")
 
     controller = data[intp_name]["controller"]
     data[intp_name]["pose"][pose]["t"] = cmds.getAttr(f"{controller}.t")[0]
@@ -366,7 +367,7 @@ def update_pose(intp_name, pose):
 
 def remove_intp(intp_name):
     if not cmds.objExists(intp_name):
-        return cmds.warning(f"`{intp_name}` 존재하지 않습니다.")
+        return logger.warning(f"`{intp_name}` 존재하지 않습니다.")
 
     data = get_data()
 
@@ -410,16 +411,16 @@ def remove_intp(intp_name):
 
 def remove_pose(intp_name, pose):
     if not cmds.objExists(intp_name):
-        return cmds.warning(f"`{intp_name}` 존재하지 않습니다.")
+        return logger.warning(f"`{intp_name}` 존재하지 않습니다.")
     interpolator = cmds.listRelatives(intp_name, shapes=True)[0]
 
     data = get_data()
 
     if pose not in data[intp_name]["pose"]:
-        return cmds.warning(f"`{pose}` 존재하지 않습니다.")
+        return logger.warning(f"`{pose}` 존재하지 않습니다.")
 
     if pose not in cmds.poseInterpolator(interpolator, query=True, poseNames=True):
-        return cmds.warning(f"`{pose}` 존재하지 않습니다.")
+        return logger.warning(f"`{pose}` 존재하지 않습니다.")
 
     index = cmds.poseInterpolator(interpolator, edit=True, deletePose=pose)
     if data["is_blendshape"]:
@@ -442,7 +443,7 @@ def remove_pose(intp_name, pose):
 
 def remove_driven(intp_name, driven):
     if not cmds.objExists(intp_name):
-        return cmds.warning(f"`{intp_name}` 존재하지 않습니다.")
+        return logger.warning(f"`{intp_name}` 존재하지 않습니다.")
 
     data = get_data()
 
@@ -453,11 +454,11 @@ def remove_driven(intp_name, driven):
     blend_m = f"{driven}_bm"
 
     if not cmds.objExists(blend_m):
-        return cmds.warning(f"Don't exists '{blend_m}'")
+        return logger.warning(f"Don't exists '{blend_m}'")
     if not cmds.objExists(grp):
-        return cmds.warning(f"Don't exists '{grp}'")
+        return logger.warning(f"Don't exists '{grp}'")
     if driven not in data[intp_name]["driven"]:
-        return cmds.warning(f"Don't exists '{driven}' in _data")
+        return logger.warning(f"Don't exists '{driven}' in _data")
 
     parent = cmds.listRelatives(grp, parent=True)
     if parent:
@@ -475,12 +476,12 @@ def remove_driven(intp_name, driven):
 
 def mirror_intp(intp_name):
     if not cmds.objExists(intp_name):
-        return cmds.warning(f"`{intp_name}` 존재하지 않습니다.")
+        return logger.warning(f"`{intp_name}` 존재하지 않습니다.")
 
     data = get_data()
 
     if intp_name not in data:
-        return cmds.warning(f"`{intp_name}` 존재하지 않습니다.")
+        return logger.warning(f"`{intp_name}` 존재하지 않습니다.")
 
     driver = cmds.poseInterpolator(intp_name, query=True, drivers=True)[0]
 
@@ -493,11 +494,11 @@ def mirror_intp(intp_name):
     target_controller = data[intp_name]["controller"].replace(source_side, target_side)
 
     if driver == target_driver:
-        return cmds.warning(f"`{intp_name}` 는 _L, _R 이 맞나요? ")
+        return logger.warning(f"`{intp_name}` 는 _L, _R 이 맞나요? ")
     if not cmds.objExists(target_driver):
-        return cmds.warning(f"`{target_driver}` 존재하지 않습니다.")
+        return logger.warning(f"`{target_driver}` 존재하지 않습니다.")
     if not cmds.objExists(target_controller):
-        return cmds.warning(f"`{target_controller}` 존재하지 않습니다.")
+        return logger.warning(f"`{target_controller}` 존재하지 않습니다.")
 
     # target interpolator
     cmds.select(target_driver)
@@ -687,7 +688,7 @@ def mirror_intp(intp_name):
             # add driven
             target_driven = source_driven.replace(source_side, target_side)
             if not cmds.objExists(target_driven):
-                cmds.warning(f"'{target_driven}' 존재하지 않습니다.")
+                logger.warning(f"'{target_driven}' 존재하지 않습니다.")
                 continue
 
             # add blendMatrix
@@ -750,7 +751,7 @@ def mirror_intp(intp_name):
 
 def go_to_pose(intp_name, pose):
     if not cmds.objExists(intp_name):
-        return cmds.warning(f"`{intp_name}` 존재하지 않습니다.")
+        return logger.warning(f"`{intp_name}` 존재하지 않습니다.")
 
     data = get_data()
 
@@ -760,7 +761,7 @@ def go_to_pose(intp_name, pose):
         return
 
     if pose not in data[intp_name]["pose"]:
-        return cmds.warning(f"'{pose}' 존재하지 않습니다.")
+        return logger.warning(f"'{pose}' 존재하지 않습니다.")
 
     cmds.setAttr(
         f"{data[intp_name]['controller']}.t", *data[intp_name]["pose"][pose]["t"]
@@ -773,13 +774,13 @@ def go_to_pose(intp_name, pose):
 def import_psd(file_path):
     path = Path(file_path)
     if not path.exists():
-        return cmds.warning(f"{file_path} 존재하지 않습니다.")
+        return logger.warning(f"{file_path} 존재하지 않습니다.")
 
     with open(file_path, "r") as f:
         data = json.load(f)
 
     if cmds.objExists(PSD_MANAGER):
-        return cmds.warning(f"{PSD_MANAGER} 이미 존재합니다.")
+        return logger.warning(f"{PSD_MANAGER} 이미 존재합니다.")
 
     for intp_name, intp_data in data.items():
         # interpolator setup
@@ -876,13 +877,13 @@ def import_psd(file_path):
 
 def export_psd(file_path):
     if not cmds.objExists(PSD_MANAGER):
-        return cmds.warning(f"{PSD_MANAGER} 존재하지 않습니다.")
+        return logger.warning(f"{PSD_MANAGER} 존재하지 않습니다.")
 
     data = get_data()
 
     path = Path(file_path)
     if not path.parent.exists():
-        return cmds.warning(f"{path.parent} 존재하지 않습니다.")
+        return logger.warning(f"{path.parent} 존재하지 않습니다.")
 
     with open(file_path, "w") as f:
         json.dump(data, f, indent=2)
@@ -1101,7 +1102,7 @@ class PSDManager(QtWidgets.QDialog):
     def add_interpolator(self):
         selected = cmds.ls(selection=True)
         if len(selected) < 2:
-            return cmds.warning("Driver, Controller 를 선택해주세요.")
+            return logger.warning("Driver, Controller 를 선택해주세요.")
 
         driver, controller = selected
 
@@ -1198,7 +1199,7 @@ class PSDManager(QtWidgets.QDialog):
         pattern = re.compile(r"^[A-Za-z][A-Za-z0-9]*$")  # 영어 + 숫자
 
         if not bool(pattern.match(description)):
-            return cmds.warning("description 은 영어, 숫자 여야합니다.")
+            return logger.warning("description 은 영어, 숫자 여야합니다.")
 
         is_blendshape = blendshape_radio_btn.isChecked()
         blendshape = blendshape_line_edit.text()
@@ -1291,7 +1292,7 @@ class PSDManager(QtWidgets.QDialog):
         pattern = re.compile(r"^[A-Za-z][A-Za-z0-9]*$")  # 영어 + 숫자
 
         if not bool(pattern.match(pose_name)):
-            return cmds.warning("pose 는 영어, 숫자 여야합니다.")
+            return logger.warning("pose 는 영어, 숫자 여야합니다.")
 
         try:
             cmds.undoInfo(openChunk=True)

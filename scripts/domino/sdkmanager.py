@@ -10,6 +10,7 @@ from PySide6 import QtWidgets, QtCore, QtGui
 
 # domino
 from domino.core import anim, left, right, nurbscurve, Name
+from domino.core.utils import logger
 
 SDK_SETS = "sdk_sets"
 SDK_MANAGER = "sdk_manager"
@@ -41,7 +42,7 @@ def add_sdk_control(controls):
         parent = parent[0] if parent else None
         m = cmds.xform(control, query=True, matrix=True, worldSpace=True)
         if cmds.objExists(f"{control}_{Name.sdk_extension}"):
-            cmds.warning(f"이미 `{control}_{Name.sdk_extension}` 가 존재합니다.")
+            logger.warning(f"이미 `{control}_{Name.sdk_extension}` 가 존재합니다.")
             continue
         sdk_control = nurbscurve.create("axis", None)
         sdk_control = cmds.rename(sdk_control, f"{control}_{Name.sdk_extension}")
@@ -158,13 +159,13 @@ def add_sdk_driver(drivers=None):
         drivers = [d for d in drivers if cmds.objExists(d)]
 
     if not drivers:
-        return cmds.warning(
+        return logger.warning(
             "추가할 driver 가 존재하지 않습니다. channelBox 에서 선택해주세요."
         )
 
     for driver in drivers.copy():
         if driver in data["sdk"].keys():
-            cmds.warning(f"{driver} 이 이미 존재합니다.")
+            logger.warning(f"{driver} 이 이미 존재합니다.")
             drivers.remove(driver)
 
     data["sdk"].update({driver: {"driven": [], "fcurve": []} for driver in drivers})
@@ -181,18 +182,18 @@ def remove_sdk_driver(drivers):
 
     for driver in drivers:
         if driver not in data["sdk"]:
-            return cmds.warning(f"{driver} 가 존재하지 않습니다.")
+            return logger.warning(f"{driver} 가 존재하지 않습니다.")
 
     remove_list = []
     for driver in drivers:
         anim_curves = anim.get_fcurve(driver)
         if not anim_curves:
-            cmds.warning(f"{driver} 에 연결된 fcurve 노드가 없습니다.")
+            logger.warning(f"{driver} 에 연결된 fcurve 노드가 없습니다.")
             continue
         for anim_curve in anim_curves:
             driven = anim.get_driven(anim_curve)
             if not driven:
-                cmds.warning(f"{anim_curve} 연결이 끊긴 fcurve 노드가 있습니다.")
+                logger.warning(f"{anim_curve} 연결이 끊긴 fcurve 노드가 있습니다.")
                 continue
             node, attr = driven.split(".")
             short_name = cmds.attributeQuery(attr, node=node, shortName=True)
@@ -220,7 +221,7 @@ def mirror_sdk_driver(drivers):
 
         _, side, *_ = driver.split("_")
         if not side.startswith(left) and not side.startswith(right):
-            cmds.warning(f"{driver} 는 Mirror 할 수 없습니다.")
+            logger.warning(f"{driver} 는 Mirror 할 수 없습니다.")
             continue
 
         mirror_side = f"_{right}" if side.startswith(left) else f"_{left}"
@@ -354,13 +355,13 @@ def add_sdk_driven(driver, drivens=None):
         drivens = [d for d in drivens if cmds.objExists(d)]
 
     if not drivens:
-        return cmds.warning(
+        return logger.warning(
             "추가할 driven 가 존재하지 않습니다. channelBox 에서 선택해주세요."
         )
 
     for driven in drivens.copy():
         if driven in data["sdk"][driver]["driven"]:
-            cmds.warning(f"{driven} 이 이미 존재합니다.")
+            logger.warning(f"{driven} 이 이미 존재합니다.")
             drivens.remove(driven)
 
     data["sdk"][driver]["driven"].extend(drivens)
@@ -381,13 +382,13 @@ def remove_sdk_driven(driver, drivens):
 
     anim_curves = anim.get_fcurve(driver)
     if not anim_curves:
-        return cmds.warning(f"{driver} 에 연결된 fcurve 노드가 없습니다.")
+        return logger.warning(f"{driver} 에 연결된 fcurve 노드가 없습니다.")
 
     remove_list = []
     for anim_curve in anim_curves:
         driven = anim.get_driven(anim_curve)
         if not driven:
-            cmds.warning(f"{anim_curve} 연결이 끊긴 fcurve 노드가 있습니다.")
+            logger.warning(f"{anim_curve} 연결이 끊긴 fcurve 노드가 있습니다.")
             continue
         node, attr = driven.split(".")
         short_name = cmds.attributeQuery(attr, node=node, shortName=True)
@@ -416,13 +417,13 @@ def optimize(drivers):
 
     for driver in drivers:
         if driver not in data["sdk"]:
-            return cmds.warning(f"{driver} 가 존재하지 않습니다.")
+            return logger.warning(f"{driver} 가 존재하지 않습니다.")
 
     remove_list = []
     for driver in drivers:
         anim_curves = anim.get_fcurve(driver)
         if not anim_curves:
-            cmds.warning(f"{driver} 에 연결된 fcurve 노드가 없습니다.")
+            logger.warning(f"{driver} 에 연결된 fcurve 노드가 없습니다.")
             continue
         for anim_curve in anim_curves:
             if anim.is_static(anim_curve):
@@ -438,7 +439,7 @@ def import_sdk(file_path):
 
     file_path = Path(file_path)
     if not file_path.exists():
-        return cmds.warning(f"경로가 존재하지 않습니다: {file_path}")
+        return logger.warning(f"경로가 존재하지 않습니다: {file_path}")
 
     with open(file_path, "r") as f:
         data = json.load(f)
@@ -463,7 +464,7 @@ def export_sdk(file_path):
 
     file_path = Path(file_path)
     if not file_path.parent.exists():
-        return cmds.warning(f"경로가 존재하지 않습니다: {file_path.parent}")
+        return logger.warning(f"경로가 존재하지 않습니다: {file_path.parent}")
 
     data = json.loads(cmds.getAttr(f"{sdk_node}._data"))
 
@@ -702,6 +703,8 @@ class SDKManager(QtWidgets.QDialog):
             add_sdk_control(selected)
 
             self.refresh_ui()
+        except Exception as e:
+            logger.error(e, exc_info=True)
         finally:
             cmds.undoInfo(closeChunk=True)
 
@@ -719,6 +722,8 @@ class SDKManager(QtWidgets.QDialog):
             )
 
             self.refresh_ui()
+        except Exception as e:
+            logger.error(e, exc_info=True)
         finally:
             cmds.undoInfo(closeChunk=True)
 
@@ -738,6 +743,8 @@ class SDKManager(QtWidgets.QDialog):
                     cmds.setAttr(f"{shape}.v", True)
             if selected:
                 cmds.select(selected)
+        except Exception as e:
+            logger.error(e, exc_info=True)
         finally:
             cmds.undoInfo(closeChunk=True)
 
@@ -757,6 +764,8 @@ class SDKManager(QtWidgets.QDialog):
                     cmds.setAttr(f"{shape}.v", False)
             if selected:
                 cmds.select(selected)
+        except Exception as e:
+            logger.error(e, exc_info=True)
         finally:
             cmds.undoInfo(closeChunk=True)
 
@@ -771,6 +780,8 @@ class SDKManager(QtWidgets.QDialog):
             add_sdk_driver()
 
             self.refresh_ui()
+        except Exception as e:
+            logger.error(e, exc_info=True)
         finally:
             cmds.undoInfo(closeChunk=True)
 
@@ -790,6 +801,8 @@ class SDKManager(QtWidgets.QDialog):
                 self.current_driver = None
 
             self.refresh_ui()
+        except Exception as e:
+            logger.error(e, exc_info=True)
         finally:
             cmds.undoInfo(closeChunk=True)
 
@@ -806,6 +819,8 @@ class SDKManager(QtWidgets.QDialog):
             mirror_sdk_driver(drivers)
 
             self.refresh_ui()
+        except Exception as e:
+            logger.error(e, exc_info=True)
         finally:
             cmds.undoInfo(closeChunk=True)
 
@@ -823,6 +838,8 @@ class SDKManager(QtWidgets.QDialog):
             add_sdk_driven(self.current_driver)
 
             self.refresh_ui()
+        except Exception as e:
+            logger.error(e, exc_info=True)
         finally:
             cmds.undoInfo(closeChunk=True)
 
@@ -842,6 +859,8 @@ class SDKManager(QtWidgets.QDialog):
             remove_sdk_driven(self.current_driver, drivens)
 
             self.refresh_ui()
+        except Exception as e:
+            logger.error(e, exc_info=True)
         finally:
             cmds.undoInfo(closeChunk=True)
 
@@ -863,6 +882,8 @@ class SDKManager(QtWidgets.QDialog):
             set_key(self.current_driver, drivens)
 
             self.refresh_ui()
+        except Exception as e:
+            logger.error(e, exc_info=True)
         finally:
             cmds.undoInfo(closeChunk=True)
 
@@ -875,6 +896,8 @@ class SDKManager(QtWidgets.QDialog):
                 return
 
             self.refresh_ui()
+        except Exception as e:
+            logger.error(e, exc_info=True)
         finally:
             cmds.undoInfo(closeChunk=True)
 
@@ -883,7 +906,7 @@ class SDKManager(QtWidgets.QDialog):
             cmds.undoInfo(openChunk=True)
             sdk_node = get_sdk_node()
             if sdk_node:
-                cmds.warning("이미 SDK 노드가 존재합니다.")
+                logger.warning("이미 SDK 노드가 존재합니다.")
                 self.refresh_ui()
                 return
 
@@ -901,13 +924,15 @@ class SDKManager(QtWidgets.QDialog):
 
             import_sdk(file_path[0])
             self.refresh_ui()
+        except Exception as e:
+            logger.error(e, exc_info=True)
         finally:
             cmds.undoInfo(closeChunk=True)
 
     def export_sdk(self):
         sdk_node = get_sdk_node()
         if not sdk_node:
-            cmds.warning("SDK 노드가 존재하지 않습니다.")
+            logger.warning("SDK 노드가 존재하지 않습니다.")
             self.refresh_ui()
             return
 
