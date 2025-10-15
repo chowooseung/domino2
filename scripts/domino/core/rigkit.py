@@ -1304,13 +1304,13 @@ def spline_ik():
 def transfer_blendshape(source, destination, bs, smooth=0, delta_mush=False):
     check = False
     if not cmds.objExists(source):
-        cmds.warning(f"{source} 가 존재하지 않습니다.")
+        logger.warning(f"{source} 가 존재하지 않습니다.")
         check = True
     if not cmds.objExists(destination):
-        cmds.warning(f"{destination} 가 존재하지 않습니다.")
+        logger.warning(f"{destination} 가 존재하지 않습니다.")
         check = True
     if not cmds.objExists(bs):
-        cmds.warning(f"{bs} 가 존재하지 않습니다.")
+        logger.warning(f"{bs} 가 존재하지 않습니다.")
         check = True
     if check:
         return
@@ -1504,7 +1504,7 @@ def import_blendshape(directory):
         mesh, bs = name.split("__")
         for p in directory_path.glob(f"{bs}.shp"):
             if not cmds.objExists(mesh):
-                cmds.warning(f"{mesh} 가 존재하지 않습니다.")
+                logger.warning(f"{mesh} 가 존재하지 않습니다.")
                 continue
             if not cmds.objExists(bs):
                 cmds.blendShape(mesh, name=bs)
@@ -1760,12 +1760,12 @@ def set_deformer_chain(geometry, chain):
 
     check = False
     if len(chain) != len(new_chain):
-        cmds.warning(f"deformer 가 서로 맞지 않습니다. {chain} {new_chain}")
+        logger.warning(f"deformer 가 서로 맞지 않습니다. {chain} {new_chain}")
         check = True
 
     for deformer in chain:
         if deformer not in new_chain:
-            cmds.warning(f"{deformer} 가 현재 {new_chain} 에 존재하지 않습니다.")
+            logger.warning(f"{deformer} 가 현재 {new_chain} 에 존재하지 않습니다.")
             check = True
 
     if check:
