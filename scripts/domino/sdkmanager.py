@@ -1,5 +1,6 @@
 # maya
 from maya import cmds
+from maya.app.general.mayaMixin import MayaQWidgetDockableMixin
 
 # built-ins
 import json
@@ -21,7 +22,7 @@ def create_sdk_node():
     cmds.addAttr(sdk_node, longName="_data", dataType="string")
 
     data = {"controls": [], "sdk": {}}
-    cmds.setAttr(f"{sdk_node}._data", json.dumps(data), type="string")
+    set_data(data)
     return sdk_node
 
 
@@ -29,12 +30,26 @@ def get_sdk_node():
     return SDK_MANAGER if cmds.objExists(SDK_MANAGER) else None
 
 
+def get_data():
+    return json.loads(cmds.getAttr(f"{SDK_MANAGER}._data"))
+
+
+def set_data(data):
+    try:
+        cmds.undoInfo(stateWithoutFlush=False)
+        cmds.setAttr(f"{SDK_MANAGER}._data", json.dumps(data), type="string")
+    except Exception as e:
+        logger.error(e, exc_info=True)
+    finally:
+        cmds.undoInfo(stateWithoutFlush=True)
+
+
 def add_sdk_control(controls):
     sdk_node = get_sdk_node()
     if sdk_node is None:
         return
 
-    data = json.loads(cmds.getAttr(f"{sdk_node}._data"))
+    data = get_data()
 
     sdk_controls = []
     for control in controls:
@@ -88,7 +103,7 @@ def add_sdk_control(controls):
     cmds.sets(sdk_controls, edit=True, addElement=SDK_SETS)
 
     data["controls"].extend(sdk_controls)
-    cmds.setAttr(f"{sdk_node}._data", json.dumps(data), type="string")
+    set_data(data)
     cmds.select(sdk_controls)
     return sdk_controls
 
@@ -98,7 +113,7 @@ def remove_sdk_control(controls):
     if sdk_node is None:
         return
 
-    data = json.loads(cmds.getAttr(f"{sdk_node}._data"))
+    data = get_data()
 
     selected = cmds.ls(selection=True)
     sdk_controls = []
@@ -113,7 +128,7 @@ def remove_sdk_control(controls):
 
     sdk_sets = set(sdk_controls)
     data["controls"] = [ctl for ctl in data["controls"] if ctl not in sdk_sets]
-    cmds.setAttr(f"{sdk_node}._data", json.dumps(data), type="string")
+    set_data(data)
     if selected:
         cmds.select([s for s in selected if cmds.objExists(s)])
 
@@ -123,7 +138,7 @@ def add_sdk_driver(drivers=None):
     if sdk_node is None:
         return
 
-    data = json.loads(cmds.getAttr(f"{sdk_node}._data"))
+    data = get_data()
 
     if drivers is None:
         drivers = []
@@ -169,8 +184,7 @@ def add_sdk_driver(drivers=None):
             drivers.remove(driver)
 
     data["sdk"].update({driver: {"driven": [], "fcurve": []} for driver in drivers})
-
-    cmds.setAttr(f"{sdk_node}._data", json.dumps(data), type="string")
+    set_data(data)
 
 
 def remove_sdk_driver(drivers):
@@ -178,7 +192,7 @@ def remove_sdk_driver(drivers):
     if sdk_node is None:
         return
 
-    data = json.loads(cmds.getAttr(f"{sdk_node}._data"))
+    data = get_data()
 
     for driver in drivers:
         if driver not in data["sdk"]:
@@ -204,8 +218,7 @@ def remove_sdk_driver(drivers):
     for driver in drivers:
         if driver in data["sdk"]:
             del data["sdk"][driver]
-
-    cmds.setAttr(f"{sdk_node}._data", json.dumps(data), type="string")
+    set_data(data)
 
 
 def mirror_sdk_driver(drivers):
@@ -213,7 +226,7 @@ def mirror_sdk_driver(drivers):
     if sdk_node is None:
         return
 
-    data = json.loads(cmds.getAttr(f"{sdk_node}._data"))
+    data = get_data()
 
     for driver in drivers:
         if len(driver.split("_")) < 2:
@@ -238,7 +251,7 @@ def mirror_sdk_driver(drivers):
             "fcurve": [],
         }
         data["sdk"][mirror_driver] = mirror_data
-        cmds.setAttr(f"{sdk_node}._data", json.dumps(data), type="string")
+        set_data(data)
 
         trs_attrs = ["tx", "ty", "tz", "rx", "ry", "rz", "sx", "sy", "sz"]
         orientation_multiple = [-1, 1, 1, 1, -1, -1, 1, 1, 1]
@@ -319,7 +332,7 @@ def add_sdk_driven(driver, drivens=None):
     if sdk_node is None:
         return
 
-    data = json.loads(cmds.getAttr(f"{sdk_node}._data"))
+    data = get_data()
 
     if drivens is None:
         drivens = []
@@ -365,8 +378,7 @@ def add_sdk_driven(driver, drivens=None):
             drivens.remove(driven)
 
     data["sdk"][driver]["driven"].extend(drivens)
-
-    cmds.setAttr(f"{sdk_node}._data", json.dumps(data), type="string")
+    set_data(data)
 
 
 def remove_sdk_driven(driver, drivens):
@@ -374,7 +386,7 @@ def remove_sdk_driven(driver, drivens):
     if sdk_node is None:
         return
 
-    data = json.loads(cmds.getAttr(f"{sdk_node}._data"))
+    data = get_data()
 
     for driven in data["sdk"][driver]["driven"]:
         if driven not in drivens:
@@ -399,8 +411,7 @@ def remove_sdk_driven(driver, drivens):
 
     driven_set = set(data["sdk"][driver]["driven"])
     data["sdk"][driver]["driven"] = list(driven_set - set(drivens))
-
-    cmds.setAttr(f"{sdk_node}._data", json.dumps(data), type="string")
+    set_data(data)
 
 
 def set_key(driver, drivens):
@@ -413,7 +424,7 @@ def optimize(drivers):
     if sdk_node is None:
         return
 
-    data = json.loads(cmds.getAttr(f"{sdk_node}._data"))
+    data = get_data()
 
     for driver in drivers:
         if driver not in data["sdk"]:
@@ -466,7 +477,7 @@ def export_sdk(file_path):
     if not file_path.parent.exists():
         return logger.warning(f"경로가 존재하지 않습니다: {file_path.parent}")
 
-    data = json.loads(cmds.getAttr(f"{sdk_node}._data"))
+    data = get_data()
 
     for driver in data["sdk"].keys():
         anim_curves = anim.get_fcurve(driver)
@@ -495,7 +506,7 @@ def export_sdk(file_path):
         json.dump(data, f, indent=4)
 
 
-class SDKManager(QtWidgets.QDialog):
+class SDKManager(MayaQWidgetDockableMixin, QtWidgets.QDialog):
 
     # 싱글톤 패턴
     _instance = None
@@ -663,7 +674,7 @@ class SDKManager(QtWidgets.QDialog):
             self.current_driver = None
             return
 
-        data = json.loads(cmds.getAttr(f"{sdk_node}._data"))
+        data = get_data()
 
         for control in data["controls"]:
             item = QtWidgets.QListWidgetItem(control)
@@ -736,7 +747,7 @@ class SDKManager(QtWidgets.QDialog):
                 return
             selected = cmds.ls(selection=True)
 
-            data = json.loads(cmds.getAttr(f"{sdk_node}._data"))
+            data = get_data()
 
             for control in data["controls"]:
                 for shape in cmds.listRelatives(control, shapes=True) or []:
@@ -757,7 +768,7 @@ class SDKManager(QtWidgets.QDialog):
                 return
             selected = cmds.ls(selection=True)
 
-            data = json.loads(cmds.getAttr(f"{sdk_node}._data"))
+            data = get_data()
 
             for control in data["controls"]:
                 for shape in cmds.listRelatives(control, shapes=True) or []:

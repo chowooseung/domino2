@@ -778,7 +778,6 @@ global proc DominoLoadOptionsUICommit(string $parent)
             optionsUITitle="Debug Point Option",
         )
 
-        # Commit 후 Python에서 결과 확인
         if file_path:
             break_point = cmds.optionVar(q="dominoBreakPoint")
             if break_point == "breakpoint_rig":

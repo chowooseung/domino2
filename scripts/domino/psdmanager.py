@@ -2,6 +2,7 @@
 from maya import cmds
 from maya import mel
 from maya.api import OpenMaya as om
+from maya.app.general.mayaMixin import MayaQWidgetDockableMixin
 
 # Qt
 from PySide6 import QtWidgets, QtCore, QtGui
@@ -33,7 +34,7 @@ def initialize():
     if not cmds.objExists(PSD_MANAGER):
         cmds.createNode("transform", name=PSD_MANAGER)
         cmds.addAttr(PSD_MANAGER, longName="_data", dataType="string")
-        cmds.setAttr(f"{PSD_MANAGER}._data", json.dumps({}), type="string")
+        set_data({})
 
 
 def get_data():
@@ -82,7 +83,13 @@ def get_data():
 
 
 def set_data(data):
-    cmds.setAttr(f"{PSD_MANAGER}._data", json.dumps(data), type="string")
+    try:
+        cmds.undoInfo(stateWithoutFlush=False)
+        cmds.setAttr(f"{PSD_MANAGER}._data", json.dumps(data), type="string")
+    except Exception as e:
+        logger.error(e, exc_info=True)
+    finally:
+        cmds.undoInfo(stateWithoutFlush=True)
 
 
 def add_intp(driver, controller, description="", swing=True, blendshape=""):
@@ -889,7 +896,7 @@ def export_psd(file_path):
         json.dump(data, f, indent=2)
 
 
-class PSDManager(QtWidgets.QDialog):
+class PSDManager(MayaQWidgetDockableMixin, QtWidgets.QDialog):
 
     # 싱글톤 패턴
     _instance = None
