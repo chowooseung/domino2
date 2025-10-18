@@ -210,23 +210,11 @@ ins.stacked_widget.slide_to_index(0)
 ins.validate()
 """
 
-spacemanager_command = """from maya import cmds
-from domino import spacemanager
+spacemanager_command = """from domino import spacemanager
 
-selected = cmds.ls(selection=True)[0]
-spacemanager.show()
-spacemanager.initialize()
-parent = cmds.listRelatives("space_manager", parent=True)
-if not parent or parent[0] != "origin_sub_ctl":
-    cmds.parent("space_manager", "origin_sub_ctl")
-if not cmds.objExists(selected + ".space_manager"):
-    cmds.addAttr(selected, longName="space_manager", attributeType="message")
-if (
-    cmds.connectionInfo(selected + ".space_manager", sourceFromDestination=True)
-    != "space_manager.message"
-):
-    cmds.connectAttr("space_manager.message", selected + ".space_manager", force=True)
-cmds.select(selected)"""
+ins = spacemanager.SpaceManager.get_instance()
+ins.show()
+ins.refresh()"""
 
 psdmanager_command = """from domino import psdmanager
 
@@ -239,7 +227,7 @@ sdkmanager_command = """from domino import sdkmanager
 
 ins = sdkmanager.SDKManager.get_instance()
 ins.show()
-ins.refresh_ui()"""
+ins.refresh()"""
 
 dynamicmanager_command = """from domino import dynamicmanager
 

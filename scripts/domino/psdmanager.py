@@ -1382,9 +1382,11 @@ class PSDManager(MayaQWidgetDockableMixin, QtWidgets.QDialog):
 
     def import_psd(self):
         file_path = cmds.fileDialog2(
-            caption="Load PSD(Pose Space Deformation)",
+            caption="Import PSD(Pose Space Deformation)",
             startingDirectory=cmds.workspace(query=True, rootDirectory=True),
-            fileFilter="PSD (*.psd)",
+            fileFilter="Domino PSD Files (*.psd)",
+            okCaption="Import",
+            cancelCaption="Cancel",
             fileMode=1,
         )
         if file_path:
@@ -1399,9 +1401,11 @@ class PSDManager(MayaQWidgetDockableMixin, QtWidgets.QDialog):
 
     def export_psd(self):
         file_path = cmds.fileDialog2(
-            caption="Save PSD(Pose Space Deformation)",
+            caption="Export PSD(Pose Space Deformation)",
             startingDirectory=cmds.workspace(query=True, rootDirectory=True),
-            fileFilter="PSD (*.psd)",
+            fileFilter="Domino PSD Files (*.psd)",
+            okCaption="Export",
+            cancelCaption="Cancel",
             fileMode=0,
         )
         if not file_path:

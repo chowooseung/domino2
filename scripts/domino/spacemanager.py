@@ -1,410 +1,488 @@
 # maya
 from maya import cmds
+from maya.app.general.mayaMixin import MayaQWidgetDockableMixin
+
+# Qt
+from PySide6 import QtWidgets, QtCore, QtGui
 
 # built-ins
-import json
 from functools import partial
+from pathlib import Path
+import json
+
+# domino
+from domino.core import left, right
+from domino.core.utils import logger
+
+SPACE_MANAGER = "space_manager"
+L_MIRROR_TOKEN = f"_{left}"
+R_MIRROR_TOKEN = f"_{right}"
 
 
-ERROR = -11111
+CONS_FUNC = [
+    cmds.pointConstraint,
+    cmds.orientConstraint,
+    cmds.parentConstraint,
+    cmds.scaleConstraint,
+]
 
 
-root_node_name = "space_manager"
+def initialize():
+    if not cmds.objExists(SPACE_MANAGER):
+        cmds.createNode("transform", name=SPACE_MANAGER)
+        cmds.addAttr(SPACE_MANAGER, longName="_data", dataType="string")
+        set_data([])
 
 
-def initialize() -> None:
-    selected = cmds.ls(selection=True)
-    if not cmds.objExists(root_node_name):
-        cmds.createNode("transform", name=root_node_name)
-    if not cmds.objExists(root_node_name + "._data"):
-        cmds.addAttr(root_node_name, longName="_data", dataType="string")
-        cmds.setAttr(root_node_name + "._data", json.dumps({}), type="string")
-    if selected:
-        cmds.select(selected)
+def get_data():
+    return json.loads(cmds.getAttr(f"{SPACE_MANAGER}._data"))
 
 
-def get_data() -> dict:
-    if not cmds.objExists(root_node_name):
-        return ERROR
-
-    return json.loads(cmds.getAttr(root_node_name + "._data"))
-
-
-def set_data(data) -> None:
-    if cmds.objExists(root_node_name):
-        cmds.setAttr(root_node_name + "._data", json.dumps(data), type="string")
+def set_data(data):
+    try:
+        cmds.undoInfo(stateWithoutFlush=False)
+        cmds.setAttr(f"{SPACE_MANAGER}._data", json.dumps(data), type="string")
+    except Exception as e:
+        logger.error(e, exc_info=True)
+    finally:
+        cmds.undoInfo(stateWithoutFlush=True)
 
 
-def add_attr(target: str, attr_name: str, constraint_type: str = "parent") -> None:
-    data = get_data()
-    if target not in data:
-        data[target] = {}
+def mirror(
+    sources,
+    destination,
+    host,
+):
+    mirrored_sources = []
+    for src in sources:
+        if L_MIRROR_TOKEN in src:
+            mirrored_sources.append(src.replace(L_MIRROR_TOKEN, R_MIRROR_TOKEN))
+        elif R_MIRROR_TOKEN in src:
+            mirrored_sources.append(src.replace(R_MIRROR_TOKEN, L_MIRROR_TOKEN))
+        else:
+            mirrored_sources.append(src)
 
-    if attr_name not in data[target]:
-        data[target][attr_name] = {
-            "source": [],
-            "enum_name": [],
-            "constraint": constraint_type,
-        }
+    mirrored_destination = destination
+    if L_MIRROR_TOKEN in destination:
+        mirrored_destination = destination.replace(L_MIRROR_TOKEN, R_MIRROR_TOKEN)
+    elif R_MIRROR_TOKEN in destination:
+        mirrored_destination = destination.replace(R_MIRROR_TOKEN, L_MIRROR_TOKEN)
 
-    set_data(data)
+    mirrored_host = host
+    if L_MIRROR_TOKEN in host:
+        mirrored_host = host.replace(L_MIRROR_TOKEN, R_MIRROR_TOKEN)
+    elif R_MIRROR_TOKEN in host:
+        mirrored_host = host.replace(R_MIRROR_TOKEN, L_MIRROR_TOKEN)
 
-
-def add_source(target: str, attr_name: str, source: str, enum_name: str) -> None:
-    data = get_data()
-    if target not in data:
-        return ERROR
-    if attr_name not in data[target]:
-        return ERROR
-
-    data[target][attr_name]["source"].append(source)
-    data[target][attr_name]["enum_name"].append(enum_name)
-
-    set_data(data)
-
-
-def delete_attr(target: str, attr_name: str) -> None:
-    data = get_data()
-    if target in data:
-        if attr_name in data[target]:
-            del data[target][attr_name]
-
-    set_data(data)
-
-
-def delete_source(target: str, attr_name: str, source: str, enum_name: str) -> None:
-    data = get_data()
-    if target in data:
-        if attr_name in data[target]:
-            if (
-                source in data[target][attr_name]["source"]
-                and enum_name in data[target][attr_name]["enum_name"]
-            ):
-                data[target][attr_name]["source"].remove(source)
-                data[target][attr_name]["enum_name"].remove(enum_name)
-
-    set_data(data)
-
-
-def build(*args: tuple) -> None:
-    cmds.undoInfo(openChunk=True)
-    data = get_data()
-
-    constraint_table = {
-        "parent": cmds.parentConstraint,
-        "point": cmds.pointConstraint,
-        "orient": cmds.orientConstraint,
-    }
-
-    for target in data:
-        m = cmds.xform(target, query=True, matrix=True, worldSpace=True)
-        for attr_name in data[target]:
-            parent_name = target + "_" + attr_name + "_spaceGrp"
-            if not cmds.objExists(parent_name):
-                cmds.createNode(
-                    "transform",
-                    parent=root_node_name,
-                    name=parent_name,
-                )
-
-            source_nodes = []
-            for source, enum_name in zip(
-                data[target][attr_name]["source"], data[target][attr_name]["enum_name"]
-            ):
-                source_node_name = (
-                    target + "_" + attr_name + "_" + source + "_" + enum_name
-                )
-                cmds.createNode("transform", name=source_node_name, parent=parent_name)
-                cmds.connectAttr(
-                    source + ".worldMatrix[0]",
-                    source_node_name + ".offsetParentMatrix",
-                )
-                cmds.xform(source_node_name, matrix=m, worldSpace=True)
-                source_nodes.append(source_node_name)
-
-            constraint_func = constraint_table[data[target][attr_name]["constraint"]]
-            target_parent = cmds.listRelatives(target, parent=True)
-            cons = constraint_func(
-                source_nodes,
-                target_parent[0] if target_parent else target,
-                maintainOffset=True,
-            )[0]
-            enum_name = ["default"] + data[target][attr_name]["enum_name"]
-            if cmds.objExists(target + "." + attr_name):
-                cmds.deleteAttr(target + "." + attr_name)
-            cmds.addAttr(
-                target,
-                longName=attr_name,
-                attributeType="enum",
-                enumName=":".join(enum_name),
-                keyable=True,
-            )
-
-            enum_count = len(data[target][attr_name]["enum_name"])
-            alias_list = constraint_func(cons, query=True, weightAliasList=True)
-            for i in range(enum_count):
-                choice = cmds.createNode("choice")
-                cmds.setAttr(choice + ".input[0]", 0)
-                for _i in range(enum_count):
-                    if i == _i:
-                        cmds.setAttr(choice + ".input[{0}]".format(_i + 1), 1)
-                    else:
-                        cmds.setAttr(choice + ".input[{0}]".format(_i + 1), 0)
-
-                cmds.connectAttr(target + "." + attr_name, choice + ".selector")
-                cmds.connectAttr(choice + ".output", cons + "." + alias_list[i])
-    cmds.undoInfo(closeChunk=True)
-
-
-ID = "space_manager_ui"
-
-
-def show(*args) -> None:
-    if cmds.window(ID, query=True, exists=True):
-        cmds.deleteUI(ID)
-    cmds.workspaceControl(
-        ID,
-        retain=False,
-        floating=True,
-        label="Space Manager UI",
-        uiScript="from domino import spacemanager;spacemanager.ui()",
+    return (
+        mirrored_sources,
+        mirrored_destination,
+        mirrored_host,
     )
 
 
-def insert_row(table_view: str, *args: tuple) -> None:
-    index = cmds.scriptTable(table_view, query=True, selectedRow=True)
-    cmds.scriptTable(table_view, edit=True, insertRow=index + 1)
+def generate():
+    try:
+        cmds.undoInfo(openChunk=True)
+        data = get_data()
+        for (
+            sources,
+            destination,
+            cons_type,
+            attribute_type,
+            attribute_name,
+            enum_name,
+            host,
+        ) in data:
+            check = False
+            if not sources:
+                check = True
+            for src in sources:
+                if not cmds.objExists(src):
+                    logger.warning(f"sources `{src}` 가 없습니다.")
+                    check = True
+            if check:
+                continue
 
+            if not cmds.objExists(destination):
+                logger.warning(f"destination `{destination}` 가 없습니다.")
+                continue
 
-def delete_row(table_view: str, *args: tuple) -> None:
-    cells = cmds.scriptTable(table_view, query=True, selectedCells=True) or []
-    rows = list(set(cells[::2]))
+            if not cmds.objExists(host):
+                logger.warning(f"host `{host}` 가 없습니다.")
+                continue
 
-    count = 0
-    for row in sorted(rows):
-        cmds.scriptTable(table_view, edit=True, deleteRow=row - count)
-        count += 1
-
-
-def push_data(table_view: str, *args: tuple) -> None:
-    cmds.undoInfo(openChunk=True)
-    set_data({})
-    row_count = cmds.scriptTable(table_view, query=True, rows=True)
-    column_count = cmds.scriptTable(table_view, query=True, columns=True)
-    table_data = []
-    for _row in range(1, row_count):
-        data = []
-        for _column in range(1, column_count):
-            cell_value = cmds.scriptTable(
-                table_view,
-                query=True,
-                cellIndex=(_row, _column),
-                cellValue=True,
-            )[0]
-            data.append(cell_value)
-        table_data.append(data)
-
-    current_target = ""
-    current_attribute = ""
-    current_constraint_type = ""
-    for row_data in table_data:
-        if row_data[0]:
-            current_target = row_data[0]
-            current_attribute = row_data[1]
-            current_constraint_type = row_data[2]
-            status = add_attr(
-                current_target, current_attribute, current_constraint_type
-            )
-            if status == ERROR:
-                cmds.warning(
-                    f"add_attr {current_target} {current_attribute} {current_constraint_type}"
-                )
-        else:
-            if current_target and current_attribute and current_constraint_type:
-                status = add_source(
-                    current_target,
-                    current_attribute,
-                    row_data[3],
-                    row_data[4],
-                )
-                if status == ERROR:
-                    cmds.warning(
-                        f"add_source {current_target} {current_attribute} {row_data[3]} {row_data[4]}"
+            if attribute_type == 0:
+                if not attribute_name:
+                    logger.warning(
+                        f"attribute_name `{attribute_name}` 가 유효하지 않습니다."
                     )
-    cmds.undoInfo(closeChunk=True)
+                    continue
+
+                for en in enum_name.split(":"):
+                    if not en:
+                        logger.warning(f"enum name `{en}` 가 유효하지 않습니다.")
+                        continue
+
+                if attribute_name in (cmds.listAttr(host, userDefined=True) or []):
+                    logger.warning(
+                        f"{host}.{attribute_name} 이 이미 존재하기 때문에 삭제 후 생성합니다."
+                    )
+                    cmds.deleteAttr(host, attribute=attribute_name)
+            elif attribute_type == 1:
+                for src in sources:
+                    if src in (cmds.listAttr(host, userDefined=True) or []):
+                        logger.warning(
+                            f"{host}.{src} 이 이미 존재하기 때문에 삭제 후 생성합니다."
+                        )
+                        cmds.deleteAttr(host, attribute=src)
+
+            func = CONS_FUNC[int(cons_type)]
+
+            cons = func(sources, destination, maintainOffset=True)[0]
+            alias_list = func(cons, query=True, weightAliasList=True)
+
+            if attribute_type == 0:  # enum
+                cmds.addAttr(
+                    host,
+                    longName=attribute_name,
+                    attributeType="enum",
+                    enumName=enum_name,
+                    keyable=True,
+                )
+                enum_name_list = enum_name.split(":")
+                for i, en in enumerate(enum_name_list):
+                    choice = cmds.createNode("choice")
+                    for x in range(len(enum_name_list)):
+                        cmds.setAttr(f"{choice}.input[{x}]", True if i == x else False)
+                    cmds.connectAttr(f"{host}.{attribute_name}", f"{choice}.selector")
+                    cmds.connectAttr(f"{choice}.output", f"{cons}.{alias_list[i]}")
+            elif attribute_type == 1:  # float
+                for i, src in enumerate(sources):
+                    cmds.addAttr(
+                        host,
+                        longName=src,
+                        attributeType="float",
+                        keyable=True,
+                        minValue=0,
+                        maxValue=1,
+                    )
+                    cmds.connectAttr(f"{host}.{src}", f"{cons}.{alias_list[i]}")
+    except Exception as e:
+        logger.error(e, exc_info=True)
+    finally:
+        cmds.undoInfo(closeChunk=True)
 
 
-def pull_data(table_view: str, *args: tuple) -> None:
-    # delete All item
-    row_count = cmds.scriptTable(table_view, query=True, rows=True)
-    for _ in range(1, row_count):
-        cmds.scriptTable(table_view, edit=True, deleteRow=1)
+def rollback():
+    try:
+        cmds.undoInfo(openChunk=True)
+        data = get_data()
+        for (
+            sources,
+            destination,
+            cons_type,
+            attribute_type,
+            attribute_name,
+            _,
+            host,
+        ) in data:
+            # constraint
+            func = CONS_FUNC[int(cons_type)]
+            cmds.delete(func(destination, query=True))
 
-    data = get_data()
-    if data == ERROR:
+            # host attribute
+            if attribute_type == 0:
+                if cmds.objExists(f"{host}.{attribute_name}"):
+                    cmds.deleteAttr(host, attribute=attribute_name)
+                    logger.info(f"Rollback `{host}.{attribute_name}`")
+            elif attribute_type == 1:
+                for src in sources:
+                    if src in (cmds.listAttr(host, userDefined=True) or []):
+                        cmds.deleteAttr(host, attribute=src)
+                        logger.info(f"Rollback `{host}.{src}`")
+    except Exception as e:
+        logger.error(e, exc_info=True)
+    finally:
+        cmds.undoInfo(closeChunk=True)
+
+
+def import_space_manager_data(file_path, _generate=True):
+    if not Path(file_path).exists():
         return
 
-    # populate tableView
-    current_row = 1
-    for target in data:
-        cmds.scriptTable(table_view, edit=True, insertRow=current_row)
-        cmds.scriptTable(
-            table_view, edit=True, cellIndex=(current_row, 1), cellValue=target
-        )
-        for attr_name in data[target]:
-            cmds.scriptTable(
-                table_view, edit=True, cellIndex=(current_row, 2), cellValue=attr_name
-            )
-            cmds.scriptTable(
-                table_view,
-                edit=True,
-                cellIndex=(current_row, 3),
-                cellValue=data[target][attr_name]["constraint"],
-            )
-            current_row += 1
-            for source, enum_name in zip(
-                data[target][attr_name]["source"], data[target][attr_name]["enum_name"]
-            ):
-                cmds.scriptTable(table_view, edit=True, insertRow=current_row)
-                cmds.scriptTable(
-                    table_view, edit=True, cellIndex=(current_row, 4), cellValue=source
-                )
-                cmds.scriptTable(
-                    table_view,
-                    edit=True,
-                    cellIndex=(current_row, 5),
-                    cellValue=enum_name,
-                )
-                current_row += 1
-
-
-def save_file(file_path: str, *args: tuple) -> None:
-    data = get_data()
-
-    if not file_path:
-        project_path = cmds.workspace(query=True, rootDirectory=True)
-        file_path = cmds.fileDialog2(
-            fileFilter="*.dsm",
-            dialogStyle=2,
-            fileMode=0,
-            caption="Save .dsm File",
-            startingDirectory=project_path,
-        )
-
-    if isinstance(file_path, list):
-        file_path = file_path[0]
-
-    with open(file_path, "w") as f:
-        json.dump(data, f, indent=2)
-
-
-def load_file(file_path: str, table_view: str, *args: tuple) -> None:
-    if not file_path:
-        project_path = cmds.workspace(query=True, rootDirectory=True)
-        file_path = cmds.fileDialog2(
-            fileFilter="*.dsm",
-            dialogStyle=2,
-            fileMode=1,
-            caption="Load .dsm File",
-            startingDirectory=project_path,
-        )
-
-    if isinstance(file_path, list):
-        file_path = file_path[0]
+    if cmds.objExists(SPACE_MANAGER):
+        rollback()
 
     with open(file_path, "r") as f:
         data = json.load(f)
 
-    if cmds.objExists(root_node_name):
-        cmds.delete(root_node_name)
-
     initialize()
     set_data(data)
-    if table_view:
-        pull_data(table_view=table_view)
+    if _generate:
+        generate()
 
 
-def ui(*args, **kwargs) -> None:
+def export_space_manager_data(file_path):
+    if not Path(file_path).parent.exists():
+        return
 
-    def edit_cell(row: int, column: int, value: str) -> int:
-        return 1
+    data = get_data()
+    with open(file_path, "w") as f:
+        json.dump(data, f, indent=2)
 
-    # create widget
-    menu_layout = cmds.menuBarLayout(parent=ID)
-    layout = cmds.formLayout(parent=ID)
-    table_view = cmds.scriptTable(
-        "sm_script_table",
-        parent=layout,
-        multiEditEnabled=True,
-        cellChangedCmd=edit_cell,
-        columns=5,
-        label=[
-            (1, "Target"),
-            (2, "Attribute Name"),
-            (3, "Constraint Type"),
-            (4, "Source"),
-            (5, "Enum Name"),
-        ],
-        useDoubleClickEdit=True,
-    )
-    row_count = cmds.scriptTable(table_view, query=True, rows=True)
-    for _ in range(1, row_count):
-        cmds.scriptTable(table_view, edit=True, deleteRow=1)
 
-    insert_row_btn = cmds.button(
-        "sm_insert_row_btn",
-        parent=layout,
-        label="insert row",
-        command=partial(insert_row, table_view),
-    )
-    delete_row_btn = cmds.button(
-        "sm_delete_row_btn",
-        parent=layout,
-        label="delete row",
-        command=partial(delete_row, table_view),
-    )
+class SpaceManager(MayaQWidgetDockableMixin, QtWidgets.QDialog):
 
-    # menu
-    menu = cmds.menu(parent=menu_layout, label="Command")
-    cmds.menuItem(
-        parent=menu,
-        label="Save File(.dsm)",
-        command=partial(save_file, ""),
-    )
-    cmds.menuItem(
-        parent=menu,
-        label="Load File(.dsm)",
-        command=partial(load_file, "", table_view),
-    )
-    cmds.menuItem(
-        parent=menu,
-        label="Push Data",
-        command=partial(push_data, table_view),
-    )
-    cmds.menuItem(
-        parent=menu,
-        label="Pull Data",
-        command=partial(pull_data, table_view),
-    )
-    cmds.menuItem(parent=menu, label="Build", command=build)
+    # 싱글톤 패턴
+    _instance = None
 
-    # layout
-    cmds.formLayout(
-        layout,
-        edit=True,
-        attachForm=[
-            (table_view, "top", 4),
-            (table_view, "left", 4),
-            (table_view, "right", 4),
-            (insert_row_btn, "bottom", 4),
-            (delete_row_btn, "bottom", 4),
-        ],
-        attachControl=[(table_view, "bottom", 4, insert_row_btn)],
-        attachPosition=[
-            (insert_row_btn, "left", 4, 0),
-            (insert_row_btn, "right", 2, 50),
-            (delete_row_btn, "left", 2, 50),
-            (delete_row_btn, "right", 4, 100),
-        ],
-    )
-    pull_data(table_view=table_view)
+    ui_name = "domino_space_manager_ui"
+
+    def __init__(self, parent=None):
+        super(SpaceManager, self).__init__(parent=parent)
+        self.setObjectName(self.ui_name)
+        self.setWindowTitle("Space Manager")
+        self.setWindowFlags(
+            self.windowFlags() | QtCore.Qt.WindowType.WindowStaysOnTopHint
+        )
+
+        self.resize(800, 400)
+
+        layout = QtWidgets.QVBoxLayout()
+        self.setLayout(layout)
+
+        # menu
+        self.menu_bar = QtWidgets.QMenuBar()
+        layout.setMenuBar(self.menu_bar)
+
+        self.file_menu = self.menu_bar.addMenu("File")
+        self.import_space_data_action = QtGui.QAction("Import Space Manager Data")
+        self.import_space_data_action.triggered.connect(self.import_sm)
+        self.export_space_data_action = QtGui.QAction("Export Space Manager Data")
+        self.export_space_data_action.triggered.connect(self.export_sm)
+        self.file_menu.addAction(self.import_space_data_action)
+        self.file_menu.addAction(self.export_space_data_action)
+
+        self.table_widget = QtWidgets.QTableWidget(0, 7)
+        self.table_widget.itemChanged.connect(self.edit_data)
+        self.table_widget.setHorizontalHeaderLabels(
+            [
+                "Source Spaces",
+                "Destination Space",
+                "Cons Type",
+                "Attribute Type",
+                "Attribute Name",
+                "Enum Name",
+                "Host",
+            ]
+        )
+        self.table_widget.verticalHeader().setVisible(False)
+        header = self.table_widget.horizontalHeader()
+        header.setSectionResizeMode(QtWidgets.QHeaderView.ResizeMode.Stretch)
+        layout.addWidget(self.table_widget)
+
+        btn_layout = QtWidgets.QHBoxLayout()
+        layout.addLayout(btn_layout)
+
+        self.append_row_btn = QtWidgets.QPushButton("Append Row")
+        self.append_row_btn.clicked.connect(self.append_row)
+        self.remove_row_btn = QtWidgets.QPushButton("Remove Row")
+        self.remove_row_btn.clicked.connect(self.remove_row)
+        self.mirror_btn = QtWidgets.QPushButton("Mirror")
+        self.mirror_btn.clicked.connect(self.mirror)
+        self.generate_btn = QtWidgets.QPushButton("Generate")
+        self.generate_btn.clicked.connect(generate)
+        self.rollback_btn = QtWidgets.QPushButton("Rollback")
+        self.rollback_btn.clicked.connect(rollback)
+        btn_layout.addWidget(self.append_row_btn)
+        btn_layout.addWidget(self.remove_row_btn)
+        btn_layout.addWidget(self.mirror_btn)
+        btn_layout.addWidget(self.generate_btn)
+        btn_layout.addWidget(self.rollback_btn)
+
+    def edit_data(self, item):
+        row, col = item.row(), item.column()
+        data = get_data()
+        data[row][col] = item.text()
+        set_data(data)
+
+    def set_source(self, row):
+        selected = cmds.ls(selection=True)
+        data = get_data()
+        data[row][0] = selected
+        set_data(data)
+        self.refresh()
+
+    def set_source_menu(self, combobox, row, pos):
+        menu = QtWidgets.QMenu(self)
+        menu.addAction("Set Source", partial(self.set_source, row))
+        menu.exec(combobox.mapToGlobal(pos))
+
+    def set_attribute_type(self, row, index):
+        data = get_data()
+        data[row][4] = index
+        attribute_name_item = self.table_widget.item(row, 4)
+        enum_name_item = self.table_widget.item(row, 5)
+        if index == 0:
+            attribute_name_item.setFlags(
+                attribute_name_item.flags() | QtCore.Qt.ItemFlag.ItemIsEditable
+            )
+            enum_name_item.setFlags(
+                enum_name_item.flags() | QtCore.Qt.ItemFlag.ItemIsEditable
+            )
+        elif index == 1:
+            data[row][4] = ""
+            data[row][5] = ""
+            attribute_name_item.setText("")
+            enum_name_item.setText("")
+            attribute_name_item.setFlags(
+                attribute_name_item.flags() & ~QtCore.Qt.ItemFlag.ItemIsEditable
+            )
+            enum_name_item.setFlags(
+                enum_name_item.flags() & ~QtCore.Qt.ItemFlag.ItemIsEditable
+            )
+        set_data(data)
+
+    def set_constraint_type(self, row, index):
+        data = get_data()
+        data[row][2] = index
+        set_data(data)
+
+    def refresh(self):
+        self.table_widget.setRowCount(0)
+        self.table_widget.blockSignals(True)
+        if not cmds.objExists(SPACE_MANAGER):
+            self.table_widget.blockSignals(False)
+            return
+        data = get_data()
+        for i, row_data in enumerate(data):
+            self.table_widget.insertRow(i)
+
+            source_combobox = QtWidgets.QComboBox()
+            source_combobox.setContextMenuPolicy(
+                QtCore.Qt.ContextMenuPolicy.CustomContextMenu
+            )
+            source_combobox.customContextMenuRequested.connect(
+                partial(self.set_source_menu, source_combobox, i)
+            )
+            source_combobox.addItems(row_data[0])
+
+            constraint_type_combobox = QtWidgets.QComboBox()
+            constraint_type_combobox.addItems(["points", "orient", "parent", "scale"])
+            constraint_type_combobox.setCurrentIndex(row_data[2])
+            constraint_type_combobox.currentIndexChanged.connect(
+                partial(self.set_constraint_type, i)
+            )
+            attribute_type_combobox = QtWidgets.QComboBox()
+            attribute_type_combobox.addItems(["enum", "float"])
+            attribute_type_combobox.setCurrentIndex(row_data[3])
+            attribute_type_combobox.currentIndexChanged.connect(
+                partial(self.set_attribute_type, i)
+            )
+
+            self.table_widget.setCellWidget(i, 0, source_combobox)
+            self.table_widget.setItem(i, 1, QtWidgets.QTableWidgetItem(row_data[1]))
+            self.table_widget.setCellWidget(i, 2, constraint_type_combobox)
+            self.table_widget.setCellWidget(i, 3, attribute_type_combobox)
+            self.table_widget.setItem(i, 4, QtWidgets.QTableWidgetItem(row_data[4]))
+            self.table_widget.setItem(i, 5, QtWidgets.QTableWidgetItem(row_data[5]))
+            self.table_widget.setItem(i, 6, QtWidgets.QTableWidgetItem(row_data[6]))
+
+        self.table_widget.blockSignals(False)
+
+    def append_row(self):
+        if not cmds.objExists(SPACE_MANAGER):
+            initialize()
+        data = get_data()
+        data.append([[], "", 0, 0, "", "", ""])
+        set_data(data)
+        self.refresh()
+
+    def remove_row(self):
+        selected_rows = sorted(
+            set(index.row() for index in self.table_widget.selectedIndexes()),
+            reverse=True,
+        )
+
+        data = get_data()
+        for row in selected_rows:
+            data.pop(row)
+        set_data(data)
+        self.refresh()
+
+    def mirror(self):
+        selected_rows = sorted(
+            set(index.row() for index in self.table_widget.selectedIndexes()),
+            reverse=True,
+        )
+
+        data = get_data()
+        for row in selected_rows:
+            (
+                sources,
+                destination,
+                cons_type,
+                attribute_type,
+                attribute_name,
+                enum_name,
+                host,
+            ) = data[row]
+            mirrored_str = mirror(sources=sources, destination=destination, host=host)
+            mirrored_data = [
+                mirrored_str[0],
+                mirrored_str[1],
+                cons_type,
+                attribute_type,
+                attribute_name,
+                enum_name,
+                mirrored_str[2],
+            ]
+            if data[row] != mirrored_data:
+                data.append(mirrored_data)
+        set_data(data)
+        self.refresh()
+
+    def import_sm(self):
+        file_path = cmds.fileDialog2(
+            caption="Import Space Manager",
+            startingDirectory=cmds.workspace(query=True, rootDirectory=True),
+            fileFilter="Domino Space Manager Files (*.smf)",
+            okCaption="Import",
+            cancelCaption="Cancel",
+            fileMode=1,
+        )
+
+        if file_path:
+            try:
+                cmds.undoInfo(openChunk=True)
+                import_space_manager_data(file_path=file_path[0], _generate=True)
+            except Exception as e:
+                logger.error(e, exc_info=True)
+            finally:
+                cmds.undoInfo(closeChunk=True)
+            self.refresh()
+
+    def export_sm(self):
+        if not cmds.objExists(SPACE_MANAGER):
+            return logger.warning(f"{SPACE_MANAGER} 가 존재하지 않습니다.")
+
+        file_path = cmds.fileDialog2(
+            caption="Export Space Manager",
+            startingDirectory=cmds.workspace(query=True, rootDirectory=True),
+            fileFilter="Domino Space Manager Files (*.smf)",
+            okCaption="Export",
+            cancelCaption="Cancel",
+            fileMode=0,
+        )
+        if file_path:
+            export_space_manager_data(file_path=file_path[0])
+
+    @classmethod
+    def get_instance(cls):
+        if cls._instance is None:
+            cls._instance = cls()
+        return cls._instance
+
+    def showEvent(self, e):
+        super(SpaceManager, self).showEvent(e)

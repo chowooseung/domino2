@@ -662,9 +662,9 @@ class SDKManager(MayaQWidgetDockableMixin, QtWidgets.QDialog):
         driven_layout.addLayout(sdk_btn_layout)
         layout.addLayout(driven_layout)
 
-        self.refresh_ui()
+        self.refresh()
 
-    def refresh_ui(self):
+    def refresh(self):
         self.control_list_widget.clear()
         self.driver_list_widget.clear()
         self.driven_list_widget.clear()
@@ -699,7 +699,7 @@ class SDKManager(MayaQWidgetDockableMixin, QtWidgets.QDialog):
         item = self.driver_list_widget.itemFromIndex(index)
 
         self.current_driver = item.text()
-        self.refresh_ui()
+        self.refresh()
 
     def add_controls(self):
         try:
@@ -709,11 +709,11 @@ class SDKManager(MayaQWidgetDockableMixin, QtWidgets.QDialog):
                 return
             sdk_node = get_sdk_node()
             if not sdk_node:
-                self.refresh_ui()
+                self.refresh()
                 sdk_node = create_sdk_node()
             add_sdk_control(selected)
 
-            self.refresh_ui()
+            self.refresh()
         except Exception as e:
             logger.error(e, exc_info=True)
         finally:
@@ -724,7 +724,7 @@ class SDKManager(MayaQWidgetDockableMixin, QtWidgets.QDialog):
             cmds.undoInfo(openChunk=True)
             sdk_node = get_sdk_node()
             if not sdk_node:
-                self.refresh_ui()
+                self.refresh()
                 return
 
             items = self.control_list_widget.selectedItems()
@@ -732,7 +732,7 @@ class SDKManager(MayaQWidgetDockableMixin, QtWidgets.QDialog):
                 [i.text().removesuffix(f"_{Name.sdk_extension}") for i in items]
             )
 
-            self.refresh_ui()
+            self.refresh()
         except Exception as e:
             logger.error(e, exc_info=True)
         finally:
@@ -743,7 +743,7 @@ class SDKManager(MayaQWidgetDockableMixin, QtWidgets.QDialog):
             cmds.undoInfo(openChunk=True)
             sdk_node = get_sdk_node()
             if not sdk_node:
-                self.refresh_ui()
+                self.refresh()
                 return
             selected = cmds.ls(selection=True)
 
@@ -764,7 +764,7 @@ class SDKManager(MayaQWidgetDockableMixin, QtWidgets.QDialog):
             cmds.undoInfo(openChunk=True)
             sdk_node = get_sdk_node()
             if not sdk_node:
-                self.refresh_ui()
+                self.refresh()
                 return
             selected = cmds.ls(selection=True)
 
@@ -785,12 +785,12 @@ class SDKManager(MayaQWidgetDockableMixin, QtWidgets.QDialog):
             cmds.undoInfo(openChunk=True)
             sdk_node = get_sdk_node()
             if not sdk_node:
-                self.refresh_ui()
+                self.refresh()
                 sdk_node = create_sdk_node()
 
             add_sdk_driver()
 
-            self.refresh_ui()
+            self.refresh()
         except Exception as e:
             logger.error(e, exc_info=True)
         finally:
@@ -801,7 +801,7 @@ class SDKManager(MayaQWidgetDockableMixin, QtWidgets.QDialog):
             cmds.undoInfo(openChunk=True)
             sdk_node = get_sdk_node()
             if not sdk_node:
-                self.refresh_ui()
+                self.refresh()
                 return
 
             items = self.driver_list_widget.selectedItems()
@@ -811,7 +811,7 @@ class SDKManager(MayaQWidgetDockableMixin, QtWidgets.QDialog):
             if self.current_driver in drivers:
                 self.current_driver = None
 
-            self.refresh_ui()
+            self.refresh()
         except Exception as e:
             logger.error(e, exc_info=True)
         finally:
@@ -822,14 +822,14 @@ class SDKManager(MayaQWidgetDockableMixin, QtWidgets.QDialog):
             cmds.undoInfo(openChunk=True)
             sdk_node = get_sdk_node()
             if not sdk_node:
-                self.refresh_ui()
+                self.refresh()
                 return
 
             items = self.driver_list_widget.selectedItems()
             drivers = [item.text() for item in items]
             mirror_sdk_driver(drivers)
 
-            self.refresh_ui()
+            self.refresh()
         except Exception as e:
             logger.error(e, exc_info=True)
         finally:
@@ -843,12 +843,12 @@ class SDKManager(MayaQWidgetDockableMixin, QtWidgets.QDialog):
             cmds.undoInfo(openChunk=True)
             sdk_node = get_sdk_node()
             if not sdk_node:
-                self.refresh_ui()
+                self.refresh()
                 return
 
             add_sdk_driven(self.current_driver)
 
-            self.refresh_ui()
+            self.refresh()
         except Exception as e:
             logger.error(e, exc_info=True)
         finally:
@@ -862,14 +862,14 @@ class SDKManager(MayaQWidgetDockableMixin, QtWidgets.QDialog):
             cmds.undoInfo(openChunk=True)
             sdk_node = get_sdk_node()
             if not sdk_node:
-                self.refresh_ui()
+                self.refresh()
                 return
 
             items = self.driven_list_widget.selectedItems()
             drivens = [item.text() for item in items]
             remove_sdk_driven(self.current_driver, drivens)
 
-            self.refresh_ui()
+            self.refresh()
         except Exception as e:
             logger.error(e, exc_info=True)
         finally:
@@ -883,7 +883,7 @@ class SDKManager(MayaQWidgetDockableMixin, QtWidgets.QDialog):
             cmds.undoInfo(openChunk=True)
             sdk_node = get_sdk_node()
             if not sdk_node:
-                self.refresh_ui()
+                self.refresh()
                 return
 
             drivens = []
@@ -892,7 +892,7 @@ class SDKManager(MayaQWidgetDockableMixin, QtWidgets.QDialog):
                 drivens.append(item.text())
             set_key(self.current_driver, drivens)
 
-            self.refresh_ui()
+            self.refresh()
         except Exception as e:
             logger.error(e, exc_info=True)
         finally:
@@ -903,10 +903,10 @@ class SDKManager(MayaQWidgetDockableMixin, QtWidgets.QDialog):
             cmds.undoInfo(openChunk=True)
             sdk_node = get_sdk_node()
             if not sdk_node:
-                self.refresh_ui()
+                self.refresh()
                 return
 
-            self.refresh_ui()
+            self.refresh()
         except Exception as e:
             logger.error(e, exc_info=True)
         finally:
@@ -918,23 +918,22 @@ class SDKManager(MayaQWidgetDockableMixin, QtWidgets.QDialog):
             sdk_node = get_sdk_node()
             if sdk_node:
                 logger.warning("이미 SDK 노드가 존재합니다.")
-                self.refresh_ui()
+                self.refresh()
                 return
 
             file_path = cmds.fileDialog2(
-                dialogStyle=2,
-                fileMode=1,
                 caption="Import SDK",
-                okCaption="Import",
-                cancelCaption="Cancel",
                 startingDirectory=cmds.workspace(query=True, rootDirectory=True),
                 fileFilter="Domino SDK Files (*.sdk)",
+                okCaption="Import",
+                cancelCaption="Cancel",
+                fileMode=1,
             )
             if not file_path:
                 return
 
             import_sdk(file_path[0])
-            self.refresh_ui()
+            self.refresh()
         except Exception as e:
             logger.error(e, exc_info=True)
         finally:
@@ -944,23 +943,22 @@ class SDKManager(MayaQWidgetDockableMixin, QtWidgets.QDialog):
         sdk_node = get_sdk_node()
         if not sdk_node:
             logger.warning("SDK 노드가 존재하지 않습니다.")
-            self.refresh_ui()
+            self.refresh()
             return
 
         file_path = cmds.fileDialog2(
-            dialogStyle=2,
-            fileMode=0,
             caption="Export SDK",
-            okCaption="Export",
-            cancelCaption="Cancel",
             startingDirectory=cmds.workspace(query=True, rootDirectory=True),
             fileFilter="Domino SDK Files (*.sdk)",
+            okCaption="Export",
+            cancelCaption="Cancel",
+            fileMode=0,
         )
         if not file_path:
             return
 
         export_sdk(file_path[0])
-        self.refresh_ui()
+        self.refresh()
 
     @classmethod
     def get_instance(cls):
