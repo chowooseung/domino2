@@ -166,6 +166,7 @@ def generate():
                         keyable=True,
                         minValue=0,
                         maxValue=1,
+                        defaultValue=1,
                     )
                     cmds.connectAttr(f"{host}.{src}", f"{cons}.{alias_list[i]}")
     except Exception as e:
@@ -222,6 +223,8 @@ def import_space_manager_data(file_path, _generate=True):
     if _generate:
         generate()
 
+    logger.info(f"Import Space Manager File `{file_path}`")
+
 
 def export_space_manager_data(file_path):
     if not Path(file_path).parent.exists():
@@ -230,6 +233,8 @@ def export_space_manager_data(file_path):
     data = get_data()
     with open(file_path, "w") as f:
         json.dump(data, f, indent=2)
+
+    logger.info(f"Export Space Manager File `{file_path}`")
 
 
 class SpaceManager(MayaQWidgetDockableMixin, QtWidgets.QDialog):

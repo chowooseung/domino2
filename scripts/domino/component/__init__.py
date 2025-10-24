@@ -1,6 +1,11 @@
 # domino
 from domino.psdmanager import PSD_MANAGER, PSD_SETS, export_psd, import_psd
 from domino.sdkmanager import SDK_MANAGER, SDK_SETS, export_sdk, import_sdk
+from domino.spacemanager import (
+    SPACE_MANAGER,
+    export_space_manager_data,
+    import_space_manager_data,
+)
 from domino.core import (
     Name,
     Transform,
@@ -47,6 +52,7 @@ COMPONENTLIST = [
     "humanspine01",
     "humanneck01",
     "humanarm01",
+    "humanleg01",
     "psd01",
 ]
 GUIDE = "guide"
@@ -1622,7 +1628,19 @@ def build(context, component, attach_guide=False):
         if component["break_point"] == BREAK_POINT_PRECUSTOMSCRIPTS:
             return context
 
-        # TODO SPACEMANAGER
+        # metadata dir
+        if component["domino_path"]["value"]:
+            domino_path = component["domino_path"]["value"]
+            metadata_dir = Path(domino_path).parent / (
+                f"{Path(domino_path).name.split('.')[0]}.metadata"
+            )
+
+        # SPACEMANAGER
+        if component["domino_path"]["value"]:
+            space_dir = metadata_dir / "space"
+            if space_dir.exists():
+                import_space_manager_data((space_dir / "space.smf").as_posix())
+                cmds.parent(SPACE_MANAGER, RIG)
 
         # BREAK POINT SPACEMANAGER
         if component["break_point"] == BREAK_POINT_SPACEMANAGER:
@@ -1630,10 +1648,6 @@ def build(context, component, attach_guide=False):
 
         # blendshape
         if component["domino_path"]["value"]:
-            domino_path = component["domino_path"]["value"]
-            metadata_dir = Path(domino_path).parent / (
-                f"{Path(domino_path).name.split('.')[0]}.metadata"
-            )
             blendshape_dir = metadata_dir / "blendshape"
             if blendshape_dir.exists():
                 rigkit.import_blendshape(blendshape_dir.as_posix())
@@ -1655,10 +1669,6 @@ def build(context, component, attach_guide=False):
 
         # PSD
         if component["domino_path"]["value"]:
-            domino_path = component["domino_path"]["value"]
-            metadata_dir = Path(domino_path).parent / (
-                f"{Path(domino_path).name.split('.')[0]}.metadata"
-            )
             psd_dir = metadata_dir / "pose"
             if psd_dir.exists():
                 import_psd((psd_dir / "poseSpaceDeformation.psd").as_posix())
@@ -1670,10 +1680,6 @@ def build(context, component, attach_guide=False):
 
         # SDK
         if component["domino_path"]["value"]:
-            domino_path = component["domino_path"]["value"]
-            metadata_dir = Path(domino_path).parent / (
-                f"{Path(domino_path).name.split('.')[0]}.metadata"
-            )
             sdk_dir = metadata_dir / "sdk"
             if sdk_dir.exists():
                 import_psd((sdk_dir / "setDriven.sdk").as_posix())
@@ -1691,10 +1697,6 @@ def build(context, component, attach_guide=False):
 
         # deformer weights
         if component["domino_path"]["value"]:
-            domino_path = component["domino_path"]["value"]
-            metadata_dir = Path(domino_path).parent / (
-                f"{Path(domino_path).name.split('.')[0]}.metadata"
-            )
             deformer_weights_dir = metadata_dir / "deformerWeights"
             if deformer_weights_dir.exists():
                 rigkit.import_weights_from_directory(deformer_weights_dir.as_posix())
@@ -2081,7 +2083,12 @@ def save(file_path, data=None):
         for bs in data["blendshape"]:
             rigkit.export_blendshape(blendshape_dir.as_posix(), bs)
 
-    # TODO space
+    # space
+    if cmds.objExists(SPACE_MANAGER):
+        space_dir = metadata_dir / "space"
+        if not space_dir.exists():
+            space_dir.mkdir()
+        export_space_manager_data((space_dir / "space.smf").as_posix())
 
     # PSD
     if cmds.objExists(PSD_MANAGER):
