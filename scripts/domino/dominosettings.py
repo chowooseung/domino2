@@ -18,6 +18,7 @@ from domino.component.fkik2jnt01ui import Fkik2Jnt01
 from domino.component.humanspine01ui import HumanSpine01
 from domino.component.humanneck01ui import HumanNeck01
 from domino.component.humanarm01ui import HumanArm01
+from domino.component.humanleg01ui import HumanLeg01
 from domino.component.psd01ui import Psd01
 
 
@@ -32,6 +33,7 @@ UITABLE = {
     "humanspine01": HumanSpine01,
     "humanneck01": HumanNeck01,
     "humanarm01": HumanArm01,
+    "humanleg01": HumanLeg01,
     "psd01": Psd01,
 }
 

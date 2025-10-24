@@ -20,84 +20,48 @@ matrices = []
 m = om.MMatrix()
 tm0 = om.MTransformationMatrix(m)
 tm0.setTranslation(
-    om.MVector((0.2713483983280126, 14.817113835622706, -0.21733299595141725)),
+    om.MVector((0.8842910385180538, 9.667090526505518, 0.1690758409372688)),
     om.MSpace.kObject,
 )
+radians = [
+    om.MAngle(x, om.MAngle.kDegrees).asRadians()
+    for x in (90, 3.527297366784589, -85.9752590901959)
+]
+euler_rot = om.MEulerRotation(radians, om.MEulerRotation.kXYZ)
+tm0.setRotation(euler_rot)
 matrices.append(list(tm0.asMatrix()))
 
 tm1 = om.MTransformationMatrix(m)
-tm1.setTranslation(
-    om.MVector((1.6375206610699022, -0.46228491902835245, 0.0)), om.MSpace.kObject
-)
-radians = [
-    om.MAngle(x, om.MAngle.kDegrees).asRadians() for x in (0.0, 0.0, -64.38074188099554)
-]
+tm1.setTranslation(om.MVector((4.6, 0, 0)), om.MSpace.kObject)
+radians = [om.MAngle(x, om.MAngle.kDegrees).asRadians() for x in (0, 0, -1.0)]
 euler_rot = om.MEulerRotation(radians, om.MEulerRotation.kXYZ)
 tm1.setRotation(euler_rot)
 matrices.append(list(tm1.asMatrix() * tm0.asMatrix()))
 
 tm2 = om.MTransformationMatrix(m)
 tm2.setTranslation(
-    om.MVector((2.986188866176552, 0.0, 0.0)),
+    om.MVector((3.9780000000000006, -2.220446049250313e-16, -4.440892098500626e-16)),
     om.MSpace.kObject,
 )
 radians = [
     om.MAngle(x, om.MAngle.kDegrees).asRadians()
-    for x in (0.0, -12.303827536691916, 0.0)
+    for x in (85.97525909019602, 8.250965870290722, 94.5272973667846)
 ]
 euler_rot = om.MEulerRotation(radians, om.MEulerRotation.kXYZ)
 tm2.setRotation(euler_rot)
 matrices.append(list(tm2.asMatrix() * tm1.asMatrix() * tm0.asMatrix()))
 
 tm3 = om.MTransformationMatrix(m)
-tm3.setTranslation(
-    om.MVector((2.5550001731058107, 0.0, 0.0)),
-    om.MSpace.kObject,
-)
+tm3.setTranslation(om.MVector((1, 0, 0)), om.MSpace.kObject)
 matrices.append(list(tm3.asMatrix() * tm2.asMatrix() * tm1.asMatrix() * tm0.asMatrix()))
 
-tm4 = om.MTransformationMatrix(m)
-tm4.setTranslation(om.MVector((0.7532275625127223, 0.0, 0.0)), om.MSpace.kObject)
-matrices.append(
-    list(
-        tm4.asMatrix()
-        * tm3.asMatrix()
-        * tm2.asMatrix()
-        * tm1.asMatrix()
-        * tm0.asMatrix()
-    )
-)
-
-matrices.append(list(tm0.asMatrix()))
-
-tm6 = om.MTransformationMatrix(m)
-tm6.setTranslation(
-    om.MVector((1.383837182993473, -0.3763373064937685, -0.29592414776586956)),
-    om.MSpace.kObject,
-)
-radians = [
-    om.MAngle(x, om.MAngle.kDegrees).asRadians()
-    for x in (3.596721910740145, 153.54807469808893, 8.032006443550973)
-]
-euler_rot = om.MEulerRotation(radians, om.MEulerRotation.kXYZ)
-tm6.setRotation(euler_rot)
-matrices.append(list(tm6.asMatrix() * tm0.asMatrix()))
-
-tm7 = om.MTransformationMatrix(m)
-tm7.setTranslation(om.MVector((2.0, 0.0, 0.0)), om.MSpace.kObject)
-matrices.append(list(tm7.asMatrix() * tm6.asMatrix() * tm0.asMatrix()))
-
-tm8 = om.MTransformationMatrix(m)
-tm8.setTranslation(om.MVector((0.0, -2.0, 0.0)), om.MSpace.kObject)
-matrices.append(list(tm8.asMatrix() * tm6.asMatrix() * tm0.asMatrix()))
-
 DATA = [
-    attribute.String(longName="component", value="humanarm01"),
-    attribute.String(longName="name", value="humanArm"),
+    attribute.String(longName="component", value="humanleg01"),
+    attribute.String(longName="name", value="humanLeg"),
     attribute.Enum(longName="side", enumName=Name.side_list, value=0),
     attribute.Integer(longName="index", minValue=0),
     attribute.Matrix(longName="guide_matrix", multi=True, value=matrices),
-    attribute.Matrix(longName="npo_matrix", multi=True, value=matrices[:9]),
+    attribute.Matrix(longName="npo_matrix", multi=True, value=matrices),
     attribute.Matrix(
         longName="initialize_output_matrix",
         multi=True,
@@ -108,9 +72,7 @@ DATA = [
         multi=True,
         value=matrices,
     ),
-    attribute.Integer(
-        longName="guide_mirror_type", multi=True, value=[1, 1, 1, 1, 1, 1, 1, 1, 1]
-    ),
+    attribute.Integer(longName="guide_mirror_type", multi=True, value=[1, 1, 1, 1]),
     # 부모로 사용할 상위 component 의 output index
     attribute.Integer(
         longName="parent_output_index", minValue=-1, defaultValue=-1, value=-1
@@ -136,48 +98,20 @@ DATA = [
     attribute.DoubleAngle(
         longName="offset_output_rotate_z", minValue=-360, maxValue=360
     ),
-    attribute.Float(longName="pole_vector_multiple", value=5),
+    attribute.Float(longName="pole_vector_multiple", minValue=1, value=5),
     attribute.Matrix(longName="pole_vector_matrix", value=list(ORIGINMATRIX)),
-    attribute.Bool(longName="align_last_transform_to_guide", defaultValue=0),
+    attribute.Enum(
+        longName="controller_primary_axis", enumName=["x", "y", "z"], value=0
+    ),
+    attribute.Enum(
+        longName="controller_secondary_axis", enumName=["x", "y", "z"], value=1
+    ),
+    attribute.Bool(longName="align_last_transform_to_guide", defaultValue=1, value=1),
     attribute.Bool(longName="unlock_last_scale", defaultValue=0),
     attribute.Matrix(
         longName="driver_inverse_matrix",
         multi=True,
         value=[list(ORIGINMATRIX) for _ in range(6)],
-    ),
-    attribute.Matrix(
-        longName="clavicle_bone_matrix",
-        value=list(ORIGINMATRIX),
-    ),
-    attribute.Float(
-        longName="clavicle_bone_distance",
-        value=0,
-    ),
-    attribute.Float(
-        longName="scapular_aim_axis_x",
-    ),
-    attribute.Float(
-        longName="scapular_aim_axis_y",
-    ),
-    attribute.Float(
-        longName="scapular_aim_axis_z",
-    ),
-    attribute.Float(
-        longName="scapular_up_axis_x",
-    ),
-    attribute.Float(
-        longName="scapular_up_axis_y",
-    ),
-    attribute.Float(
-        longName="scapular_up_axis_z",
-    ),
-    attribute.Matrix(
-        longName="scapular_aim_matrix",
-        value=list(ORIGINMATRIX),
-    ),
-    attribute.Matrix(
-        longName="scapular_up_matrix",
-        value=list(ORIGINMATRIX),
     ),
     attribute.NurbsSurface(
         longName="upper_ribbon_surface",
@@ -283,15 +217,14 @@ DATA = [
     ),
 ]
 
-description = """## humanarm01
+description = """## humanleg01
 ---
 
-human arm component 입니다.
+human leg component 입니다.
 fkik2jnt01 을 베이스로 수정되었습니다.
 
-ik 를 생성하기 때문에 humanarm 구성요소를 일직선 상에 놓지 마세요.  
+ik 를 생성하기 때문에 humanleg 구성요소를 일직선 상에 놓지 마세요.  
 rotate 를 사용해서 평면을 만들어주세요.
-
 
 #### Settings"""
 
@@ -349,7 +282,7 @@ class Rig(component.Rig):
                 description="host",
                 parent_controllers=[],
             )
-            fk_descriptions = ["clavicle", "clavicleBone", "shoulder", "elbow", "wrist"]
+            fk_descriptions = ["thigh", "knee", "ankle"]
             parent_controllers = [(self.identifier, "host")]
             for description in fk_descriptions:
                 self.add_controller(
@@ -358,7 +291,7 @@ class Rig(component.Rig):
                 )
                 parent_controllers = [(self.identifier, description)]
 
-            parent_controllers = [(self.identifier, "clavicleBone")]
+            parent_controllers = [(self.identifier, "host")]
             ik_descriptions = ["ikPos", "poleVec", "ik", "ikLocal"]
             for description in ik_descriptions:
                 self.add_controller(
@@ -369,7 +302,7 @@ class Rig(component.Rig):
 
             self.add_controller(
                 description="pin",
-                parent_controllers=[(self.identifier, "elbow")],
+                parent_controllers=[(self.identifier, "knee")],
             )
             self.add_controller(
                 description="upperBend",
@@ -379,32 +312,25 @@ class Rig(component.Rig):
                 description="lowerBend",
                 parent_controllers=[(self.identifier, "pin")],
             )
-            self.add_controller(
-                description="scapular",
-                parent_controllers=[(self.identifier, "clavicleBone")],
-            )
 
     def populate_output(self):
         if not self["output"]:
-            self.add_output(description="clavicle", extension=Name.output_extension)
-            self.add_output(description="shoulder", extension=Name.output_extension)
+            self.add_output(description="thigh", extension=Name.output_extension)
             for i in range(self["twist_joint_count"]["value"]):
                 self.add_output(
                     description=f"upperTwist{i}", extension=Name.output_extension
                 )
-            self.add_output(description="elbow", extension=Name.output_extension)
+            self.add_output(description="knee", extension=Name.output_extension)
             for i in range(self["twist_joint_count"]["value"]):
                 self.add_output(
                     description=f"lowerTwist{i}", extension=Name.output_extension
                 )
-            self.add_output(description="wrist", extension=Name.output_extension)
-            self.add_output(description="scapular", extension=Name.output_extension)
+            self.add_output(description="ankle", extension=Name.output_extension)
 
     def populate_output_joint(self):
         if not self["output_joint"]:
-            self.add_output_joint(parent_description=None, description="clavicle")
-            self.add_output_joint(parent_description="clavicle", description="shoulder")
-            parent_description = "shoulder"
+            self.add_output_joint(parent_description=None, description="thigh")
+            parent_description = "thigh"
             for i in range(self["twist_joint_count"]["value"]):
                 description = f"upperTwist{i}"
                 self.add_output_joint(
@@ -412,9 +338,9 @@ class Rig(component.Rig):
                 )
                 parent_description = description
             self.add_output_joint(
-                parent_description=parent_description, description="elbow"
+                parent_description=parent_description, description="knee"
             )
-            parent_description = "elbow"
+            parent_description = "knee"
             for i in range(self["twist_joint_count"]["value"]):
                 description = f"lowerTwist{i}"
                 self.add_output_joint(
@@ -422,9 +348,8 @@ class Rig(component.Rig):
                 )
                 parent_description = description
             self.add_output_joint(
-                parent_description=parent_description, description="wrist"
+                parent_description=parent_description, description="ankle"
             )
-            self.add_output_joint(parent_description="clavicle", description="scapular")
 
     # region RIG
     @build_log(logging.INFO)
@@ -439,13 +364,13 @@ class Rig(component.Rig):
         cmds.setAttr(f"{negate_condition}.colorIfTrueR", -1)
         cmds.setAttr(f"{negate_condition}.colorIfFalseR", 1)
 
-        # region RIG - fk / ik
+        # controller
         host_npo, host_ctl = self["controller"][0].create(
             parent=self.rig_root,
             shape=(
                 self["controller"][0]["shape"]
                 if "shape" in self["controller"][0]
-                else "host"
+                else "cube"
             ),
             color=12,
             host=True,
@@ -458,39 +383,6 @@ class Rig(component.Rig):
         cmds.setAttr(f"{host_ctl}.rz", lock=True, keyable=False)
         cmds.setAttr(f"{host_ctl}.rotateOrder", channelBox=False)
         cmds.setAttr(f"{host_ctl}.mirror_type", 1)
-        cmds.addAttr(
-            host_ctl,
-            longName="_scapular",
-            attributeType="enum",
-            enumName="____________",
-            keyable=False,
-        )
-        cmds.setAttr(f"{host_ctl}._scapular", channelBox=True)
-        cmds.addAttr(
-            host_ctl,
-            longName="auto_scapular",
-            attributeType="float",
-            minValue=0,
-            maxValue=1,
-            defaultValue=0,
-            keyable=True,
-        )
-        cmds.addAttr(
-            host_ctl,
-            longName="scapular_ctl_visibility",
-            attributeType="enum",
-            enumName="off:on",
-            defaultValue=0,
-            keyable=True,
-        )
-        cmds.addAttr(
-            host_ctl,
-            longName="_arm",
-            attributeType="enum",
-            enumName="____________",
-            keyable=False,
-        )
-        cmds.setAttr(f"{host_ctl}._arm", channelBox=True)
         cmds.addAttr(
             host_ctl,
             longName="fkik",
@@ -542,7 +434,7 @@ class Rig(component.Rig):
             defaultValue=1,
             keyable=False,
         )
-        clavicle_npo, clavicle_ctl = self["controller"][1].create(
+        thigh_npo, thigh_ctl = self["controller"][1].create(
             parent=self.rig_root,
             shape=(
                 self["controller"][1]["shape"]
@@ -552,169 +444,68 @@ class Rig(component.Rig):
             color=12,
             npo_matrix_index=0,
         )
-        cmds.setAttr(f"{clavicle_ctl}.mirror_type", 2)
-        cmds.addAttr(
-            clavicle_ctl,
-            longName="roll",
-            attributeType="doubleAngle",
-            minValue=-360,
-            maxValue=360,
-            defaultValue=0,
-            keyable=True,
-        )
-        cmds.addAttr(
-            clavicle_ctl,
-            longName="clavicle_bone_ctl_visibility",
-            attributeType="enum",
-            enumName="off:on",
-            defaultValue=0,
-            keyable=True,
-        )
+        cmds.setAttr(f"{thigh_ctl}.mirror_type", 1)
         ins = Transform(
-            parent=self.rig_root,
+            parent=thigh_ctl,
             name=name,
             side=side,
             index=index,
-            description="claviclePos",
-            extension=Name.loc_extension,
-        )
-        clavicle_pos_loc = ins.create()
-        cmds.pointConstraint(clavicle_ctl, clavicle_pos_loc, maintainOffset=False)
-        ins = Transform(
-            parent=clavicle_ctl,
-            name=name,
-            side=side,
-            index=index,
-            description="ikhDriver",
-            extension=Name.loc_extension,
-        )
-        clavicle_ikh_driver = ins.create()
-        cmds.setAttr(f"{clavicle_ikh_driver}.t", 0, 0, 0)
-        cmds.setAttr(f"{clavicle_ikh_driver}.r", 0, 0, 0)
-        cmds.connectAttr(
-            f"{self.rig_root}.clavicle_bone_distance", f"{clavicle_ikh_driver}.tx"
-        )
-        ins = Joint(
-            parent=clavicle_pos_loc,
-            name=name,
-            side=side,
-            index=index,
-            description="clavicleSC0",
-            extension=Name.joint_extension,
+            description="thighLength",
             m=ORIGINMATRIX,
         )
-        clavicle_sc0_joint = ins.create()
-        ins = Joint(
-            parent=clavicle_sc0_joint,
-            name=name,
-            side=side,
-            index=index,
-            description="clavicleSC1",
-            extension=Name.joint_extension,
-            m=ORIGINMATRIX,
+        thigh_length_grp = ins.create()
+        cmds.setAttr(f"{thigh_length_grp}.t", 0, 0, 0)
+        cmds.setAttr(f"{thigh_length_grp}.r", 0, 0, 0)
+        cmds.addAttr(
+            thigh_ctl,
+            longName="length",
+            attributeType="float",
+            keyable=True,
+            defaultValue=0,
         )
-        clavicle_sc1_joint = ins.create()
-        cmds.connectAttr(f"{negate_condition}.outColorR", f"{clavicle_sc1_joint}.tx")
-        cmds.setAttr(f"{clavicle_sc0_joint}.t", 0, 0, 0)
-        cmds.setAttr(f"{clavicle_sc0_joint}.r", 0, 0, 0)
-        cmds.setAttr(f"{clavicle_sc0_joint}.jointOrient", 0, 0, 0)
-        clavicle_sc_ikh, _ = cmds.ikHandle(
-            name=Name.create(
-                Name.controller_name_convention,
-                name=name,
-                side=side,
-                index=index,
-                description="clavicleSC",
-                extension=Name.ikh_extension,
-            ),
-            startJoint=clavicle_sc0_joint,
-            endEffector=clavicle_sc1_joint,
-            solver="ikSCsolver",
-        )
-        clavicle_sc_ikh = cmds.parent(clavicle_sc_ikh, self.rig_root)[0]
-        cmds.setAttr(f"{clavicle_sc_ikh}.r", 0, 0, 0)
-        clavicle_negate_condition = cmds.createNode("condition")
-        cmds.connectAttr(
-            f"{self.rig_root}.side", f"{clavicle_negate_condition}.firstTerm"
-        )
-        cmds.setAttr(f"{clavicle_negate_condition}.secondTerm", 2)
-        cmds.setAttr(f"{clavicle_negate_condition}.colorIfTrueR", 180)
-        cmds.setAttr(f"{clavicle_negate_condition}.colorIfFalseR", 0)
-        cmds.hide(clavicle_sc0_joint, clavicle_sc_ikh)
-        cmds.connectAttr(
-            f"{self.rig_root}.clavicle_bone_matrix",
-            f"{clavicle_sc0_joint}.offsetParentMatrix",
-        )
-        cmds.pointConstraint(clavicle_ikh_driver, clavicle_sc_ikh, maintainOffset=False)
-        ins = Transform(
-            clavicle_pos_loc,
-            name=name,
-            side=side,
-            index=index,
-            description="clavicleSC",
-            extension="space",
-        )
-        clavicle_sc_space = ins.create()
-        cmds.connectAttr(
-            f"{self.rig_root}.clavicle_bone_matrix",
-            f"{clavicle_sc_space}.offsetParentMatrix",
-        )
-        cmds.setAttr(f"{clavicle_sc_space}.t", 0, 0, 0)
-        cmds.setAttr(f"{clavicle_sc_space}.s", 1, 1, 1)
-        cmds.connectAttr(f"{clavicle_sc0_joint}.r", f"{clavicle_sc_space}.r")
-        clavicle_bone_npo, clavicle_bone_ctl = self["controller"][2].create(
-            parent=clavicle_sc_space,
+        multiply0 = cmds.createNode("multiply")
+        cmds.connectAttr(f"{thigh_ctl}.length", f"{multiply0}.input[0]")
+        cmds.connectAttr(f"{negate_condition}.outColorR", f"{multiply0}.input[1]")
+        cmds.connectAttr(f"{multiply0}.output", f"{thigh_length_grp}.tx")
+
+        knee_npo, knee_ctl = self["controller"][2].create(
+            parent=thigh_length_grp,
             shape=(
                 self["controller"][2]["shape"]
                 if "shape" in self["controller"][2]
-                else "square"
+                else "cube"
             ),
             color=12,
+            npo_matrix_index=1,
         )
-        mult_m = cmds.createNode("multMatrix")
-        cmds.connectAttr(f"{self.rig_root}.npo_matrix[1]", f"{mult_m}.matrixIn[0]")
-
-        inverse_m = cmds.createNode("inverseMatrix")
-        cmds.connectAttr(
-            f"{self.rig_root}.clavicle_bone_matrix", f"{inverse_m}.inputMatrix"
-        )
-        cmds.connectAttr(f"{inverse_m}.outputMatrix", f"{mult_m}.matrixIn[1]")
-
-        pick_m = cmds.createNode("pickMatrix")
-        cmds.connectAttr(f"{mult_m}.matrixSum", f"{pick_m}.inputMatrix")
-        cmds.setAttr(f"{pick_m}.useTranslate", 0)
-        cmds.connectAttr(
-            f"{pick_m}.outputMatrix", f"{clavicle_bone_npo}.offsetParentMatrix"
-        )
-
-        multiply = cmds.createNode("multiply")
-        cmds.connectAttr(f"{clavicle_ctl}.roll", f"{multiply}.input[0]")
-        cmds.setAttr(f"{multiply}.input[1]", -1)
-        cmds.connectAttr(f"{multiply}.output", f"{clavicle_bone_npo}.rx")
-        for shape in cmds.listRelatives(clavicle_bone_ctl, shapes=True) or []:
-            cmds.connectAttr(
-                f"{clavicle_ctl}.clavicle_bone_ctl_visibility", f"{shape}.v"
-            )
-
+        cmds.setAttr(f"{knee_ctl}.rx", lock=True, keyable=False)
+        cmds.setAttr(f"{knee_ctl}.rz", lock=True, keyable=False)
+        cmds.setAttr(f"{knee_ctl}.mirror_type", 1)
         ins = Transform(
-            parent=clavicle_bone_ctl,
+            parent=knee_ctl,
             name=name,
             side=side,
             index=index,
-            description="clavicleBoneInverse",
+            description="kneeLength",
             m=ORIGINMATRIX,
         )
-        clavicle_bone_npo_inverse = ins.create()
-        inverse_m = cmds.createNode("inverseMatrix")
-        cmds.connectAttr(f"{self.rig_root}.npo_matrix[1]", f"{inverse_m}.inputMatrix")
-        cmds.connectAttr(
-            f"{inverse_m}.outputMatrix",
-            f"{clavicle_bone_npo_inverse}.offsetParentMatrix",
+        knee_length_grp = ins.create()
+        cmds.setAttr(f"{knee_length_grp}.t", 0, 0, 0)
+        cmds.setAttr(f"{knee_length_grp}.r", 0, 0, 0)
+        cmds.addAttr(
+            knee_ctl,
+            longName="length",
+            attributeType="float",
+            keyable=True,
+            defaultValue=0,
         )
-        cmds.setAttr(f"{clavicle_bone_npo_inverse}.t", 0, 0, 0)
-        cmds.setAttr(f"{clavicle_bone_npo_inverse}.r", 0, 0, 0)
-        shoulder_npo, shoulder_ctl = self["controller"][3].create(
-            parent=clavicle_bone_ctl,
+        multiply0 = cmds.createNode("multiply")
+        cmds.connectAttr(f"{knee_ctl}.length", f"{multiply0}.input[0]")
+        cmds.connectAttr(f"{negate_condition}.outColorR", f"{multiply0}.input[1]")
+        cmds.connectAttr(f"{multiply0}.output", f"{knee_length_grp}.tx")
+
+        ankle_npo, ankle_ctl = self["controller"][3].create(
+            parent=knee_length_grp,
             shape=(
                 self["controller"][3]["shape"]
                 if "shape" in self["controller"][3]
@@ -723,32 +514,18 @@ class Rig(component.Rig):
             color=12,
             npo_matrix_index=2,
         )
-        cmds.setAttr(f"{shoulder_ctl}.mirror_type", 1)
-        ins = Transform(
-            parent=shoulder_ctl,
-            name=name,
-            side=side,
-            index=index,
-            description="fk0Length",
-            m=ORIGINMATRIX,
-        )
-        shoulder_length_grp = ins.create()
-        cmds.setAttr(f"{shoulder_length_grp}.t", 0, 0, 0)
-        cmds.setAttr(f"{shoulder_length_grp}.r", 0, 0, 0)
-        cmds.addAttr(
-            shoulder_ctl,
-            longName="length",
-            attributeType="float",
-            keyable=True,
-            defaultValue=0,
-        )
-        multiply0 = cmds.createNode("multiply")
-        cmds.connectAttr(f"{shoulder_ctl}.length", f"{multiply0}.input[0]")
-        cmds.connectAttr(f"{negate_condition}.outColorR", f"{multiply0}.input[1]")
-        cmds.connectAttr(f"{multiply0}.output", f"{shoulder_length_grp}.tx")
+        cmds.setAttr(f"{ankle_ctl}.mirror_type", 1)
+        if self["unlock_last_scale"]["value"]:
+            cmds.setAttr(f"{ankle_ctl}.sx", lock=False, keyable=True)
+            cmds.setAttr(f"{ankle_ctl}.sy", lock=False, keyable=True)
+            cmds.setAttr(f"{ankle_ctl}.sz", lock=False, keyable=True)
+        else:
+            cmds.setAttr(f"{ankle_ctl}.sx", lock=True, keyable=False)
+            cmds.setAttr(f"{ankle_ctl}.sy", lock=True, keyable=False)
+            cmds.setAttr(f"{ankle_ctl}.sz", lock=True, keyable=False)
 
-        elbow_npo, elbow_ctl = self["controller"][4].create(
-            parent=shoulder_length_grp,
+        ik_pos_npo, ik_pos_ctl = self["controller"][4].create(
+            parent=self.rig_root,
             shape=(
                 self["controller"][4]["shape"]
                 if "shape" in self["controller"][4]
@@ -757,72 +534,16 @@ class Rig(component.Rig):
             color=12,
             npo_matrix_index=3,
         )
-        cmds.setAttr(f"{elbow_ctl}.rx", lock=True, keyable=False)
-        cmds.setAttr(f"{elbow_ctl}.rz", lock=True, keyable=False)
-        cmds.setAttr(f"{elbow_ctl}.mirror_type", 1)
-        ins = Transform(
-            parent=elbow_ctl,
-            name=name,
-            side=side,
-            index=index,
-            description="fk1Length",
-            m=ORIGINMATRIX,
-        )
-        elbow_length_grp = ins.create()
-        cmds.setAttr(f"{elbow_length_grp}.t", 0, 0, 0)
-        cmds.setAttr(f"{elbow_length_grp}.r", 0, 0, 0)
-        cmds.addAttr(
-            elbow_ctl,
-            longName="length",
-            attributeType="float",
-            keyable=True,
-            defaultValue=0,
-        )
-        multiply0 = cmds.createNode("multiply")
-        cmds.connectAttr(f"{elbow_ctl}.length", f"{multiply0}.input[0]")
-        cmds.connectAttr(f"{negate_condition}.outColorR", f"{multiply0}.input[1]")
-        cmds.connectAttr(f"{multiply0}.output", f"{elbow_length_grp}.tx")
-
-        wrist_npo, wrist_ctl = self["controller"][5].create(
-            parent=elbow_length_grp,
-            shape=(
-                self["controller"][5]["shape"]
-                if "shape" in self["controller"][5]
-                else "cube"
-            ),
-            color=12,
-            npo_matrix_index=4,
-        )
-        cmds.setAttr(f"{wrist_ctl}.mirror_type", 1)
-        if self["unlock_last_scale"]["value"]:
-            cmds.setAttr(f"{wrist_ctl}.sx", lock=False, keyable=True)
-            cmds.setAttr(f"{wrist_ctl}.sy", lock=False, keyable=True)
-            cmds.setAttr(f"{wrist_ctl}.sz", lock=False, keyable=True)
-        else:
-            cmds.setAttr(f"{wrist_ctl}.sx", lock=True, keyable=False)
-            cmds.setAttr(f"{wrist_ctl}.sy", lock=True, keyable=False)
-            cmds.setAttr(f"{wrist_ctl}.sz", lock=True, keyable=False)
-
-        ik_pos_npo, ik_pos_ctl = self["controller"][6].create(
-            parent=clavicle_bone_npo_inverse,
-            shape=(
-                self["controller"][6]["shape"]
-                if "shape" in self["controller"][6]
-                else "cube"
-            ),
-            color=12,
-            npo_matrix_index=5,
-        )
         cmds.setAttr(f"{ik_pos_ctl}.rx", lock=True, keyable=False)
         cmds.setAttr(f"{ik_pos_ctl}.ry", lock=True, keyable=False)
         cmds.setAttr(f"{ik_pos_ctl}.rz", lock=True, keyable=False)
         cmds.setAttr(f"{ik_pos_ctl}.mirror_type", 2)
 
-        pole_vec_npo, pole_vec_ctl = self["controller"][7].create(
-            parent=clavicle_bone_npo_inverse,
+        pole_vec_npo, pole_vec_ctl = self["controller"][5].create(
+            parent=self.rig_root,
             shape=(
-                self["controller"][7]["shape"]
-                if "shape" in self["controller"][7]
+                self["controller"][5]["shape"]
+                if "shape" in self["controller"][5]
                 else "cube"
             ),
             color=12,
@@ -845,20 +566,20 @@ class Rig(component.Rig):
                 extension="guideline",
             ),
         )
-        guideline = cmds.parent(guideline, clavicle_bone_npo_inverse)[0]
+        guideline = cmds.parent(guideline, self.rig_root)[0]
         cmds.setAttr(f"{guideline}.overrideEnabled", 1)
         cmds.setAttr(f"{guideline}.overrideDisplayType", 1)
         cmds.setAttr(f"{guideline}.t", 0, 0, 0)
         cmds.setAttr(f"{guideline}.r", 0, 0, 0)
 
         ins = Joint(
-            parent=clavicle_bone_npo_inverse,
+            parent=self.rig_root,
             name=name,
             side=side,
             index=index,
             description="ik0",
             extension=Name.joint_extension,
-            m=cmds.xform(shoulder_ctl, query=True, matrix=True, worldSpace=True),
+            m=cmds.xform(thigh_ctl, query=True, matrix=True, worldSpace=True),
             use_joint_convention=False,
         )
         ik0_jnt = ins.create()
@@ -870,7 +591,7 @@ class Rig(component.Rig):
             index=index,
             description="ik1",
             extension=Name.joint_extension,
-            m=cmds.xform(elbow_ctl, query=True, matrix=True, worldSpace=True),
+            m=cmds.xform(knee_ctl, query=True, matrix=True, worldSpace=True),
             use_joint_convention=False,
         )
         ik1_jnt = ins.create()
@@ -882,22 +603,22 @@ class Rig(component.Rig):
             index=index,
             description="ik2",
             extension=Name.joint_extension,
-            m=cmds.xform(wrist_ctl, query=True, matrix=True, worldSpace=True),
+            m=cmds.xform(ankle_ctl, query=True, matrix=True, worldSpace=True),
             use_joint_convention=False,
         )
         ik2_jnt = ins.create()
         cmds.pointConstraint(ik_pos_ctl, ik0_jnt, maintainOffset=False)
         cmds.hide(ik0_jnt)
 
-        ik_npo, ik_ctl = self["controller"][8].create(
-            parent=clavicle_bone_npo_inverse,
+        ik_npo, ik_ctl = self["controller"][6].create(
+            parent=self.rig_root,
             shape=(
-                self["controller"][8]["shape"]
-                if "shape" in self["controller"][8]
+                self["controller"][6]["shape"]
+                if "shape" in self["controller"][6]
                 else "cube"
             ),
             color=12,
-            npo_matrix_index=6,
+            npo_matrix_index=4,
         )
         cmds.setAttr(f"{ik_ctl}.mirror_type", 0)
         if self["unlock_last_scale"]["value"]:
@@ -953,16 +674,17 @@ class Rig(component.Rig):
             keyable=True,
         )
 
-        ik_local_npo, ik_local_ctl = self["controller"][9].create(
+        ik_local_npo, ik_local_ctl = self["controller"][7].create(
             parent=ik_ctl,
             shape=(
-                self["controller"][9]["shape"]
-                if "shape" in self["controller"][9]
+                self["controller"][7]["shape"]
+                if "shape" in self["controller"][7]
                 else "cube"
             ),
             color=12,
-            npo_matrix_index=7,
+            npo_matrix_index=5,
         )
+        cmds.setAttr(f"{ik_local_ctl}.mirror_type", 1)
         if self["unlock_last_scale"]["value"]:
             cmds.setAttr(f"{ik_local_ctl}.sx", lock=False, keyable=True)
             cmds.setAttr(f"{ik_local_ctl}.sy", lock=False, keyable=True)
@@ -972,9 +694,8 @@ class Rig(component.Rig):
             cmds.setAttr(f"{ik_local_ctl}.sy", lock=True, keyable=False)
             cmds.setAttr(f"{ik_local_ctl}.sz", lock=True, keyable=False)
 
-        cmds.setAttr(f"{ik_local_ctl}.mirror_type", 1)
-        cmds.orientConstraint(ik_local_ctl, ik2_jnt, maintainOffset=False)
-        cmds.scaleConstraint(ik_local_ctl, ik2_jnt, maintainOffset=False)
+        cmds.orientConstraint(ik_local_ctl, ik2_jnt)
+        cmds.scaleConstraint(ik_local_ctl, ik2_jnt)
 
         cmds.connectAttr(f"{host_ctl}.fkik", f"{ik_pos_npo}.v")
         cmds.connectAttr(f"{host_ctl}.fkik", f"{pole_vec_npo}.v")
@@ -983,7 +704,7 @@ class Rig(component.Rig):
 
         rev = cmds.createNode("reverse")
         cmds.connectAttr(f"{host_ctl}.fkik", f"{rev}.inputX")
-        cmds.connectAttr(f"{rev}.outputX", f"{shoulder_npo}.v")
+        cmds.connectAttr(f"{rev}.outputX", f"{thigh_npo}.v")
 
         ins = Transform(
             parent=ik_pos_ctl,
@@ -1023,9 +744,7 @@ class Rig(component.Rig):
                 extension=Name.curve_extension,
             ),
         )
-        original_distance_curve = cmds.parent(
-            original_distance_curve, clavicle_bone_npo_inverse
-        )[0]
+        original_distance_curve = cmds.parent(original_distance_curve, self.rig_root)[0]
         cmds.hide(original_distance_curve)
 
         mult_m = cmds.createNode("multMatrix")
@@ -1060,9 +779,9 @@ class Rig(component.Rig):
                 extension=Name.ikh_extension,
             ),
             initial_matrix_plugs=[
+                f"{self.rig_root}.npo_matrix[0]",
+                f"{self.rig_root}.npo_matrix[1]",
                 f"{self.rig_root}.npo_matrix[2]",
-                f"{self.rig_root}.npo_matrix[3]",
-                f"{self.rig_root}.npo_matrix[4]",
             ],
             initial_ik_curve=original_distance_curve,
             joints=[ik0_jnt, ik1_jnt, ik2_jnt],
@@ -1075,29 +794,24 @@ class Rig(component.Rig):
             soft_ik_attr=f"{ik_ctl}.soft_ik",
             max_stretch_attr=f"{ik_ctl}.max_stretch",
         )
-        mult_m = cmds.createNode("multMatrix")
-        cmds.connectAttr(f"{self.rig_root}.npo_matrix[2]", f"{mult_m}.matrixIn[0]")
-        cmds.connectAttr(f"{self.rig_root}.npo_matrix[1]", f"{mult_m}.matrixIn[1]")
         decom_m = cmds.createNode("decomposeMatrix")
-        cmds.connectAttr(f"{mult_m}.matrixSum", f"{decom_m}.inputMatrix")
+        cmds.connectAttr(f"{self.rig_root}.npo_matrix[0]", f"{decom_m}.inputMatrix")
         cmds.connectAttr(f"{decom_m}.outputRotate", f"{ik0_jnt}.jointOrient")
         decom_m = cmds.createNode("decomposeMatrix")
-        cmds.connectAttr(f"{self.rig_root}.npo_matrix[3]", f"{decom_m}.inputMatrix")
+        cmds.connectAttr(f"{self.rig_root}.npo_matrix[1]", f"{decom_m}.inputMatrix")
         cmds.connectAttr(f"{decom_m}.outputRotate", f"{ik1_jnt}.jointOrient")
         decom_m = cmds.createNode("decomposeMatrix")
-        cmds.connectAttr(f"{self.rig_root}.npo_matrix[4]", f"{decom_m}.inputMatrix")
+        cmds.connectAttr(f"{self.rig_root}.npo_matrix[2]", f"{decom_m}.inputMatrix")
         cmds.connectAttr(f"{decom_m}.outputRotate", f"{ik2_jnt}.jointOrient")
-        # endregion
 
-        # region RIG - blend joint
         ins = Joint(
-            parent=clavicle_bone_npo_inverse,
+            parent=self.rig_root,
             name=name,
             side=side,
             index=index,
             description="blend0",
             extension=Name.joint_extension,
-            m=cmds.xform(shoulder_ctl, query=True, matrix=True, worldSpace=True),
+            m=cmds.xform(thigh_ctl, query=True, matrix=True, worldSpace=True),
             use_joint_convention=False,
         )
         blend0_jnt = ins.create()
@@ -1113,7 +827,7 @@ class Rig(component.Rig):
             index=index,
             description="blend1",
             extension=Name.joint_extension,
-            m=cmds.xform(elbow_ctl, query=True, matrix=True, worldSpace=True),
+            m=cmds.xform(knee_ctl, query=True, matrix=True, worldSpace=True),
             use_joint_convention=False,
         )
         blend1_jnt = ins.create()
@@ -1129,7 +843,7 @@ class Rig(component.Rig):
             index=index,
             description="blend2",
             extension=Name.joint_extension,
-            m=cmds.xform(wrist_ctl, query=True, matrix=True, worldSpace=True),
+            m=cmds.xform(ankle_ctl, query=True, matrix=True, worldSpace=True),
             use_joint_convention=False,
         )
         blend2_jnt = ins.create()
@@ -1159,15 +873,14 @@ class Rig(component.Rig):
         pair_b = cmds.createNode("pairBlend")
         cmds.setAttr(f"{pair_b}.rotInterpolation", 1)
         mult_m = cmds.createNode("multMatrix")
-        cmds.connectAttr(f"{shoulder_ctl}.worldMatrix[0]", f"{mult_m}.matrixIn[0]")
+        cmds.connectAttr(f"{thigh_ctl}.worldMatrix[0]", f"{mult_m}.matrixIn[0]")
         cmds.connectAttr(
-            f"{clavicle_bone_npo_inverse}.worldInverseMatrix[0]",
-            f"{mult_m}.matrixIn[1]",
+            f"{self.rig_root}.worldInverseMatrix[0]", f"{mult_m}.matrixIn[1]"
         )
         decom_m = cmds.createNode("decomposeMatrix")
         cmds.connectAttr(f"{mult_m}.matrixSum", f"{decom_m}.inputMatrix")
         cmds.connectAttr(f"{decom_m}.outputTranslate", f"{pair_b}.inTranslate1")
-        cmds.connectAttr(f"{shoulder_ctl}.r", f"{pair_b}.inRotate1")
+        cmds.connectAttr(f"{thigh_ctl}.r", f"{pair_b}.inRotate1")
         cmds.connectAttr(f"{ik0_jnt}.t", f"{pair_b}.inTranslate2")
         cmds.connectAttr(f"{ik0_jnt}.r", f"{pair_b}.inRotate2")
         cmds.connectAttr(f"{host_ctl}.fkik", f"{pair_b}.weight")
@@ -1177,14 +890,12 @@ class Rig(component.Rig):
         pair_b = cmds.createNode("pairBlend")
         cmds.setAttr(f"{pair_b}.rotInterpolation", 1)
         mult_m = cmds.createNode("multMatrix")
-        cmds.connectAttr(f"{elbow_ctl}.worldMatrix[0]", f"{mult_m}.matrixIn[0]")
-        cmds.connectAttr(
-            f"{shoulder_ctl}.worldInverseMatrix[0]", f"{mult_m}.matrixIn[1]"
-        )
+        cmds.connectAttr(f"{knee_ctl}.worldMatrix[0]", f"{mult_m}.matrixIn[0]")
+        cmds.connectAttr(f"{thigh_ctl}.worldInverseMatrix[0]", f"{mult_m}.matrixIn[1]")
         decom_m = cmds.createNode("decomposeMatrix")
         cmds.connectAttr(f"{mult_m}.matrixSum", f"{decom_m}.inputMatrix")
         cmds.connectAttr(f"{decom_m}.outputTranslate", f"{pair_b}.inTranslate1")
-        cmds.connectAttr(f"{elbow_ctl}.r", f"{pair_b}.inRotate1")
+        cmds.connectAttr(f"{knee_ctl}.r", f"{pair_b}.inRotate1")
         cmds.connectAttr(f"{ik1_jnt}.t", f"{pair_b}.inTranslate2")
         cmds.connectAttr(f"{ik1_jnt}.r", f"{pair_b}.inRotate2")
         cmds.connectAttr(f"{host_ctl}.fkik", f"{pair_b}.weight")
@@ -1194,12 +905,12 @@ class Rig(component.Rig):
         pair_b = cmds.createNode("pairBlend")
         cmds.setAttr(f"{pair_b}.rotInterpolation", 1)
         mult_m = cmds.createNode("multMatrix")
-        cmds.connectAttr(f"{wrist_ctl}.worldMatrix[0]", f"{mult_m}.matrixIn[0]")
-        cmds.connectAttr(f"{elbow_ctl}.worldInverseMatrix[0]", f"{mult_m}.matrixIn[1]")
+        cmds.connectAttr(f"{ankle_ctl}.worldMatrix[0]", f"{mult_m}.matrixIn[0]")
+        cmds.connectAttr(f"{knee_ctl}.worldInverseMatrix[0]", f"{mult_m}.matrixIn[1]")
         decom_m = cmds.createNode("decomposeMatrix")
         cmds.connectAttr(f"{mult_m}.matrixSum", f"{decom_m}.inputMatrix")
         cmds.connectAttr(f"{decom_m}.outputTranslate", f"{pair_b}.inTranslate1")
-        cmds.connectAttr(f"{wrist_ctl}.r", f"{pair_b}.inRotate1")
+        cmds.connectAttr(f"{ankle_ctl}.r", f"{pair_b}.inRotate1")
         cmds.connectAttr(f"{ik2_jnt}.t", f"{pair_b}.inTranslate2")
         cmds.connectAttr(f"{ik2_jnt}.r", f"{pair_b}.inRotate2")
         cmds.connectAttr(f"{host_ctl}.fkik", f"{pair_b}.weight")
@@ -1207,16 +918,14 @@ class Rig(component.Rig):
         cmds.connectAttr(f"{pair_b}.outRotate", f"{blend2_jnt}.r")
         blend_color = cmds.createNode("blendColors")
         cmds.connectAttr(f"{ik2_jnt}.s", f"{blend_color}.color1")
-        cmds.connectAttr(f"{wrist_ctl}.s", f"{blend_color}.color2")
+        cmds.connectAttr(f"{ankle_ctl}.s", f"{blend_color}.color2")
         cmds.connectAttr(f"{host_ctl}.fkik", f"{blend_color}.blender")
         cmds.connectAttr(f"{blend_color}.output", f"{blend2_jnt}.s")
         cmds.hide(blend0_jnt)
 
-        # endregion
-
         # region RIG - twist SC joint
         ins = Joint(
-            parent=clavicle_bone_npo_inverse,
+            parent=self.rig_root,
             name=name,
             side=side,
             index=index,
@@ -1234,7 +943,7 @@ class Rig(component.Rig):
                 name=name,
                 side=side,
                 index=index,
-                extension="startRoll",
+                extension="start_roll",
             ),
             parent=upper_non_twist0_jnt,
         )
@@ -1276,12 +985,10 @@ class Rig(component.Rig):
         cmds.setAttr(f"{upper_non_twist1_jnt}.t", 1, 0, 0)
         cmds.connectAttr(f"{negate_condition}.outColorR", f"{upper_non_twist1_jnt}.tx")
         cmds.hide(upper_non_twist_ikh)
-        upper_non_twist_ikh = cmds.parent(
-            upper_non_twist_ikh, clavicle_bone_npo_inverse
-        )[0]
+        upper_non_twist_ikh = cmds.parent(upper_non_twist_ikh, self.rig_root)[0]
 
         ins = Joint(
-            parent=clavicle_bone_npo_inverse,
+            parent=self.rig_root,
             name=name,
             side=side,
             index=index,
@@ -1327,7 +1034,7 @@ class Rig(component.Rig):
         cmds.setAttr(f"{upper_twist1_jnt}.t", 1, 0, 0)
         cmds.connectAttr(f"{negate_condition}.outColorR", f"{upper_twist1_jnt}.tx")
         cmds.hide(upper_twist_ikh)
-        upper_twist_ikh = cmds.parent(upper_twist_ikh, clavicle_bone_npo_inverse)[0]
+        upper_twist_ikh = cmds.parent(upper_twist_ikh, self.rig_root)[0]
 
         ins = Joint(
             parent=blend0_jnt,
@@ -1423,29 +1130,29 @@ class Rig(component.Rig):
         # endregion
 
         # region RIG - sub controllers
-        pin_npo, pin_ctl = self["controller"][10].create(
-            parent=clavicle_bone_npo_inverse,
+        pin_npo, pin_ctl = self["controller"][8].create(
+            parent=self.rig_root,
+            shape=(
+                self["controller"][8]["shape"]
+                if "shape" in self["controller"][8]
+                else "cube"
+            ),
+            color=12,
+        )
+        upper_bend_npo, upper_bend_ctl = self["controller"][9].create(
+            parent=self.rig_root,
+            shape=(
+                self["controller"][9]["shape"]
+                if "shape" in self["controller"][9]
+                else "cube"
+            ),
+            color=12,
+        )
+        lower_bend_npo, lower_bend_ctl = self["controller"][10].create(
+            parent=self.rig_root,
             shape=(
                 self["controller"][10]["shape"]
                 if "shape" in self["controller"][10]
-                else "cube"
-            ),
-            color=12,
-        )
-        upper_bend_npo, upper_bend_ctl = self["controller"][11].create(
-            parent=clavicle_bone_npo_inverse,
-            shape=(
-                self["controller"][11]["shape"]
-                if "shape" in self["controller"][11]
-                else "cube"
-            ),
-            color=12,
-        )
-        lower_bend_npo, lower_bend_ctl = self["controller"][12].create(
-            parent=clavicle_bone_npo_inverse,
-            shape=(
-                self["controller"][12]["shape"]
-                if "shape" in self["controller"][12]
                 else "cube"
             ),
             color=12,
@@ -1506,7 +1213,7 @@ class Rig(component.Rig):
         mult_m = cmds.createNode("multMatrix")
         cmds.connectAttr(f"{pole_vec_ctl}.worldMatrix[0]", f"{mult_m}.matrixIn[0]")
         cmds.connectAttr(
-            f"{clavicle_bone_npo_inverse}.worldInverseMatrix[0]",
+            f"{self.rig_root}.worldInverseMatrix[0]",
             f"{mult_m}.matrixIn[1]",
         )
         decom_m = cmds.createNode("decomposeMatrix")
@@ -1515,7 +1222,7 @@ class Rig(component.Rig):
         mult_m = cmds.createNode("multMatrix")
         cmds.connectAttr(f"{pin_ctl}.worldMatrix[0]", f"{mult_m}.matrixIn[0]")
         cmds.connectAttr(
-            f"{clavicle_bone_npo_inverse}.worldInverseMatrix[0]",
+            f"{self.rig_root}.worldInverseMatrix[0]",
             f"{mult_m}.matrixIn[1]",
         )
         decom_m = cmds.createNode("decomposeMatrix")
@@ -1686,7 +1393,7 @@ class Rig(component.Rig):
                 description="ribbon",
                 extension="grp",
             ),
-            parent=clavicle_bone_npo_inverse,
+            parent=self.rig_root,
         )
         ins = Surface(data=self["upper_ribbon_surface"]["value"])
         upper_ribbon_surface = ins.create_from_data()
@@ -1843,254 +1550,12 @@ class Rig(component.Rig):
             name=name,
             side=side,
             index=index,
-            description="wrist",
+            description="ankle",
             extension=Name.loc_extension,
         )
-        wrist_loc = ins.create()
-        cmds.setAttr(f"{wrist_loc}.t", 0, 0, 0)
-        cmds.orientConstraint(blend2_jnt, wrist_loc, maintainOffset=False)
-
-        # scapular
-        scapular_npo, scapular_ctl = self["controller"][13].create(
-            parent=clavicle_bone_ctl,
-            shape=(
-                self["controller"][13]["shape"]
-                if "shape" in self["controller"][13]
-                else "cube"
-            ),
-            color=12,
-            npo_matrix_index=8,
-        )
-        cmds.setAttr(f"{scapular_ctl}.mirror_type", 2)
-        ins = Transform(
-            scapular_ctl,
-            name=name,
-            side=side,
-            index=index,
-            description="scapular",
-            extension="inverse",
-        )
-        scapular_negate_inverse = ins.create()
-        cmds.setAttr(f"{scapular_negate_inverse}.t", 0, 0, 0)
-        cmds.setAttr(f"{scapular_negate_inverse}.r", 0, 0, 0)
-        cmds.setAttr(f"{scapular_negate_inverse}.s", 1, 1, 1)
-        cmds.connectAttr(
-            f"{negate_condition}.outColorR", f"{scapular_negate_inverse}.sz"
-        )
-        cmds.connectAttr(f"{host_ctl}.scapular_ctl_visibility", f"{scapular_npo}.v")
-        cmds.addAttr(
-            scapular_ctl,
-            longName="rotation",
-            attributeType="float",
-            minValue=-1,
-            maxValue=1,
-            defaultValue=0,
-            keyable=True,
-        )
-        cmds.addAttr(
-            scapular_ctl,
-            longName="upper_winging",
-            attributeType="float",
-            minValue=0,
-            maxValue=1,
-            defaultValue=0,
-            keyable=True,
-        )
-        cmds.addAttr(
-            scapular_ctl,
-            longName="lower_winging",
-            attributeType="float",
-            minValue=0,
-            maxValue=1,
-            defaultValue=0,
-            keyable=True,
-        )
-        ins = Transform(
-            parent=clavicle_bone_npo_inverse,
-            name=name,
-            side=side,
-            index=index,
-            description="scapularAim",
-            extension=Name.loc_extension,
-        )
-        scapular_aim_loc = ins.create()
-        cmds.connectAttr(
-            f"{self.rig_root}.scapular_aim_matrix",
-            f"{scapular_aim_loc}.offsetParentMatrix",
-        )
-        cmds.setAttr(f"{scapular_aim_loc}.t", 0, 0, 0)
-        cmds.setAttr(f"{scapular_aim_loc}.r", 0, 0, 0)
-        ins = Transform(
-            parent=self.rig_root,
-            name=name,
-            side=side,
-            index=index,
-            description="scapularAutoAim",
-            extension=Name.group_extension,
-        )
-        scapular_auto_aim_grp = ins.create()
-        ins = Transform(
-            parent=scapular_auto_aim_grp,
-            name=name,
-            side=side,
-            index=index,
-            description="scapularAutoAim",
-            extension=Name.loc_extension,
-        )
-        scapular_auto_aim_loc = ins.create()
-        cmds.connectAttr(
-            f"{self.rig_root}.scapular_aim_matrix",
-            f"{scapular_auto_aim_grp}.offsetParentMatrix",
-        )
-        ins = Transform(
-            parent=self.rig_root,
-            name=name,
-            side=side,
-            index=index,
-            description="scapularBlendAim",
-            extension=Name.loc_extension,
-        )
-        scapular_blend_aim_loc = ins.create()
-        ins = Transform(
-            parent=scapular_blend_aim_loc,
-            name=name,
-            side=side,
-            index=index,
-            description="scapularAutoAim",
-            extension="rotationWinging",
-        )
-        scapular_aim_rotation_winging = ins.create()
-        ins = Transform(
-            parent=clavicle_bone_npo_inverse,
-            name=name,
-            side=side,
-            index=index,
-            description="scapularUp",
-            extension=Name.loc_extension,
-        )
-        scapular_up_loc = ins.create()
-        cmds.connectAttr(
-            f"{self.rig_root}.scapular_up_matrix",
-            f"{scapular_up_loc}.offsetParentMatrix",
-        )
-        cmds.setAttr(f"{scapular_up_loc}.t", 0, 0, 0)
-        cmds.setAttr(f"{scapular_up_loc}.r", 0, 0, 0)
-        ins = Transform(
-            parent=self.rig_root,
-            name=name,
-            side=side,
-            index=index,
-            description="scapularAutoUp",
-            extension=Name.group_extension,
-        )
-        scapular_auto_up_grp = ins.create()
-        ins = Transform(
-            parent=scapular_auto_up_grp,
-            name=name,
-            side=side,
-            index=index,
-            description="scapularAutoUp",
-            extension=Name.loc_extension,
-        )
-        scapular_auto_up_loc = ins.create()
-        cmds.connectAttr(
-            f"{self.rig_root}.scapular_up_matrix",
-            f"{scapular_auto_up_grp}.offsetParentMatrix",
-        )
-        ins = Transform(
-            parent=self.rig_root,
-            name=name,
-            side=side,
-            index=index,
-            description="scapularBlendUp",
-            extension=Name.loc_extension,
-        )
-        scapular_blend_up_loc = ins.create()
-        ins = Transform(
-            parent=scapular_blend_up_loc,
-            name=name,
-            side=side,
-            index=index,
-            description="scapularAutoUp",
-            extension="rotationWinging",
-        )
-        scapular_up_rotation_winging = ins.create()
-        mult_m = cmds.createNode("multMatrix")
-        cmds.connectAttr(f"{scapular_aim_loc}.worldMatrix[0]", f"{mult_m}.matrixIn[0]")
-        cmds.connectAttr(
-            f"{self.rig_root}.worldInverseMatrix[0]", f"{mult_m}.matrixIn[1]"
-        )
-        blend_m = cmds.createNode("blendMatrix")
-        cmds.connectAttr(f"{mult_m}.matrixSum", f"{blend_m}.inputMatrix")
-        mult_m = cmds.createNode("multMatrix")
-        cmds.connectAttr(
-            f"{scapular_auto_aim_loc}.worldMatrix[0]",
-            f"{mult_m}.matrixIn[0]",
-        )
-        cmds.connectAttr(
-            f"{self.rig_root}.worldInverseMatrix[0]", f"{mult_m}.matrixIn[1]"
-        )
-        cmds.connectAttr(
-            f"{mult_m}.matrixSum",
-            f"{blend_m}.target[0].targetMatrix",
-        )
-        cmds.connectAttr(f"{host_ctl}.auto_scapular", f"{blend_m}.envelope")
-        cmds.connectAttr(
-            f"{blend_m}.outputMatrix", f"{scapular_blend_aim_loc}.offsetParentMatrix"
-        )
-        mult_m = cmds.createNode("multMatrix")
-        cmds.connectAttr(f"{scapular_up_loc}.worldMatrix[0]", f"{mult_m}.matrixIn[0]")
-        cmds.connectAttr(
-            f"{self.rig_root}.worldInverseMatrix[0]", f"{mult_m}.matrixIn[1]"
-        )
-        blend_m = cmds.createNode("blendMatrix")
-        cmds.connectAttr(f"{mult_m}.matrixSum", f"{blend_m}.inputMatrix")
-        mult_m = cmds.createNode("multMatrix")
-        cmds.connectAttr(
-            f"{scapular_auto_up_loc}.worldMatrix[0]",
-            f"{mult_m}.matrixIn[0]",
-        )
-        cmds.connectAttr(
-            f"{self.rig_root}.worldInverseMatrix[0]", f"{mult_m}.matrixIn[1]"
-        )
-        cmds.connectAttr(
-            f"{mult_m}.matrixSum",
-            f"{blend_m}.target[0].targetMatrix",
-        )
-        cmds.connectAttr(f"{host_ctl}.auto_scapular", f"{blend_m}.envelope")
-        cmds.connectAttr(
-            f"{blend_m}.outputMatrix", f"{scapular_blend_up_loc}.offsetParentMatrix"
-        )
-        cons = cmds.aimConstraint(
-            scapular_aim_rotation_winging,
-            scapular_npo,
-            aimVector=(-1, 0, 0),
-            upVector=(0, -1, 0),
-            worldUpType="object",
-            worldUpObject=scapular_up_rotation_winging,
-            maintainOffset=False,
-        )[0]
-        cmds.connectAttr(f"{self.rig_root}.scapular_aim_axis_x", f"{cons}.aimVectorX")
-        cmds.connectAttr(f"{self.rig_root}.scapular_aim_axis_y", f"{cons}.aimVectorY")
-        cmds.connectAttr(f"{self.rig_root}.scapular_aim_axis_z", f"{cons}.aimVectorZ")
-        cmds.connectAttr(f"{self.rig_root}.scapular_up_axis_x", f"{cons}.upVectorX")
-        cmds.connectAttr(f"{self.rig_root}.scapular_up_axis_y", f"{cons}.upVectorY")
-        cmds.connectAttr(f"{self.rig_root}.scapular_up_axis_z", f"{cons}.upVectorZ")
-
-        md = cmds.createNode("multiplyDivide")
-        cmds.connectAttr(f"{negate_condition}.outColorR", f"{md}.input2X")
-        cmds.connectAttr(f"{negate_condition}.outColorR", f"{md}.input2Y")
-        cmds.connectAttr(f"{negate_condition}.outColorR", f"{md}.input2Z")
-        cmds.connectAttr(f"{scapular_ctl}.rotation", f"{md}.input1X")
-
-        cmds.connectAttr(f"{scapular_ctl}.upper_winging", f"{md}.input1Y")
-        cmds.connectAttr(f"{scapular_ctl}.lower_winging", f"{md}.input1Z")
-        cmds.connectAttr(f"{md}.outputX", f"{scapular_aim_rotation_winging}.ty")
-        cmds.connectAttr(f"{md}.outputY", f"{scapular_aim_rotation_winging}.tz")
-        subtract = cmds.createNode("subtract")
-        cmds.connectAttr(f"{md}.outputY", f"{subtract}.input2")
-        cmds.connectAttr(f"{md}.outputZ", f"{subtract}.input1")
-        cmds.connectAttr(f"{subtract}.output", f"{scapular_up_rotation_winging}.tz")
+        ankle_loc = ins.create()
+        cmds.setAttr(f"{ankle_loc}.t", 0, 0, 0)
+        cmds.orientConstraint(blend2_jnt, ankle_loc, maintainOffset=False)
 
         # output
         c = 0
@@ -2099,27 +1564,13 @@ class Rig(component.Rig):
             name=name,
             side=side,
             index=index,
-            description="clavicle",
+            description="thigh",
             extension=Name.output_extension,
             m=ORIGINMATRIX,
         )
-        clavicle_output = ins.create()
-        cmds.setAttr(f"{clavicle_output}.drawStyle", 2)
-        self["output"][c].connect(clavicle_bone_ctl)
-
-        c += 1
-        ins = Joint(
-            parent=self.rig_root,
-            name=name,
-            side=side,
-            index=index,
-            description="shoulder",
-            extension=Name.output_extension,
-            m=ORIGINMATRIX,
-        )
-        shoulder_output = ins.create()
-        cmds.setAttr(f"{shoulder_output}.drawStyle", 2)
-        self["output"][c].connect(upper_ribbon_outputs[0])
+        thigh_loc = ins.create()
+        cmds.setAttr(f"{thigh_loc}.drawStyle", 2)
+        self["output"][c].connect(start_roll)
 
         upper_twist_outputs = []
         for i in range(self["twist_joint_count"]["value"]):
@@ -2144,12 +1595,12 @@ class Rig(component.Rig):
             name=name,
             side=side,
             index=index,
-            description="elbow",
+            description="knee",
             extension=Name.output_extension,
             m=ORIGINMATRIX,
         )
-        elbow_output = ins.create()
-        cmds.setAttr(f"{elbow_output}.drawStyle", 2)
+        knee_loc = ins.create()
+        cmds.setAttr(f"{knee_loc}.drawStyle", 2)
         self["output"][c].connect(lower_ribbon_outputs[0])
 
         lower_twist_outputs = []
@@ -2175,27 +1626,13 @@ class Rig(component.Rig):
             name=name,
             side=side,
             index=index,
-            description="wrist",
+            description="ankle",
             extension=Name.output_extension,
             m=ORIGINMATRIX,
         )
-        wrist_output = ins.create()
-        cmds.setAttr(f"{wrist_output}.drawStyle", 2)
-        self["output"][c].connect(wrist_loc)
-
-        c += 1
-        ins = Joint(
-            parent=self.rig_root,
-            name=name,
-            side=side,
-            index=index,
-            description="scapular",
-            extension=Name.output_extension,
-            m=ORIGINMATRIX,
-        )
-        scapular_output = ins.create()
-        cmds.setAttr(f"{scapular_output}.drawStyle", 2)
-        self["output"][c].connect(scapular_negate_inverse)
+        ankle_output = ins.create()
+        cmds.setAttr(f"{ankle_output}.drawStyle", 2)
+        self["output"][c].connect(ankle_loc)
 
         # output joint
         if self["create_output_joint"]["value"]:
@@ -2208,14 +1645,11 @@ class Rig(component.Rig):
     @build_log(logging.INFO)
     def guide(self):
         super().guide(description=description)
-
         graph, guide_compound = self.add_guide_graph()
 
         guide_count = len(self["guide_matrix"]["value"])
         if len(self["guide_mirror_type"]["value"]) != guide_count:
             self["guide_mirror_type"]["value"] = [1 for _ in range(guide_count)]
-
-        name, side, index = self.identifier
 
         negate_condition = cmds.createNode("condition")
         cmds.connectAttr(f"{self.rig_root}.side", f"{negate_condition}.firstTerm")
@@ -2224,168 +1658,32 @@ class Rig(component.Rig):
         cmds.setAttr(f"{negate_condition}.colorIfFalseR", 1)
 
         # guide
-        clavicle_guide = self.add_guide(
+        guide0 = self.add_guide(
             parent=self.guide_root,
-            description="clavicle",
+            description="thigh",
             m=self["guide_matrix"]["value"][0],
-            mirror_type=2,
+            mirror_type=self["guide_mirror_type"]["value"][0],
         )
-        shoulder_guide = self.add_guide(
-            parent=clavicle_guide,
-            description="shoulder",
+
+        guide1 = self.add_guide(
+            parent=guide0,
+            description="knee",
             m=self["guide_matrix"]["value"][1],
             mirror_type=self["guide_mirror_type"]["value"][1],
         )
-        elbow_guide = self.add_guide(
-            parent=shoulder_guide,
-            description="elbow",
+
+        guide2 = self.add_guide(
+            parent=guide1,
+            description="ankle",
             m=self["guide_matrix"]["value"][2],
             mirror_type=self["guide_mirror_type"]["value"][2],
         )
-        wrist_guide = self.add_guide(
-            parent=elbow_guide,
-            description="wrist",
+
+        guide3 = self.add_guide(
+            parent=guide2,
+            description="ankleAim",
             m=self["guide_matrix"]["value"][3],
             mirror_type=self["guide_mirror_type"]["value"][3],
-        )
-        wrist_end_guide = self.add_guide(
-            parent=wrist_guide,
-            description="wristEnd",
-            m=self["guide_matrix"]["value"][4],
-            mirror_type=self["guide_mirror_type"]["value"][4],
-        )
-        clavicle_bone_guide = self.add_guide(
-            parent=clavicle_guide,
-            description="clavicleBone",
-            m=self["guide_matrix"]["value"][5],
-            mirror_type=self["guide_mirror_type"]["value"][5],
-        )
-        ins = Transform(
-            parent=clavicle_guide,
-            name=name,
-            side=side,
-            index=index,
-            description="boneAim",
-            extension=Name.loc_extension,
-        )
-        clavicle_bone_aim_loc = ins.create()
-        cmds.setAttr(f"{clavicle_bone_aim_loc}.t", 0, 0, 0)
-        cmds.setAttr(f"{clavicle_bone_aim_loc}.r", 0, 0, 0)
-        divide = cmds.createNode("divide")
-        cmds.connectAttr(
-            f"{self.guide_root}.clavicle_bone_distance", f"{divide}.input1"
-        )
-        decom_m = cmds.createNode("decomposeMatrix")
-        cmds.connectAttr(f"{clavicle_guide}.worldMatrix[0]", f"{decom_m}.inputMatrix")
-        cmds.connectAttr(f"{decom_m}.outputScaleX", f"{divide}.input2")
-        cmds.connectAttr(f"{divide}.output", f"{clavicle_bone_aim_loc}.tx")
-        ins = Joint(
-            parent=self.guide_root,
-            name=name,
-            side=side,
-            index=index,
-            description="sc0Matrix",
-            extension=Name.joint_extension,
-            m=ORIGINMATRIX,
-        )
-        sc0_joint = ins.create()
-        cmds.pointConstraint(clavicle_bone_guide, sc0_joint, maintainOffset=False)
-        ins = Joint(
-            parent=sc0_joint,
-            name=name,
-            side=side,
-            index=index,
-            description="sc1Matrix",
-            extension=Name.joint_extension,
-            m=ORIGINMATRIX,
-        )
-        sc1_joint = ins.create()
-        cmds.setAttr(f"{sc1_joint}.t", 0, 0, 0)
-        cmds.setAttr(f"{sc0_joint}.jointOrient", 0, 0, 0)
-        cmds.connectAttr(f"{negate_condition}.outColorR", f"{sc1_joint}.tx")
-        sc_ikh, _ = cmds.ikHandle(
-            name=Name.create(
-                Name.controller_name_convention,
-                name=name,
-                side=side,
-                index=index,
-                description="clavicleBoneMatrix",
-                extension=Name.ikh_extension,
-            ),
-            startJoint=sc0_joint,
-            endEffector=sc1_joint,
-            solver="ikSCsolver",
-        )
-        sc_ikh = cmds.parent(sc_ikh, self.guide_root)[0]
-        cmds.hide(sc_ikh, sc0_joint)
-        cmds.pointConstraint(clavicle_bone_guide, sc0_joint, maintainOffset=False)
-        cmds.pointConstraint(clavicle_bone_aim_loc, sc_ikh, maintainOffset=False)
-        cmds.setAttr(f"{sc_ikh}.r", 0, 0, 0)
-        pick_m = cmds.createNode("pickMatrix")
-        cmds.setAttr(f"{pick_m}.useRotate", 0)
-        cmds.setAttr(f"{pick_m}.useScale", 0)
-        cmds.setAttr(f"{pick_m}.useShear", 0)
-        cmds.connectAttr(f"{clavicle_guide}.worldMatrix[0]", f"{pick_m}.inputMatrix")
-        inverse_m = cmds.createNode("inverseMatrix")
-        cmds.connectAttr(f"{pick_m}.outputMatrix", f"{inverse_m}.inputMatrix")
-        mult_m = cmds.createNode("multMatrix")
-        cmds.connectAttr(f"{sc0_joint}.worldMatrix[0]", f"{mult_m}.matrixIn[0]")
-        cmds.connectAttr(f"{inverse_m}.outputMatrix", f"{mult_m}.matrixIn[1]")
-        pick_m = cmds.createNode("pickMatrix")
-        cmds.setAttr(f"{pick_m}.useScale", 0)
-        cmds.connectAttr(f"{mult_m}.matrixSum", f"{pick_m}.inputMatrix")
-        cmds.connectAttr(
-            f"{pick_m}.outputMatrix", f"{self.guide_root}.clavicle_bone_matrix"
-        )
-        scapular_guide = self.add_guide(
-            parent=clavicle_guide,
-            description="scapular",
-            m=self["guide_matrix"]["value"][6],
-            mirror_type=2,
-        )
-        scapular_aim_guide = self.add_guide(
-            parent=scapular_guide,
-            description="scapularAim",
-            m=self["guide_matrix"]["value"][7],
-            mirror_type=self["guide_mirror_type"]["value"][7],
-        )
-        cmds.setAttr(f"{scapular_aim_guide}.ty", lock=True)
-        cmds.setAttr(f"{scapular_aim_guide}.tz", lock=True)
-        cmds.setAttr(f"{scapular_aim_guide}.r", lock=True)
-        normalize = cmds.createNode("normalize")
-        cmds.connectAttr(f"{scapular_aim_guide}.tx", f"{normalize}.inputX")
-        cmds.connectAttr(
-            f"{normalize}.outputX", f"{self.guide_root}.scapular_aim_axis_x"
-        )
-        cmds.connectAttr(f"{scapular_aim_guide}.ty", f"{normalize}.inputY")
-        cmds.connectAttr(
-            f"{normalize}.outputY", f"{self.guide_root}.scapular_aim_axis_y"
-        )
-        cmds.connectAttr(f"{scapular_aim_guide}.tz", f"{normalize}.inputZ")
-        cmds.connectAttr(
-            f"{normalize}.outputZ", f"{self.guide_root}.scapular_aim_axis_z"
-        )
-        scapular_up_guide = self.add_guide(
-            parent=scapular_guide,
-            description="scapularUp",
-            m=self["guide_matrix"]["value"][8],
-            mirror_type=self["guide_mirror_type"]["value"][8],
-        )
-        cmds.setAttr(f"{scapular_up_guide}.tx", lock=True)
-        cmds.setAttr(f"{scapular_up_guide}.tz", lock=True)
-        cmds.setAttr(f"{scapular_up_guide}.r", lock=True)
-        normalize = cmds.createNode("normalize")
-        cmds.connectAttr(f"{scapular_up_guide}.tx", f"{normalize}.inputX")
-        cmds.connectAttr(
-            f"{normalize}.outputX", f"{self.guide_root}.scapular_up_axis_x"
-        )
-        cmds.connectAttr(f"{scapular_up_guide}.ty", f"{normalize}.inputY")
-        cmds.connectAttr(
-            f"{normalize}.outputY", f"{self.guide_root}.scapular_up_axis_y"
-        )
-        cmds.connectAttr(f"{scapular_up_guide}.tz", f"{normalize}.inputZ")
-        cmds.connectAttr(
-            f"{normalize}.outputZ", f"{self.guide_root}.scapular_up_axis_z"
         )
 
         cmds.vnnNode(
@@ -2418,21 +1716,6 @@ class Rig(component.Rig):
             "/output",
             createInputPort=("driver_inverse_matrix", "array<Math::double4x4>"),
         )
-        cmds.vnnNode(
-            graph,
-            "/output",
-            createInputPort=("clavicle_bone_distance", "float"),
-        )
-        cmds.vnnNode(
-            graph,
-            "/output",
-            createInputPort=("scapular_aim_matrix", "Math::float4x4"),
-        )
-        cmds.vnnNode(
-            graph,
-            "/output",
-            createInputPort=("scapular_up_matrix", "Math::float4x4"),
-        )
         cmds.vnnConnect(
             graph,
             "/input.twist_joint_count",
@@ -2463,21 +1746,6 @@ class Rig(component.Rig):
             f"/{guide_compound}.driver_inverse_matrix",
             "/output.driver_inverse_matrix",
         )
-        cmds.vnnConnect(
-            graph,
-            f"/{guide_compound}.clavicle_bone_distance",
-            "/output.clavicle_bone_distance",
-        )
-        cmds.vnnConnect(
-            graph,
-            f"/{guide_compound}.scapular_aim_matrix",
-            "/output.scapular_aim_matrix",
-        )
-        cmds.vnnConnect(
-            graph,
-            f"/{guide_compound}.scapular_up_matrix",
-            "/output.scapular_up_matrix",
-        )
         cmds.connectAttr(f"{self.guide_root}.side", f"{graph}.negate")
         cmds.connectAttr(
             f"{self.guide_root}.align_last_transform_to_guide",
@@ -2486,21 +1754,9 @@ class Rig(component.Rig):
         cmds.connectAttr(
             f"{self.guide_root}.twist_joint_count", f"{graph}.twist_joint_count"
         )
-        cmds.connectAttr(
-            f"{graph}.clavicle_bone_distance",
-            f"{self.guide_root}.clavicle_bone_distance",
-        )
-        cmds.connectAttr(
-            f"{graph}.scapular_aim_matrix",
-            f"{self.guide_root}.scapular_aim_matrix",
-        )
-        cmds.connectAttr(
-            f"{graph}.scapular_up_matrix",
-            f"{self.guide_root}.scapular_up_matrix",
-        )
 
         mult_m0 = cmds.createNode("multMatrix")
-        cmds.connectAttr(f"{shoulder_guide}.worldMatrix[0]", f"{mult_m0}.matrixIn[0]")
+        cmds.connectAttr(f"{guide0}.worldMatrix[0]", f"{mult_m0}.matrixIn[0]")
         cmds.connectAttr(
             f"{self.guide_root}.worldInverseMatrix[0]", f"{mult_m0}.matrixIn[1]"
         )
@@ -2509,7 +1765,7 @@ class Rig(component.Rig):
         cmds.connectAttr(f"{mult_m0}.matrixSum", f"{decom_m0}.inputMatrix")
 
         mult_m1 = cmds.createNode("multMatrix")
-        cmds.connectAttr(f"{elbow_guide}.worldMatrix[0]", f"{mult_m1}.matrixIn[0]")
+        cmds.connectAttr(f"{guide1}.worldMatrix[0]", f"{mult_m1}.matrixIn[0]")
         cmds.connectAttr(
             f"{self.guide_root}.worldInverseMatrix[0]", f"{mult_m1}.matrixIn[1]"
         )
@@ -2518,7 +1774,7 @@ class Rig(component.Rig):
         cmds.connectAttr(f"{mult_m1}.matrixSum", f"{decom_m1}.inputMatrix")
 
         mult_m2 = cmds.createNode("multMatrix")
-        cmds.connectAttr(f"{wrist_guide}.worldMatrix[0]", f"{mult_m2}.matrixIn[0]")
+        cmds.connectAttr(f"{guide2}.worldMatrix[0]", f"{mult_m2}.matrixIn[0]")
         cmds.connectAttr(
             f"{self.guide_root}.worldInverseMatrix[0]", f"{mult_m2}.matrixIn[1]"
         )
@@ -2547,14 +1803,14 @@ class Rig(component.Rig):
         cmds.connectAttr(f"{normalize1}.output", f"{cross_product}.input2")
 
         upperline = cmds.curve(point=((0, 0, 0), (0, 0, 0)), degree=1)
-        upperline = cmds.rename(upperline, shoulder_guide.replace("guide", "upperLine"))
+        upperline = cmds.rename(upperline, guide0.replace("guide", "upperLine"))
         upperline = cmds.parent(upperline, self.guide_root)[0]
         cmds.setAttr(f"{upperline}.t", lock=True)
         cmds.setAttr(f"{upperline}.r", lock=True)
         cmds.setAttr(f"{upperline}.s", lock=True)
         cmds.setAttr(f"{upperline}.template", 1)
         lowerline = cmds.curve(point=((0, 0, 0), (0, 0, 0)), degree=1)
-        lowerline = cmds.rename(lowerline, shoulder_guide.replace("guide", "lowerLine"))
+        lowerline = cmds.rename(lowerline, guide0.replace("guide", "lowerLine"))
         lowerline = cmds.parent(lowerline, self.guide_root)[0]
         cmds.setAttr(f"{lowerline}.t", lock=True)
         cmds.setAttr(f"{lowerline}.r", lock=True)
@@ -2739,7 +1995,7 @@ class Rig(component.Rig):
             f"{self.guide_root}.lower_ribbon_surface",
         )
 
-        for i in range(9):
+        for i in range(6):
             decom_m = cmds.createNode("decomposeMatrix")
             cmds.connectAttr(
                 f"{self.guide_graph}.npo_matrix[{i}]", f"{decom_m}.inputMatrix"
@@ -2776,14 +2032,15 @@ class Rig(component.Rig):
 
         # pole vector guide
         cmds.addAttr(
-            elbow_guide,
+            guide1,
             longName="pole_vector_multiple",
             attributeType="float",
+            minValue=0,
             keyable=True,
             defaultValue=self["pole_vector_multiple"]["value"],
         )
         multiply = cmds.createNode("multiply")
-        cmds.connectAttr(f"{elbow_guide}.pole_vector_multiple", f"{multiply}.input[0]")
+        cmds.connectAttr(f"{guide1}.pole_vector_multiple", f"{multiply}.input[0]")
 
         decom_m = cmds.createNode("decomposeMatrix")
         cmds.connectAttr(f"{self.guide_root}.worldMatrix[0]", f"{decom_m}.inputMatrix")

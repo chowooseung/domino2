@@ -27,16 +27,18 @@ tm1.setTranslation(om.MVector((5, 0, 0)), om.MSpace.kObject)
 radians = [om.MAngle(x, om.MAngle.kDegrees).asRadians() for x in (0, -2, 0)]
 euler_rot = om.MEulerRotation(radians, om.MEulerRotation.kXYZ)
 tm1.setRotation(euler_rot)
-matrices.append(list(tm0.asMatrix() * tm1.asMatrix()))
+matrices.append(list(tm1.asMatrix() * tm0.asMatrix()))
 
 tm2 = om.MTransformationMatrix(m)
 tm2.setTranslation(om.MVector((5, 0, 0)), om.MSpace.kObject)
+radians = [om.MAngle(x, om.MAngle.kDegrees).asRadians() for x in (0, 1, 0)]
+euler_rot = om.MEulerRotation(radians, om.MEulerRotation.kXYZ)
 tm2.setRotation(euler_rot)
-matrices.append(list(tm0.asMatrix() * tm1.asMatrix() * tm2.asMatrix()))
+matrices.append(list(tm2.asMatrix() * tm1.asMatrix() * tm0.asMatrix()))
 
 tm3 = om.MTransformationMatrix(m)
 tm3.setTranslation(om.MVector((2, 0, 0)), om.MSpace.kObject)
-matrices.append(list(tm0.asMatrix() * tm1.asMatrix() * tm2.asMatrix() * tm3.asMatrix()))
+matrices.append(list(tm3.asMatrix() * tm2.asMatrix() * tm1.asMatrix() * tm0.asMatrix()))
 
 DATA = [
     attribute.String(longName="component", value="fkik2jnt01"),
@@ -87,7 +89,9 @@ DATA = [
 description = """## fkik01
 ---
 
-2jnt fkik blend 를 생성합니다.
+2jnt fkik blend 를 생성합니다.  
+fkik0, fkik1, fkik2 guide 가 ik 를 생성하기 때문에  
+일직선 상에 놓이면 안됩니다. rotate 를 사용해서 평면을 만들어주세요.
 
 #### Settings"""
 
