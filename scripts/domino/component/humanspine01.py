@@ -94,12 +94,12 @@ DATA = [
     attribute.Matrix(
         longName="initialize_output_matrix",
         multi=True,
-        value=[list(ORIGINMATRIX) for _ in range(5)],
+        value=[list(ORIGINMATRIX) for _ in range(6)],
     ),
     attribute.Matrix(
         longName="initialize_output_inverse_matrix",
         multi=True,
-        value=[list(ORIGINMATRIX) for _ in range(5)],
+        value=[list(ORIGINMATRIX) for _ in range(6)],
     ),
     attribute.Integer(
         longName="guide_mirror_type",
@@ -133,7 +133,7 @@ DATA = [
     ),
     attribute.Integer(longName="output_count", value=5),
     attribute.Float(
-        longName="output_u_values", multi=True, value=[0, 0.25, 0.5, 0.75, 1]
+        longName="output_v_values", multi=True, value=[0, 0.25, 0.5, 0.75, 1]
     ),
     attribute.Matrix(longName="driver_matrix", multi=True, value=matrices[-4:]),
     attribute.Matrix(longName="driver_inverse_matrix", multi=True, value=matrices[-4:]),
@@ -196,8 +196,8 @@ class Rig(component.Rig):
 
     def input_data(self):
         dialog = QtWidgets.QDialog()
-        dialog.setWindowTitle("Output Joint Count")
-        label = QtWidgets.QLabel("Output Count : ")
+        dialog.setWindowTitle("Ribbon u value Count")
+        label = QtWidgets.QLabel("u Value Count : ")
         line_edit = QtWidgets.QLineEdit()
         ok_btn = QtWidgets.QPushButton("Ok")
         ok_btn.clicked.connect(dialog.accept)
@@ -220,12 +220,12 @@ class Rig(component.Rig):
             if value < 3:
                 return False
             self["output_count"]["value"] = value
-            self["output_u_values"]["value"] = [v / (value - 1) for v in range(value)]
+            self["output_v_values"]["value"] = [v / (value - 1) for v in range(value)]
             self["initialize_output_matrix"]["value"] = [
-                list(ORIGINMATRIX) for _ in range(value)
+                list(ORIGINMATRIX) for _ in range(value + 1)
             ]
             self["initialize_output_inverse_matrix"]["value"] = [
-                list(ORIGINMATRIX) for _ in range(value)
+                list(ORIGINMATRIX) for _ in range(value + 1)
             ]
         except:
             return False
@@ -269,12 +269,14 @@ class Rig(component.Rig):
 
     def populate_output(self):
         if not self["output"]:
+            self.add_output(description="hip", extension=Name.output_extension)
             for i in range(self["output_count"]["value"]):
                 self.add_output(description=i, extension=Name.output_extension)
 
     def populate_output_joint(self):
         if not self["output_joint"]:
-            parent_description = None
+            self.add_output_joint(parent_description=None, description="hip")
+            parent_description = "hip"
             for i in range(self["output_count"]["value"]):
                 self.add_output_joint(
                     parent_description=parent_description, description=i
@@ -397,6 +399,19 @@ class Rig(component.Rig):
             color=12,
             npo_matrix_index=1,
         )
+        hip_loc = cmds.createNode(
+            "transform",
+            name=Name.create(
+                Name.controller_name_convention,
+                name=name,
+                side=side,
+                index=index,
+                description="hip",
+                extension=Name.loc_extension,
+            ),
+            parent=hip_ctl,
+        )
+        cmds.setAttr(f"{hip_loc}.rz", 90)
         fk0_npo, fk0_ctl = self["controller"][3].create(
             parent=upper_body_ctl,
             shape=(
@@ -461,13 +476,13 @@ class Rig(component.Rig):
         ribbon_grp = ins.create()
 
         ins = Joint(
-            parent=hip_ctl,
+            parent=upper_body_ctl,
             name=name,
             side=side,
             index=index,
             description="ribbonDriver0",
             extension=Name.joint_extension,
-            m=cmds.xform(hip_ctl, query=True, matrix=True, worldSpace=True),
+            m=cmds.xform(upper_body_ctl, query=True, matrix=True, worldSpace=True),
             use_joint_convention=False,
         )
         ribbon0_jnt = ins.create()
@@ -534,7 +549,7 @@ class Rig(component.Rig):
         )
         main_ik_joints = []
         parent = ribbon_grp
-        for i in range(len(self["output_u_values"]["value"])):
+        for i in range(len(self["output_v_values"]["value"])):
             ins = Joint(
                 parent=parent,
                 name=name,
@@ -547,7 +562,7 @@ class Rig(component.Rig):
             parent = main_ik_joints[i]
         up_ik_joints = []
         parent = ribbon_grp
-        for i in range(len(self["output_u_values"]["value"])):
+        for i in range(len(self["output_v_values"]["value"])):
             ins = Joint(
                 parent=parent,
                 name=name,
@@ -559,9 +574,9 @@ class Rig(component.Rig):
             up_ik_joints.append(ins.create())
             parent = up_ik_joints[i]
 
-        output_u_values = self["output_u_values"]["value"]
-        half_list = output_u_values[: int(len(output_u_values) / 2)]
-        if len(output_u_values) % 2 == 1:
+        output_v_values = self["output_v_values"]["value"]
+        half_list = output_v_values[: int(len(output_v_values) / 2)]
+        if len(output_v_values) % 2 == 1:
             value = 1 / (len(half_list))
             half_list = [x * value for x in range(len(half_list))]
             auto_volume_multiple = half_list + [1] + list(reversed(half_list))
@@ -596,8 +611,8 @@ class Rig(component.Rig):
             volume_position_attr=f"{host_ctl}.volume_position",
             volume_high_bound_attr=f"{host_ctl}.volume_high_bound",
             volume_low_bound_attr=f"{host_ctl}.volume_low_bound",
-            output_u_value_plugs=[
-                f"{self.rig_root}.output_u_values[{i}]"
+            output_v_value_plugs=[
+                f"{self.rig_root}.output_v_values[{i}]"
                 for i in range(self["output_count"]["value"])
             ],
             negate_plug=f"{condition}.outColorR",
@@ -645,6 +660,19 @@ class Rig(component.Rig):
         tip_output = ins.create()
         cmds.orientConstraint(tip_rot, tip_output)
 
+        ins = Joint(
+            self.rig_root,
+            name=name,
+            side=side,
+            index=index,
+            description="hip",
+            extension=Name.output_extension,
+            m=ORIGINMATRIX,
+        )
+        hip_output = ins.create()
+        cmds.setAttr(f"{hip_output}.drawStyle", 2)
+        self["output"][0].connect(hip_loc)
+
         output_sources = ribbon_outputs[:-1] + [tip_output]
         for i in range(self["output_count"]["value"]):
             output_npo, output_ctl = self["controller"][7 + i].create(
@@ -678,9 +706,10 @@ class Rig(component.Rig):
             )
             output = ins.create()
             cmds.setAttr(f"{output}.drawStyle", 2)
-            self["output"][i].connect(output_ctl)
+            self["output"][i + 1].connect(output_ctl)
 
-            # output joint
+        # output joint
+        for i in range(self["output_count"]["value"] + 1):
             if self["create_output_joint"]["value"]:
                 self["output_joint"][i].create()
 
@@ -837,9 +866,9 @@ class Rig(component.Rig):
         cmds.connectAttr(f"{surface}.worldSpace[0]", f"{uvpin}.deformedGeometry")
 
         c = 0
-        for i in range(len(self["output_u_values"]["value"])):
+        for i in range(len(self["output_v_values"]["value"])):
             cmds.connectAttr(
-                f"{self.guide_root}.output_u_values[{i}]",
+                f"{self.guide_root}.output_v_values[{i}]",
                 f"{uvpin}.coordinate[{c}].coordinateV",
             )
             cmds.setAttr(f"{uvpin}.coordinate[{c}].coordinateU", 0.5)
@@ -847,9 +876,9 @@ class Rig(component.Rig):
                 f"{uvpin}.outputMatrix[{c}]", f"{graph}.main_transforms[{i}]"
             )
             c += 1
-        for i in range(len(self["output_u_values"]["value"])):
+        for i in range(len(self["output_v_values"]["value"])):
             cmds.connectAttr(
-                f"{self.guide_root}.output_u_values[{i}]",
+                f"{self.guide_root}.output_v_values[{i}]",
                 f"{uvpin}.coordinate[{c}].coordinateV",
             )
             cmds.connectAttr(
@@ -878,7 +907,7 @@ class Rig(component.Rig):
                 f"{compose_m}.outputMatrix", f"{self.guide_root}.npo_matrix[{i}]"
             )
 
-        for i in range(self["output_count"]["value"]):
+        for i in range(self["output_count"]["value"] + 1):
             cmds.connectAttr(
                 f"{self.guide_graph}.initialize_output_matrix[{i}]",
                 f"{self.guide_root}.initialize_output_matrix[{i}]",

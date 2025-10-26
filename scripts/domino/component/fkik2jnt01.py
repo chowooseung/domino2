@@ -154,7 +154,7 @@ class Rig(component.Rig):
             shape=(
                 self["controller"][0]["shape"]
                 if "shape" in self["controller"][0]
-                else "cube"
+                else "host"
             ),
             color=12,
             host=True,

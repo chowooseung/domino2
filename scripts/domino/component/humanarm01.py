@@ -121,10 +121,10 @@ DATA = [
         longName="twist_joint_count", minValue=1, defaultValue=2, value=2
     ),
     attribute.Float(
-        longName="upper_output_u_values", multi=True, value=[0, 0.3333, 0.6666, 1]
+        longName="upper_output_v_values", multi=True, value=[0, 0.3333, 0.6666, 1]
     ),
     attribute.Float(
-        longName="lower_output_u_values", multi=True, value=[0, 0.3333, 0.6666, 1]
+        longName="lower_output_v_values", multi=True, value=[0, 0.3333, 0.6666, 1]
     ),
     # offset output rotate
     attribute.DoubleAngle(
@@ -324,10 +324,10 @@ class Rig(component.Rig):
         try:
             value = int(line_edit.text())
             self["twist_joint_count"]["value"] = value
-            self["upper_output_u_values"]["value"] = [
+            self["upper_output_v_values"]["value"] = [
                 v / (value + 1) for v in range(value + 2)
             ]
-            self["lower_output_u_values"]["value"] = [
+            self["lower_output_v_values"]["value"] = [
                 v / (value + 1) for v in range(value + 2)
             ]
             self["initialize_output_matrix"]["value"] = [
@@ -856,6 +856,49 @@ class Rig(component.Rig):
             name=name,
             side=side,
             index=index,
+            description="fk0",
+            extension=Name.joint_extension,
+            m=cmds.xform(shoulder_ctl, query=True, matrix=True, worldSpace=True),
+            use_joint_convention=False,
+        )
+        fk0_jnt = ins.create()
+        cmds.parentConstraint(shoulder_ctl, fk0_jnt, maintainOffset=False)
+        cmds.scaleConstraint(shoulder_ctl, fk0_jnt, maintainOffset=False)
+        cmds.hide(fk0_jnt)
+
+        ins = Joint(
+            parent=fk0_jnt,
+            name=name,
+            side=side,
+            index=index,
+            description="fk1",
+            extension=Name.joint_extension,
+            m=cmds.xform(elbow_ctl, query=True, matrix=True, worldSpace=True),
+            use_joint_convention=False,
+        )
+        fk1_jnt = ins.create()
+        cmds.parentConstraint(elbow_ctl, fk1_jnt, maintainOffset=False)
+        cmds.scaleConstraint(elbow_ctl, fk1_jnt, maintainOffset=False)
+
+        ins = Joint(
+            parent=fk1_jnt,
+            name=name,
+            side=side,
+            index=index,
+            description="fk2",
+            extension=Name.joint_extension,
+            m=cmds.xform(wrist_ctl, query=True, matrix=True, worldSpace=True),
+            use_joint_convention=False,
+        )
+        fk2_jnt = ins.create()
+        cmds.parentConstraint(wrist_ctl, fk2_jnt, maintainOffset=False)
+        cmds.scaleConstraint(wrist_ctl, fk2_jnt, maintainOffset=False)
+
+        ins = Joint(
+            parent=clavicle_bone_npo_inverse,
+            name=name,
+            side=side,
+            index=index,
             description="ik0",
             extension=Name.joint_extension,
             m=cmds.xform(shoulder_ctl, query=True, matrix=True, worldSpace=True),
@@ -1080,12 +1123,15 @@ class Rig(component.Rig):
         cmds.connectAttr(f"{self.rig_root}.npo_matrix[1]", f"{mult_m}.matrixIn[1]")
         decom_m = cmds.createNode("decomposeMatrix")
         cmds.connectAttr(f"{mult_m}.matrixSum", f"{decom_m}.inputMatrix")
+        cmds.connectAttr(f"{decom_m}.outputRotate", f"{fk0_jnt}.jointOrient")
         cmds.connectAttr(f"{decom_m}.outputRotate", f"{ik0_jnt}.jointOrient")
         decom_m = cmds.createNode("decomposeMatrix")
         cmds.connectAttr(f"{self.rig_root}.npo_matrix[3]", f"{decom_m}.inputMatrix")
+        cmds.connectAttr(f"{decom_m}.outputRotate", f"{fk1_jnt}.jointOrient")
         cmds.connectAttr(f"{decom_m}.outputRotate", f"{ik1_jnt}.jointOrient")
         decom_m = cmds.createNode("decomposeMatrix")
         cmds.connectAttr(f"{self.rig_root}.npo_matrix[4]", f"{decom_m}.inputMatrix")
+        cmds.connectAttr(f"{decom_m}.outputRotate", f"{fk2_jnt}.jointOrient")
         cmds.connectAttr(f"{decom_m}.outputRotate", f"{ik2_jnt}.jointOrient")
         # endregion
 
@@ -1158,16 +1204,8 @@ class Rig(component.Rig):
 
         pair_b = cmds.createNode("pairBlend")
         cmds.setAttr(f"{pair_b}.rotInterpolation", 1)
-        mult_m = cmds.createNode("multMatrix")
-        cmds.connectAttr(f"{shoulder_ctl}.worldMatrix[0]", f"{mult_m}.matrixIn[0]")
-        cmds.connectAttr(
-            f"{clavicle_bone_npo_inverse}.worldInverseMatrix[0]",
-            f"{mult_m}.matrixIn[1]",
-        )
-        decom_m = cmds.createNode("decomposeMatrix")
-        cmds.connectAttr(f"{mult_m}.matrixSum", f"{decom_m}.inputMatrix")
-        cmds.connectAttr(f"{decom_m}.outputTranslate", f"{pair_b}.inTranslate1")
-        cmds.connectAttr(f"{shoulder_ctl}.r", f"{pair_b}.inRotate1")
+        cmds.connectAttr(f"{fk0_jnt}.t", f"{pair_b}.inTranslate1")
+        cmds.connectAttr(f"{fk0_jnt}.r", f"{pair_b}.inRotate1")
         cmds.connectAttr(f"{ik0_jnt}.t", f"{pair_b}.inTranslate2")
         cmds.connectAttr(f"{ik0_jnt}.r", f"{pair_b}.inRotate2")
         cmds.connectAttr(f"{host_ctl}.fkik", f"{pair_b}.weight")
@@ -1176,15 +1214,8 @@ class Rig(component.Rig):
 
         pair_b = cmds.createNode("pairBlend")
         cmds.setAttr(f"{pair_b}.rotInterpolation", 1)
-        mult_m = cmds.createNode("multMatrix")
-        cmds.connectAttr(f"{elbow_ctl}.worldMatrix[0]", f"{mult_m}.matrixIn[0]")
-        cmds.connectAttr(
-            f"{shoulder_ctl}.worldInverseMatrix[0]", f"{mult_m}.matrixIn[1]"
-        )
-        decom_m = cmds.createNode("decomposeMatrix")
-        cmds.connectAttr(f"{mult_m}.matrixSum", f"{decom_m}.inputMatrix")
-        cmds.connectAttr(f"{decom_m}.outputTranslate", f"{pair_b}.inTranslate1")
-        cmds.connectAttr(f"{elbow_ctl}.r", f"{pair_b}.inRotate1")
+        cmds.connectAttr(f"{fk1_jnt}.t", f"{pair_b}.inTranslate1")
+        cmds.connectAttr(f"{fk1_jnt}.r", f"{pair_b}.inRotate1")
         cmds.connectAttr(f"{ik1_jnt}.t", f"{pair_b}.inTranslate2")
         cmds.connectAttr(f"{ik1_jnt}.r", f"{pair_b}.inRotate2")
         cmds.connectAttr(f"{host_ctl}.fkik", f"{pair_b}.weight")
@@ -1193,13 +1224,8 @@ class Rig(component.Rig):
 
         pair_b = cmds.createNode("pairBlend")
         cmds.setAttr(f"{pair_b}.rotInterpolation", 1)
-        mult_m = cmds.createNode("multMatrix")
-        cmds.connectAttr(f"{wrist_ctl}.worldMatrix[0]", f"{mult_m}.matrixIn[0]")
-        cmds.connectAttr(f"{elbow_ctl}.worldInverseMatrix[0]", f"{mult_m}.matrixIn[1]")
-        decom_m = cmds.createNode("decomposeMatrix")
-        cmds.connectAttr(f"{mult_m}.matrixSum", f"{decom_m}.inputMatrix")
-        cmds.connectAttr(f"{decom_m}.outputTranslate", f"{pair_b}.inTranslate1")
-        cmds.connectAttr(f"{wrist_ctl}.r", f"{pair_b}.inRotate1")
+        cmds.connectAttr(f"{fk2_jnt}.t", f"{pair_b}.inTranslate1")
+        cmds.connectAttr(f"{fk2_jnt}.r", f"{pair_b}.inRotate1")
         cmds.connectAttr(f"{ik2_jnt}.t", f"{pair_b}.inTranslate2")
         cmds.connectAttr(f"{ik2_jnt}.r", f"{pair_b}.inRotate2")
         cmds.connectAttr(f"{host_ctl}.fkik", f"{pair_b}.weight")
@@ -1745,9 +1771,9 @@ class Rig(component.Rig):
             volume_position_attr=f"{upper_bend_ctl}.volume_position",
             volume_high_bound_attr=f"{upper_bend_ctl}.volume_high_bound",
             volume_low_bound_attr=f"{upper_bend_ctl}.volume_low_bound",
-            output_u_value_plugs=[
-                f"{self.rig_root}.upper_output_u_values[{i}]"
-                for i in range(len(self["upper_output_u_values"]["value"]))
+            output_v_value_plugs=[
+                f"{self.rig_root}.upper_output_v_values[{i}]"
+                for i in range(len(self["upper_output_v_values"]["value"]))
             ],
             negate_plug=f"{negate_condition}.outColorR",
         )
@@ -1802,9 +1828,9 @@ class Rig(component.Rig):
             volume_position_attr=f"{lower_bend_ctl}.volume_position",
             volume_high_bound_attr=f"{lower_bend_ctl}.volume_high_bound",
             volume_low_bound_attr=f"{lower_bend_ctl}.volume_low_bound",
-            output_u_value_plugs=[
-                f"{self.rig_root}.lower_output_u_values[{i}]"
-                for i in range(len(self["lower_output_u_values"]["value"]))
+            output_v_value_plugs=[
+                f"{self.rig_root}.lower_output_v_values[{i}]"
+                for i in range(len(self["lower_output_v_values"]["value"]))
             ],
             negate_plug=f"{negate_condition}.outColorR",
         )
@@ -2596,35 +2622,21 @@ class Rig(component.Rig):
         cmds.setAttr(f"{linear_rebuild_curve1}.degree", 1)
         cmds.setAttr(f"{linear_rebuild_curve1}.spans", 4)
         cmds.connectAttr(
-            f"{upperline}.worldSpace[0]", f"{linear_rebuild_curve1}.inputCurve"
+            f"{offset_curve1}.outputCurve[0]", f"{linear_rebuild_curve1}.inputCurve"
         )
 
         linear_rebuild_curve2 = cmds.createNode("rebuildCurve")
         cmds.setAttr(f"{linear_rebuild_curve2}.degree", 1)
         cmds.setAttr(f"{linear_rebuild_curve2}.spans", 4)
         cmds.connectAttr(
-            f"{offset_curve1}.outputCurve[0]", f"{linear_rebuild_curve2}.inputCurve"
+            f"{offset_curve2}.outputCurve[0]", f"{linear_rebuild_curve2}.inputCurve"
         )
 
         linear_rebuild_curve3 = cmds.createNode("rebuildCurve")
         cmds.setAttr(f"{linear_rebuild_curve3}.degree", 1)
         cmds.setAttr(f"{linear_rebuild_curve3}.spans", 4)
         cmds.connectAttr(
-            f"{offset_curve2}.outputCurve[0]", f"{linear_rebuild_curve3}.inputCurve"
-        )
-
-        linear_rebuild_curve4 = cmds.createNode("rebuildCurve")
-        cmds.setAttr(f"{linear_rebuild_curve4}.degree", 1)
-        cmds.setAttr(f"{linear_rebuild_curve4}.spans", 4)
-        cmds.connectAttr(
-            f"{lowerline}.worldSpace[0]", f"{linear_rebuild_curve4}.inputCurve"
-        )
-
-        linear_rebuild_curve5 = cmds.createNode("rebuildCurve")
-        cmds.setAttr(f"{linear_rebuild_curve5}.degree", 1)
-        cmds.setAttr(f"{linear_rebuild_curve5}.spans", 4)
-        cmds.connectAttr(
-            f"{offset_curve3}.outputCurve[0]", f"{linear_rebuild_curve5}.inputCurve"
+            f"{offset_curve3}.outputCurve[0]", f"{linear_rebuild_curve3}.inputCurve"
         )
 
         cubic_rebuild_curve0 = cmds.createNode("rebuildCurve")
@@ -2667,26 +2679,6 @@ class Rig(component.Rig):
             f"{linear_rebuild_curve3}.outputCurve", f"{cubic_rebuild_curve3}.inputCurve"
         )
 
-        cubic_rebuild_curve4 = cmds.createNode("rebuildCurve")
-        cmds.setAttr(f"{cubic_rebuild_curve4}.degree", 3)
-        cmds.setAttr(f"{cubic_rebuild_curve4}.keepControlPoints", 1)
-        cmds.connectAttr(
-            f"{linear_rebuild_curve4}.spans", f"{cubic_rebuild_curve4}.spans"
-        )
-        cmds.connectAttr(
-            f"{linear_rebuild_curve4}.outputCurve", f"{cubic_rebuild_curve4}.inputCurve"
-        )
-
-        cubic_rebuild_curve5 = cmds.createNode("rebuildCurve")
-        cmds.setAttr(f"{cubic_rebuild_curve5}.degree", 3)
-        cmds.setAttr(f"{cubic_rebuild_curve5}.keepControlPoints", 1)
-        cmds.connectAttr(
-            f"{linear_rebuild_curve5}.spans", f"{cubic_rebuild_curve5}.spans"
-        )
-        cmds.connectAttr(
-            f"{linear_rebuild_curve5}.outputCurve", f"{cubic_rebuild_curve5}.inputCurve"
-        )
-
         upper_loft = cmds.createNode("loft")
         cmds.setAttr(f"{upper_loft}.degree", 1)
         cmds.connectAttr(
@@ -2695,14 +2687,11 @@ class Rig(component.Rig):
         cmds.connectAttr(
             f"{cubic_rebuild_curve1}.outputCurve", f"{upper_loft}.inputCurve[1]"
         )
-        cmds.connectAttr(
-            f"{cubic_rebuild_curve2}.outputCurve", f"{upper_loft}.inputCurve[2]"
-        )
         rebuild_surface = cmds.createNode("rebuildSurface")
         cmds.connectAttr(
             f"{upper_loft}.outputSurface", f"{rebuild_surface}.inputSurface"
         )
-        cmds.setAttr(f"{rebuild_surface}.spansU", 2)
+        cmds.setAttr(f"{rebuild_surface}.spansU", 1)
         cmds.setAttr(f"{rebuild_surface}.spansV", 2)
         cmds.setAttr(f"{rebuild_surface}.degreeU", 1)
         cmds.setAttr(f"{rebuild_surface}.degreeV", 3)
@@ -2716,19 +2705,16 @@ class Rig(component.Rig):
         lower_loft = cmds.createNode("loft")
         cmds.setAttr(f"{lower_loft}.degree", 1)
         cmds.connectAttr(
-            f"{cubic_rebuild_curve3}.outputCurve", f"{lower_loft}.inputCurve[0]"
+            f"{cubic_rebuild_curve2}.outputCurve", f"{lower_loft}.inputCurve[0]"
         )
         cmds.connectAttr(
-            f"{cubic_rebuild_curve4}.outputCurve", f"{lower_loft}.inputCurve[1]"
-        )
-        cmds.connectAttr(
-            f"{cubic_rebuild_curve5}.outputCurve", f"{lower_loft}.inputCurve[2]"
+            f"{cubic_rebuild_curve3}.outputCurve", f"{lower_loft}.inputCurve[1]"
         )
         rebuild_surface = cmds.createNode("rebuildSurface")
         cmds.connectAttr(
             f"{lower_loft}.outputSurface", f"{rebuild_surface}.inputSurface"
         )
-        cmds.setAttr(f"{rebuild_surface}.spansU", 2)
+        cmds.setAttr(f"{rebuild_surface}.spansU", 1)
         cmds.setAttr(f"{rebuild_surface}.spansV", 2)
         cmds.setAttr(f"{rebuild_surface}.degreeU", 1)
         cmds.setAttr(f"{rebuild_surface}.degreeV", 3)

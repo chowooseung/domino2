@@ -16,7 +16,7 @@ ORIGINMATRIX = om.MMatrix()
 matrices = [list(ORIGINMATRIX)]
 DATA = [
     attribute.String(longName="component", value="cog01"),
-    attribute.String(longName="name", value="COG"),
+    attribute.String(longName="name", value="cog"),
     attribute.Enum(longName="side", enumName=Name.side_list, value=0),
     attribute.Integer(longName="index", minValue=0),
     attribute.Matrix(longName="guide_matrix", multi=True, value=matrices),

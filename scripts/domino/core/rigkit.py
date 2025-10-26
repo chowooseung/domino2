@@ -376,7 +376,7 @@ def ribbon_spline_ik(
     volume_position_attr,
     volume_low_bound_attr,
     volume_high_bound_attr,
-    output_u_value_plugs,
+    output_v_value_plugs,
     negate_plug=None,
     primary_axis=(1, 0, 0),
     secondary_axis=(0, 0, 1),
@@ -441,14 +441,14 @@ def ribbon_spline_ik(
 
     main_orig_output_plugs = []
     c = 0
-    for plug in output_u_value_plugs:
+    for plug in output_v_value_plugs:
         cmds.connectAttr(plug, f"{uvpin}.coordinate[{c}].coordinateV")
         cmds.setAttr(f"{uvpin}.coordinate[{c}].coordinateU", 0.5)
         main_orig_output_plugs.append(f"{uvpin}.outputMatrix[{c}]")
         c += 1
 
     up_orig_output_plugs = []
-    for plug in output_u_value_plugs:
+    for plug in output_v_value_plugs:
         cmds.connectAttr(plug, f"{uvpin}.coordinate[{c}].coordinateV")
         up_orig_output_plugs.append(f"{uvpin}.outputMatrix[{c}]")
         c += 1
@@ -491,14 +491,14 @@ def ribbon_spline_ik(
 
     main_output_plugs = []
     c = 0
-    for plug in output_u_value_plugs:
+    for plug in output_v_value_plugs:
         cmds.connectAttr(plug, f"{uvpin}.coordinate[{c}].coordinateV")
         cmds.setAttr(f"{uvpin}.coordinate[{c}].coordinateU", 0.5)
         main_output_plugs.append(f"{uvpin}.outputMatrix[{c}]")
         c += 1
 
     up_output_plugs = []
-    for plug in output_u_value_plugs:
+    for plug in output_v_value_plugs:
         cmds.connectAttr(plug, f"{uvpin}.coordinate[{c}].coordinateV")
         up_output_plugs.append(f"{uvpin}.outputMatrix[{c}]")
         c += 1
@@ -772,7 +772,7 @@ def ribbon_spline_ik(
         pos_list.append(pos)
 
     outputs = []
-    for i in range(len(output_u_value_plugs)):
+    for i in range(len(output_v_value_plugs)):
         output = cmds.createNode(
             "transform", name=f"{surface}_output{i}", parent=parent
         )
@@ -836,7 +836,7 @@ def ribbon_spline_ik(
         cmds.connectAttr(f"{master_remap_value}.value[0]", f"{rv}.value[0]")
         cmds.connectAttr(f"{master_remap_value}.value[1]", f"{rv}.value[1]")
         cmds.connectAttr(f"{master_remap_value}.value[2]", f"{rv}.value[2]")
-        cmds.connectAttr(f"{output_u_value_plugs[i]}", f"{rv}.inputValue")
+        cmds.connectAttr(f"{output_v_value_plugs[i]}", f"{rv}.inputValue")
 
         pma = cmds.createNode("plusMinusAverage")
         cmds.connectAttr(f"{auto_volume_pma[i]}.output1D", f"{pma}.input1D[0]")
@@ -861,7 +861,7 @@ def ribbon_uv(
     volume_position_attr,
     volume_low_bound_attr,
     volume_high_bound_attr,
-    output_u_value_plugs,
+    output_v_value_plugs,
     negate_plug=None,
     primary_axis=(1, 0, 0),
     secondary_axis=(0, 0, 1),
@@ -1039,7 +1039,7 @@ def ribbon_uv(
     uniform_up_output_plugs = []
     main_orig_parameter_plugs = []
     up_orig_parameter_plugs = []
-    for plug in output_u_value_plugs:
+    for plug in output_v_value_plugs:
         poci = cmds.createNode("pointOnCurveInfo")
         cmds.setAttr(f"{poci}.turnOnPercentage", 1)
         cmds.connectAttr(plug, f"{poci}.parameter")
@@ -1097,7 +1097,7 @@ def ribbon_uv(
     uv_outs = []
     uniform_outs = []
 
-    last_index = len(output_u_value_plugs) - 1
+    last_index = len(output_v_value_plugs) - 1
     md = cmds.createNode("multiplyDivide")
     cmds.setAttr(f"{md}.input1", *primary_axis)
     cmds.connectAttr(negate_plug, f"{md}.input2X")
@@ -1218,7 +1218,7 @@ def ribbon_uv(
         pos_list.append(pos)
 
     outputs = []
-    for i in range(len(output_u_value_plugs)):
+    for i in range(len(output_v_value_plugs)):
         output = cmds.createNode(
             "transform", name=f"{surface}_output{i}", parent=parent
         )
@@ -1281,7 +1281,7 @@ def ribbon_uv(
         cmds.connectAttr(f"{master_remap_value}.value[0]", f"{rv}.value[0]")
         cmds.connectAttr(f"{master_remap_value}.value[1]", f"{rv}.value[1]")
         cmds.connectAttr(f"{master_remap_value}.value[2]", f"{rv}.value[2]")
-        cmds.connectAttr(f"{output_u_value_plugs[i]}", f"{rv}.inputValue")
+        cmds.connectAttr(f"{output_v_value_plugs[i]}", f"{rv}.inputValue")
 
         pma = cmds.createNode("plusMinusAverage")
         cmds.connectAttr(f"{auto_volume_pma[i]}.output1D", f"{pma}.input1D[0]")
