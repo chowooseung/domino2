@@ -326,7 +326,7 @@ class SpaceManager(MayaQWidgetDockableMixin, QtWidgets.QDialog):
 
     def set_attribute_type(self, row, index):
         data = get_data()
-        data[row][4] = index
+        data[row][3] = index
         attribute_name_item = self.table_widget.item(row, 4)
         enum_name_item = self.table_widget.item(row, 5)
         if index == 0:
