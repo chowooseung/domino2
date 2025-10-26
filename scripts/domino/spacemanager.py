@@ -84,6 +84,7 @@ def mirror(
 def generate():
     try:
         cmds.undoInfo(openChunk=True)
+        selected = cmds.ls(selection=True)
         data = get_data()
         for (
             sources,
@@ -93,6 +94,7 @@ def generate():
             attribute_name,
             enum_name,
             host,
+            default_value,
         ) in data:
             check = False
             if not sources:
@@ -147,14 +149,18 @@ def generate():
                     host,
                     longName=attribute_name,
                     attributeType="enum",
-                    enumName=enum_name,
+                    enumName=f"local:{enum_name}",
                     keyable=True,
+                    defaultValue=int(default_value),
                 )
                 enum_name_list = enum_name.split(":")
                 for i, en in enumerate(enum_name_list):
                     choice = cmds.createNode("choice")
+                    cmds.setAttr(f"{choice}.input[0]", False)
                     for x in range(len(enum_name_list)):
-                        cmds.setAttr(f"{choice}.input[{x}]", True if i == x else False)
+                        cmds.setAttr(
+                            f"{choice}.input[{x + 1}]", True if i == x else False
+                        )
                     cmds.connectAttr(f"{host}.{attribute_name}", f"{choice}.selector")
                     cmds.connectAttr(f"{choice}.output", f"{cons}.{alias_list[i]}")
             elif attribute_type == 1:  # float
@@ -169,6 +175,8 @@ def generate():
                         defaultValue=1,
                     )
                     cmds.connectAttr(f"{host}.{src}", f"{cons}.{alias_list[i]}")
+        if selected:
+            cmds.select(selected)
     except Exception as e:
         logger.error(e, exc_info=True)
     finally:
@@ -187,6 +195,7 @@ def rollback():
             attribute_name,
             _,
             host,
+            _,
         ) in data:
             # constraint
             func = CONS_FUNC[int(cons_type)]
@@ -269,7 +278,7 @@ class SpaceManager(MayaQWidgetDockableMixin, QtWidgets.QDialog):
         self.file_menu.addAction(self.import_space_data_action)
         self.file_menu.addAction(self.export_space_data_action)
 
-        self.table_widget = QtWidgets.QTableWidget(0, 7)
+        self.table_widget = QtWidgets.QTableWidget(0, 8)
         self.table_widget.itemChanged.connect(self.edit_data)
         self.table_widget.setHorizontalHeaderLabels(
             [
@@ -280,6 +289,7 @@ class SpaceManager(MayaQWidgetDockableMixin, QtWidgets.QDialog):
                 "Attribute Name",
                 "Enum Name",
                 "Host",
+                "defaultValue",
             ]
         )
         self.table_widget.verticalHeader().setVisible(False)
@@ -393,6 +403,7 @@ class SpaceManager(MayaQWidgetDockableMixin, QtWidgets.QDialog):
             self.table_widget.setItem(i, 4, QtWidgets.QTableWidgetItem(row_data[4]))
             self.table_widget.setItem(i, 5, QtWidgets.QTableWidgetItem(row_data[5]))
             self.table_widget.setItem(i, 6, QtWidgets.QTableWidgetItem(row_data[6]))
+            self.table_widget.setItem(i, 7, QtWidgets.QTableWidgetItem(row_data[7]))
 
         self.table_widget.blockSignals(False)
 
@@ -400,7 +411,7 @@ class SpaceManager(MayaQWidgetDockableMixin, QtWidgets.QDialog):
         if not cmds.objExists(SPACE_MANAGER):
             initialize()
         data = get_data()
-        data.append([[], "", 0, 0, "", "", ""])
+        data.append([[], "", 0, 0, "", "", "", 0])
         set_data(data)
         self.refresh()
 
