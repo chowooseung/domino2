@@ -454,7 +454,7 @@ def remove_driven(intp_name, driven):
 
     data = get_data()
 
-    if data["is_blendshape"]:
+    if data[intp_name]["is_blendshape"]:
         return
 
     grp = f"{driven}_grp"
@@ -477,7 +477,8 @@ def remove_driven(intp_name, driven):
 
     data[intp_name]["driven"].remove(driven)
     for v in data[intp_name]["pose"].values():
-        del v["driven"][driven]
+        if "driven" in v:
+            del v["driven"][driven]
     set_data(data)
 
 
