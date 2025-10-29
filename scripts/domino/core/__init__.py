@@ -690,7 +690,7 @@ class Controller(Transform):
             cmds.delete(node)
         elif isinstance(shape, dict):
             shape["curve_name"] = "TEMPCRV1"
-            crv = Curve()
+            crv = NurbsCurve()
             crv.data = shape
             crv = crv.create_from_data()
             nurbscurve.replace_shape(crv, self._node)
@@ -819,7 +819,7 @@ class Controller(Transform):
 
 
 # region Curve
-class Curve:
+class NurbsCurve:
     """nurbscurve data
 
     Examples:
@@ -985,7 +985,7 @@ class Curve:
 
 
 # region Surface
-class Surface:
+class NurbsSurface:
 
     def __init__(self, node=None, data=None):
         self._data = {}
@@ -1064,7 +1064,7 @@ class Surface:
 
 
 # region Polygon
-class Polygon:
+class Mesh:
 
     def __init__(self, node=None, data=None):
         self._data = {}

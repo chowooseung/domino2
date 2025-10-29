@@ -11,9 +11,9 @@ from domino.core import (
     Transform,
     Joint,
     Controller,
-    Curve,
-    Surface,
-    Polygon,
+    NurbsCurve,
+    NurbsSurface,
+    Mesh,
     attribute,
     nurbscurve,
     rigkit,
@@ -418,7 +418,7 @@ class Rig(dict):
                 self["parent_controllers"].append(parent_controllers)
 
             # shape 데이터 구하기.
-            ins = Curve(node=self._node)
+            ins = NurbsCurve(node=self._node)
             self["shape"] = ins.data
 
         @property
@@ -990,17 +990,20 @@ class Rig(dict):
             rig = ins.create()
             cmds.addAttr(rig, longName="is_domino_rig", attributeType="bool")
             cmds.addAttr(
-                RIG, longName="custom_curve_data", attributeType="message", multi=True
-            )
-            cmds.addAttr(
                 RIG,
-                longName="custom_surface_data",
+                longName="custom_nurbscurve_data",
                 attributeType="message",
                 multi=True,
             )
             cmds.addAttr(
                 RIG,
-                longName="custom_polygon_data",
+                longName="custom_nurbssurface_data",
+                attributeType="message",
+                multi=True,
+            )
+            cmds.addAttr(
+                RIG,
+                longName="custom_mesh_data",
                 attributeType="message",
                 multi=True,
             )
@@ -1429,7 +1432,7 @@ class Rig(dict):
                     cmds.connectAttr(
                         f"{component.rig_root}.{attr.long_name}", f"{temp_crv}.create"
                     )
-                    ins = Curve(node=temp_crv)
+                    ins = NurbsCurve(node=temp_crv)
                     component[attr.long_name]["value"] = ins.data
                     cmds.delete(temp_crv)
                     continue
@@ -1441,7 +1444,7 @@ class Rig(dict):
                         f"{component.rig_root}.{attr.long_name}",
                         f"{temp_surface}.create",
                     )
-                    ins = Surface(node=temp_surface)
+                    ins = NurbsSurface(node=temp_surface)
                     component[attr.long_name]["value"] = ins.data
                     cmds.delete(temp_surface)
                     continue
@@ -1452,7 +1455,7 @@ class Rig(dict):
                     cmds.connectAttr(
                         f"{component.rig_root}.{attr.long_name}", f"{temp_mesh}.inMesh"
                     )
-                    ins = Polygon(node=temp_mesh)
+                    ins = Mesh(node=temp_mesh)
                     component[attr.long_name]["value"] = ins.data
                     cmds.delete(temp_mesh)
                     continue
@@ -1542,25 +1545,23 @@ def build(context, component, attach_guide=False):
             stack.extend(c["children"])
 
         # custom data
-        if "custom_curve_data" in component:
-            for i, data in enumerate(component["custom_curve_data"]):
-                ins = Curve(data=data)
+        if "custom_nurbscurve_data" in component:
+            for i, data in enumerate(component["custom_nurbscurve_data"]):
+                ins = NurbsCurve(data=data)
                 crv = ins.create_from_data()
-                cmds.connectAttr(f"{crv}.message", f"{RIG}.custom_curve_data[{i}]")
-        if "custom_surface_data" in component:
-            for i, data in enumerate(component["custom_surface_data"]):
-                ins = Surface(data=data)
+                cmds.connectAttr(f"{crv}.message", f"{RIG}.custom_nurbscurve_data[{i}]")
+        if "custom_nurbssurface_data" in component:
+            for i, data in enumerate(component["custom_nurbssurface_data"]):
+                ins = NurbsSurface(data=data)
                 surface = ins.create_from_data()
                 cmds.connectAttr(
-                    f"{surface}.message", f"{RIG}.custom_surface_data[{i}]"
+                    f"{surface}.message", f"{RIG}.custom_nurbssurface_data[{i}]"
                 )
-        if "custom_polygon_data" in component:
-            for i, data in enumerate(component["custom_polygon_data"]):
-                ins = Polygon(data=data)
-                polygon = ins.create_from_data()
-                cmds.connectAttr(
-                    f"{polygon}.message", f"{RIG}.custom_polygon_data[{i}]"
-                )
+        if "custom_mesh_data" in component:
+            for i, data in enumerate(component["custom_mesh_data"]):
+                ins = Mesh(data=data)
+                mesh = ins.create_from_data()
+                cmds.connectAttr(f"{mesh}.message", f"{RIG}.custom_mesh_data[{i}]")
 
         # setup controller sets
         all_controllers = [x.split(".")[0] for x in cmds.ls("*.is_domino_controller")]
@@ -1819,7 +1820,7 @@ def serialize():
             if hasattr(attr, "data_type") and attr.data_type == "nurbsCurve":
                 temp_crv = cmds.circle(name="temp1", constructionHistory=False)[0]
                 cmds.connectAttr(f"{node}.{attr.long_name}", f"{temp_crv}.create")
-                ins = Curve(node=temp_crv)
+                ins = NurbsCurve(node=temp_crv)
                 component[attr.long_name]["value"] = ins.data
                 cmds.delete(temp_crv)
                 continue
@@ -1828,14 +1829,14 @@ def serialize():
                     0
                 ]
                 cmds.connectAttr(f"{node}.{attr.long_name}", f"{temp_surface}.create")
-                ins = Surface(node=temp_surface)
+                ins = NurbsSurface(node=temp_surface)
                 component[attr.long_name]["value"] = ins.data
                 cmds.delete(temp_surface)
                 continue
             elif hasattr(attr, "data_type") and attr.data_type == "mesh":
                 temp_mesh = cmds.polySphere(name="temp1", constructionHistory=False)[0]
                 cmds.connectAttr(f"{node}.{attr.long_name}", f"{temp_mesh}.inMesh")
-                ins = Polygon(node=temp_mesh)
+                ins = Mesh(node=temp_mesh)
                 component[attr.long_name]["value"] = ins.data
                 cmds.delete(temp_mesh)
                 continue
@@ -1906,31 +1907,31 @@ def serialize():
             content += f.read()
         rig["post_custom_scripts_str"]["value"].append(content)
 
-    rig["custom_curve_data"] = []
-    rig["custom_surface_data"] = []
-    rig["custom_polygon_data"] = []
-    for n in (
-        cmds.listConnections(f"{RIG}.custom_curve_data", source=True, destination=False)
-        or []
-    ):
-        ins = Curve(node=n)
-        rig["custom_curve_data"].append(ins.data)
+    rig["custom_nurbscurve_data"] = []
+    rig["custom_nurbssurface_data"] = []
+    rig["custom_mesh_data"] = []
     for n in (
         cmds.listConnections(
-            f"{RIG}.custom_surface_data", source=True, destination=False
+            f"{RIG}.custom_nurbscurve_data", source=True, destination=False
         )
         or []
     ):
-        ins = Surface(node=n)
-        rig["custom_surface_data"].append(ins.data)
+        ins = NurbsCurve(node=n)
+        rig["custom_nurbscurve_data"].append(ins.data)
     for n in (
         cmds.listConnections(
-            f"{RIG}.custom_polygon_data", source=True, destination=False
+            f"{RIG}.custom_nurbssurface_data", source=True, destination=False
         )
         or []
     ):
-        ins = Polygon(node=n)
-        rig["custom_polygon_data"].append(ins.data)
+        ins = NurbsSurface(node=n)
+        rig["custom_nurbssurface_data"].append(ins.data)
+    for n in (
+        cmds.listConnections(f"{RIG}.custom_mesh_data", source=True, destination=False)
+        or []
+    ):
+        ins = Mesh(node=n)
+        rig["custom_mesh_data"].append(ins.data)
 
     if not cmds.objExists(BLENDSHAPE_SETS):
         rig["blendshape"] = []
@@ -1985,9 +1986,9 @@ def deserialize(data, create=True):
         if module_name == "assembly":
             rig = component
 
-    rig["custom_curve_data"] = data["custom_curve_data"]
-    rig["custom_surface_data"] = data["custom_surface_data"]
-    rig["custom_polygon_data"] = data["custom_polygon_data"]
+    rig["custom_nurbscurve_data"] = data["custom_nurbscurve_data"]
+    rig["custom_nurbssurface_data"] = data["custom_nurbssurface_data"]
+    rig["custom_mesh_data"] = data["custom_mesh_data"]
     rig["blendshape"] = data["blendshape"]
     rig["deformer_weights"] = data["deformer_weights"]
     rig["deformer_order"] = data["deformer_order"]

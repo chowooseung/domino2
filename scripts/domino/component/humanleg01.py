@@ -1,6 +1,6 @@
 # domino
 from domino import component
-from domino.core import attribute, Name, Transform, Joint, rigkit, Surface
+from domino.core import attribute, Name, Transform, Joint, rigkit, NurbsSurface
 from domino.core.utils import build_log
 
 # maya
@@ -1424,7 +1424,7 @@ class Rig(component.Rig):
             ),
             parent=self.rig_root,
         )
-        ins = Surface(data=self["upper_ribbon_surface"]["value"])
+        ins = NurbsSurface(data=self["upper_ribbon_surface"]["value"])
         upper_ribbon_surface = ins.create_from_data()
         upper_ribbon_surface = cmds.rename(
             upper_ribbon_surface,
@@ -1440,7 +1440,7 @@ class Rig(component.Rig):
         cmds.setAttr(f"{upper_ribbon_surface}.r", 0, 0, 0)
         cmds.setAttr(f"{upper_ribbon_surface}.t", lock=True)
         cmds.setAttr(f"{upper_ribbon_surface}.r", lock=True)
-        ins = Surface(data=self["lower_ribbon_surface"]["value"])
+        ins = NurbsSurface(data=self["lower_ribbon_surface"]["value"])
         lower_ribbon_surface = ins.create_from_data()
         lower_ribbon_surface = cmds.rename(
             lower_ribbon_surface,

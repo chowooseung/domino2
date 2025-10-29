@@ -3,7 +3,7 @@ from maya import cmds
 from maya.api import OpenMaya as om
 
 # domino
-from domino.core import Curve, Surface, Polygon
+from domino import core
 
 
 ORIGINMATRIX = om.MMatrix()
@@ -583,7 +583,7 @@ class NurbsCurve(dict):
                 dataType=self.data_type,
             )
             if "value" in self.data:
-                ins = Curve(data=self.data["value"])
+                ins = core.NurbsCurve(data=self.data["value"])
                 crv = ins.create_from_data()
                 cmds.connectAttr(f"{crv}.local", f"{self.node}.{self.long_name}")
                 cmds.delete(crv)
@@ -648,7 +648,7 @@ class NurbsSurface(dict):
                 dataType=self.data_type,
             )
             if "value" in self.data:
-                ins = Surface(data=self.data["value"])
+                ins = core.NurbsSurface(data=self.data["value"])
                 surface = ins.create_from_data()
                 cmds.connectAttr(f"{surface}.local", f"{self.node}.{self.long_name}")
                 cmds.delete(surface)
@@ -658,7 +658,7 @@ class NurbsSurface(dict):
         return self.attribute
 
 
-class Polygon(dict):
+class Mesh(dict):
 
     data_type = "mesh"
 
@@ -713,7 +713,7 @@ class Polygon(dict):
                 dataType=self.data_type,
             )
             if "value" in self.data:
-                ins = Polygon(data=self.data["value"])
+                ins = core.Mesh(data=self.data["value"])
                 mesh = ins.create_from_data()
                 cmds.connectAttr(f"{mesh}.outMesh", f"{self.node}.{self.long_name}")
                 cmds.delete(mesh)
@@ -734,5 +734,5 @@ TYPETABLE = {
     "doubleAngle": DoubleAngle,
     "nurbsCurve": NurbsCurve,
     "nurbsSurface": NurbsSurface,
-    "polygon": Polygon,
+    "mesh": Mesh,
 }

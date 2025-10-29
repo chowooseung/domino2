@@ -250,35 +250,35 @@ if cmds.objExists("rig"):
             cmds.parent(sel, "rig")
             next_index = len(
                 cmds.listConnections(
-                    "rig.custom_curve_data",
+                    "rig.custom_nurbscurve_data",
                     source=True,
                     destination=False,
                 )
                 or []
             )
-            cmds.connectAttr(sel + ".message", f"rig.custom_curve_data[{next_index}]")
+            cmds.connectAttr(sel + ".message", f"rig.custom_nurbscurve_data[{next_index}]")
         elif cmds.nodeType(shapes[0]) == "nurbsSurface":
             cmds.parent(sel, "rig")
             next_index = len(
                 cmds.listConnections(
-                    "rig.custom_surface_data",
+                    "rig.custom_nurbssurface_data",
                     source=True,
                     destination=False,
                 )
                 or []
             )
-            cmds.connectAttr(sel + ".message", f"rig.custom_surface_data[{next_index}]")
+            cmds.connectAttr(sel + ".message", f"rig.custom_nurbssurface_data[{next_index}]")
         elif cmds.nodeType(shapes[0]) == "mesh":
             cmds.parent(sel, "rig")
             next_index = len(
                 cmds.listConnections(
-                    "rig.custom_polygon_data",
+                    "rig.custom_mesh_data",
                     source=True,
                     destination=False,
                 )
                 or []
             )
-            cmds.connectAttr(sel + ".message", f"rig.custom_polygon_data[{next_index}]")
+            cmds.connectAttr(sel + ".message", f"rig.custom_mesh_data[{next_index}]")
     cmds.select(selected)
     main_window_ptr = omui.MQtUtil.mainWindow()
     main_window_widget = wrapInstance(int(main_window_ptr), QtWidgets.QWidget)

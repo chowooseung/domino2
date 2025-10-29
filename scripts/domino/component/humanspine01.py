@@ -3,7 +3,7 @@ from domino import component
 from domino.core import (
     attribute,
     Name,
-    Surface,
+    NurbsSurface,
     Joint,
     Transform,
     rigkit,
@@ -535,7 +535,7 @@ class Rig(component.Rig):
             f"{self.rig_root}.driver_matrix[3]", f"{ribbon3_jnt}.offsetParentMatrix"
         )
 
-        ins = Surface(data=self["ribbon_surface"]["value"])
+        ins = NurbsSurface(data=self["ribbon_surface"]["value"])
         ribbon_surface = ins.create_from_data()
         ribbon_surface = cmds.rename(
             ribbon_surface,
@@ -851,7 +851,7 @@ class Rig(component.Rig):
             mirror_type=self["guide_mirror_type"]["value"][9],
         )
 
-        ins = Surface(data=self["ribbon_surface"]["value"])
+        ins = NurbsSurface(data=self["ribbon_surface"]["value"])
         surface = ins.create_from_data()
         surface = cmds.parent(surface, upper_body_guide)[0]
         surface = cmds.rename(surface, tip_guide.replace("tip", "surface"))
