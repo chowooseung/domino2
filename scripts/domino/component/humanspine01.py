@@ -133,7 +133,7 @@ DATA = [
     ),
     attribute.Integer(longName="output_count", value=5),
     attribute.Float(
-        longName="output_v_values", multi=True, value=[0, 0.25, 0.5, 0.75, 1]
+        longName="output_u_values", multi=True, value=[0, 0.25, 0.5, 0.75, 1]
     ),
     attribute.Matrix(longName="driver_matrix", multi=True, value=matrices[-4:]),
     attribute.Matrix(longName="driver_inverse_matrix", multi=True, value=matrices[-4:]),
@@ -142,7 +142,7 @@ DATA = [
         longName="ribbon_surface",
         value={
             "parent_name": "",
-            "surface_name": "tempRibbonSurface",
+            "surface_name": "ribbonSurf",
             "surface_matrix": [
                 1.0,
                 0.0,
@@ -165,20 +165,20 @@ DATA = [
             "surface": {
                 "form_u": 0,
                 "form_v": 0,
-                "knot_u": [0.0, 1.0],
-                "knot_v": [0.0, 0.0, 0.0, 0.5, 1.0, 1.0, 1.0],
-                "degree_u": 1,
-                "degree_v": 3,
+                "knot_u": [0.0, 0.0, 0.0, 0.5, 1.0, 1.0, 1.0],
+                "knot_v": [0.0, 1.0],
+                "degree_u": 3,
+                "degree_v": 1,
                 "cvs": [
                     (0.3239349977974598, 9.539842605590822, 0.11921144276857373, 1.0),
-                    (0.3239349977974598, 10.573100090026857, 0.18489342927932736, 1.0),
-                    (0.3239349977974598, 11.719689369201657, 0.26006561517715476, 1.0),
-                    (0.3239349977974598, 12.829869270324705, -0.5030749440193175, 1.0),
-                    (0.3239349977974598, 13.863416671752928, -0.5030738115310668, 1.0),
                     (-0.3239349977974598, 9.539842605590822, 0.11921144276857373, 1.0),
+                    (0.3239349977974598, 10.573100090026857, 0.18489342927932736, 1.0),
                     (-0.3239349977974598, 10.573100090026857, 0.18489342927932736, 1.0),
+                    (0.3239349977974598, 11.719689369201657, 0.26006561517715476, 1.0),
                     (-0.3239349977974598, 11.719689369201657, 0.26006561517715476, 1.0),
+                    (0.3239349977974598, 12.829869270324705, -0.5030749440193175, 1.0),
                     (-0.3239349977974598, 12.829869270324705, -0.5030749440193175, 1.0),
+                    (0.3239349977974598, 13.863416671752928, -0.5030738115310668, 1.0),
                     (-0.3239349977974598, 13.863416671752928, -0.5030738115310668, 1.0),
                 ],
             },
@@ -220,7 +220,7 @@ class Rig(component.Rig):
             if value < 3:
                 return False
             self["output_count"]["value"] = value
-            self["output_v_values"]["value"] = [v / (value - 1) for v in range(value)]
+            self["output_u_values"]["value"] = [v / (value - 1) for v in range(value)]
             self["initialize_output_matrix"]["value"] = [
                 list(ORIGINMATRIX) for _ in range(value + 1)
             ]
@@ -411,7 +411,25 @@ class Rig(component.Rig):
             ),
             parent=hip_ctl,
         )
+        source = cmds.listConnections(
+            f"{upper_body_npo}.offsetParentMatrix",
+            source=True,
+            destination=False,
+            plugs=True,
+        )[0]
+        decom_m = cmds.createNode("decomposeMatrix")
+        cmds.connectAttr(source, f"{decom_m}.inputMatrix")
+
+        condition = cmds.createNode("condition")
+        cmds.setAttr(f"{condition}.operation", 4)
+        cmds.setAttr(f"{condition}.colorIfTrueR", -1)
+        cmds.setAttr(f"{condition}.colorIfTrueG", 180)
+        cmds.setAttr(f"{condition}.colorIfFalseG", 0)
+        cmds.connectAttr(f"{decom_m}.outputScaleZ", f"{condition}.firstTerm")
+        cmds.connectAttr(f"{condition}.outColorR", f"{hip_loc}.sz")
+        cmds.connectAttr(f"{condition}.outColorG", f"{hip_loc}.ry")
         cmds.setAttr(f"{hip_loc}.rz", 90)
+
         fk0_npo, fk0_ctl = self["controller"][3].create(
             parent=upper_body_ctl,
             shape=(
@@ -549,7 +567,7 @@ class Rig(component.Rig):
         )
         main_ik_joints = []
         parent = ribbon_grp
-        for i in range(len(self["output_v_values"]["value"])):
+        for i in range(len(self["output_u_values"]["value"])):
             ins = Joint(
                 parent=parent,
                 name=name,
@@ -562,7 +580,7 @@ class Rig(component.Rig):
             parent = main_ik_joints[i]
         up_ik_joints = []
         parent = ribbon_grp
-        for i in range(len(self["output_v_values"]["value"])):
+        for i in range(len(self["output_u_values"]["value"])):
             ins = Joint(
                 parent=parent,
                 name=name,
@@ -574,9 +592,9 @@ class Rig(component.Rig):
             up_ik_joints.append(ins.create())
             parent = up_ik_joints[i]
 
-        output_v_values = self["output_v_values"]["value"]
-        half_list = output_v_values[: int(len(output_v_values) / 2)]
-        if len(output_v_values) % 2 == 1:
+        output_u_values = self["output_u_values"]["value"]
+        half_list = output_u_values[: int(len(output_u_values) / 2)]
+        if len(output_u_values) % 2 == 1:
             value = 1 / (len(half_list))
             half_list = [x * value for x in range(len(half_list))]
             auto_volume_multiple = half_list + [1] + list(reversed(half_list))
@@ -611,8 +629,8 @@ class Rig(component.Rig):
             volume_position_attr=f"{host_ctl}.volume_position",
             volume_high_bound_attr=f"{host_ctl}.volume_high_bound",
             volume_low_bound_attr=f"{host_ctl}.volume_low_bound",
-            output_v_value_plugs=[
-                f"{self.rig_root}.output_v_values[{i}]"
+            output_u_value_plugs=[
+                f"{self.rig_root}.output_u_values[{i}]"
                 for i in range(self["output_count"]["value"])
             ],
             negate_plug=f"{condition}.outColorR",
@@ -626,16 +644,16 @@ class Rig(component.Rig):
 
         cmds.hide(ribbon_grp, ribbon0_jnt, ribbon1_jnt, ribbon2_jnt, ribbon3_jnt)
         cmds.skinPercent(
-            sc, f"{ribbon_surface}.cv[*][0]", transformValue=[ribbon0_jnt, 1]
+            sc, f"{ribbon_surface}.cv[0][*]", transformValue=[ribbon0_jnt, 1]
         )
         cmds.skinPercent(
             sc,
-            f"{ribbon_surface}.cv[*][1]",
-            transformValue=[(ribbon0_jnt, 0.65), (ribbon1_jnt, 0.35)],
+            f"{ribbon_surface}.cv[1][*]",
+            transformValue=[(ribbon0_jnt, 0.85), (ribbon1_jnt, 0.15)],
         )
         cmds.skinPercent(
             sc,
-            f"{ribbon_surface}.cv[*][2]",
+            f"{ribbon_surface}.cv[2][*]",
             transformValue=[
                 (ribbon0_jnt, 0.25),
                 (ribbon1_jnt, 0.55),
@@ -643,10 +661,10 @@ class Rig(component.Rig):
             ],
         )
         cmds.skinPercent(
-            sc, f"{ribbon_surface}.cv[*][3]", transformValue=[ribbon2_jnt, 1]
+            sc, f"{ribbon_surface}.cv[3][*]", transformValue=[ribbon2_jnt, 1]
         )
         cmds.skinPercent(
-            sc, f"{ribbon_surface}.cv[*][4]", transformValue=[ribbon3_jnt, 1]
+            sc, f"{ribbon_surface}.cv[4][*]", transformValue=[ribbon3_jnt, 1]
         )
         ins = Transform(
             ribbon_outputs[-1],
@@ -782,13 +800,6 @@ class Rig(component.Rig):
             f"/output.tip_matrix",
         )
 
-        condition = cmds.createNode("condition")
-        cmds.connectAttr(f"{self.rig_root}.side", f"{condition}.firstTerm")
-        cmds.setAttr(f"{condition}.secondTerm", 2)
-        cmds.setAttr(f"{condition}.colorIfTrueR", 1)
-        cmds.setAttr(f"{condition}.colorIfFalseR", 0)
-        cmds.connectAttr(f"{condition}.outColorR", f"{self.guide_graph}.negate")
-
         # guide
         upper_body_guide = self.add_guide(
             parent=self.guide_root,
@@ -851,6 +862,14 @@ class Rig(component.Rig):
             mirror_type=self["guide_mirror_type"]["value"][9],
         )
 
+        condition = cmds.createNode("condition")
+        cmds.setAttr(f"{condition}.operation", 4)
+        cmds.connectAttr(f"{upper_body_guide}.sz", f"{condition}.firstTerm")
+        cmds.setAttr(f"{condition}.secondTerm", 0)
+        cmds.setAttr(f"{condition}.colorIfTrueR", 1)
+        cmds.setAttr(f"{condition}.colorIfFalseR", 0)
+        cmds.connectAttr(f"{condition}.outColorR", f"{self.guide_graph}.negate")
+
         ins = NurbsSurface(data=self["ribbon_surface"]["value"])
         surface = ins.create_from_data()
         surface = cmds.parent(surface, upper_body_guide)[0]
@@ -866,20 +885,20 @@ class Rig(component.Rig):
         cmds.connectAttr(f"{surface}.worldSpace[0]", f"{uvpin}.deformedGeometry")
 
         c = 0
-        for i in range(len(self["output_v_values"]["value"])):
+        for i in range(len(self["output_u_values"]["value"])):
             cmds.connectAttr(
-                f"{self.guide_root}.output_v_values[{i}]",
-                f"{uvpin}.coordinate[{c}].coordinateV",
+                f"{self.guide_root}.output_u_values[{i}]",
+                f"{uvpin}.coordinate[{c}].coordinateU",
             )
-            cmds.setAttr(f"{uvpin}.coordinate[{c}].coordinateU", 0.5)
+            cmds.setAttr(f"{uvpin}.coordinate[{c}].coordinateV", 0.5)
             cmds.connectAttr(
                 f"{uvpin}.outputMatrix[{c}]", f"{graph}.main_transforms[{i}]"
             )
             c += 1
-        for i in range(len(self["output_v_values"]["value"])):
+        for i in range(len(self["output_u_values"]["value"])):
             cmds.connectAttr(
-                f"{self.guide_root}.output_v_values[{i}]",
-                f"{uvpin}.coordinate[{c}].coordinateV",
+                f"{self.guide_root}.output_u_values[{i}]",
+                f"{uvpin}.coordinate[{c}].coordinateU",
             )
             cmds.connectAttr(
                 f"{uvpin}.outputMatrix[{c}]", f"{graph}.up_transforms[{i}]"

@@ -83,10 +83,10 @@ DATA = [
         longName="twist_joint_count", minValue=1, defaultValue=2, value=2
     ),
     attribute.Float(
-        longName="upper_output_v_values", multi=True, value=[0, 0.3333, 0.6666, 1]
+        longName="upper_output_u_values", multi=True, value=[0, 0.3333, 0.6666, 1]
     ),
     attribute.Float(
-        longName="lower_output_v_values", multi=True, value=[0, 0.3333, 0.6666, 1]
+        longName="lower_output_u_values", multi=True, value=[0, 0.3333, 0.6666, 1]
     ),
     # offset output rotate
     attribute.DoubleAngle(
@@ -117,7 +117,7 @@ DATA = [
         longName="upper_ribbon_surface",
         value={
             "parent_name": "",
-            "surface_name": "upperRibbonTempSurface",
+            "surface_name": "upperRibbonSurface",
             "surface_matrix": [
                 1.0,
                 0.0,
@@ -140,26 +140,21 @@ DATA = [
             "surface": {
                 "form_u": 0,
                 "form_v": 0,
-                "knot_u": [0.0, 0.5, 1.0],
-                "knot_v": [0.0, 0.0, 0.0, 0.5, 1.0, 1.0, 1.0],
-                "degree_u": 1,
-                "degree_v": 3,
+                "knot_u": [0.0, 0.0, 0.0, 0.5, 1.0, 1.0, 1.0],
+                "knot_v": [0.0, 1.0],
+                "degree_u": 3,
+                "degree_v": 1,
                 "cvs": [
-                    (1.9088690392914205, 14.354828892661422, -0.11733299595143254, 1.0),
-                    (2.2316676896787655, 13.681676855189712, -0.11733299595143254, 1.0),
-                    (2.5544663400661154, 13.00852481771799, -0.11733299595143253, 1.0),
-                    (2.8772649904534626, 12.335372780246278, -0.11733299595143251, 1.0),
-                    (3.20006364084081, 11.662220742774565, -0.11733299595143253, 1.0),
-                    (1.9088690892002336, 14.354828916594348, -0.21733299595141722, 1.0),
-                    (2.231667739587582, 13.681676879122632, -0.21733299595141722, 1.0),
-                    (2.554466389974932, 13.008524841650933, -0.21733299595141747, 1.0),
-                    (2.877265040362275, 12.33537280417921, -0.21733299595141722, 1.0),
-                    (3.200063690749623, 11.662220766707494, -0.21733299595141722, 1.0),
-                    (1.9088691391090464, 14.35482894052727, -0.31733299595140185, 1.0),
-                    (2.2316677894963934, 13.681676903055562, -0.31733299595140196, 1.0),
-                    (2.5544664398837416, 13.008524865583842, -0.31733299595140185, 1.0),
-                    (2.877265090271087, 12.335372828112133, -0.31733299595140185, 1.0),
-                    (3.200063740658436, 11.662220790640415, -0.31733299595140185, 1.0),
+                    (0.883859001537635, 9.673227745707386, 0.06926528095228635, 1.0),
+                    (0.8847230754984726, 9.660953307303652, 0.2688864009222512, 1.0),
+                    (0.9644214039926372, 8.52823702214492, -0.0014874028595507627, 1.0),
+                    (0.9652854779534749, 8.515962583741182, 0.1981337171104141, 1.0),
+                    (1.044983806447639, 7.383246298582454, -0.07224008667138754, 1.0),
+                    (1.0458478804084765, 7.37097186017872, 0.12738103329857747, 1.0),
+                    (1.1255462089026416, 6.238255575019987, -0.1429927704832247, 1.0),
+                    (1.126410282863479, 6.225981136616249, 0.05662834948674021, 1.0),
+                    (1.2061086113576434, 5.09326485145752, -0.21374545429506153, 1.0),
+                    (1.2069726853184808, 5.080990413053785, -0.014124334325096632, 1.0),
                 ],
             },
         },
@@ -168,7 +163,7 @@ DATA = [
         longName="lower_ribbon_surface",
         value={
             "parent_name": "",
-            "surface_name": "lowerRibbonTempSurface",
+            "surface_name": "lowerRibbonSurface",
             "surface_matrix": [
                 1.0,
                 0.0,
@@ -191,26 +186,21 @@ DATA = [
             "surface": {
                 "form_u": 0,
                 "form_v": 0,
-                "knot_u": [0.0, 0.5, 1.0],
-                "knot_v": [0.0, 0.0, 0.0, 0.5, 1.0, 1.0, 1.0],
-                "degree_u": 1,
-                "degree_v": 3,
+                "knot_u": [0.0, 0.0, 0.0, 0.5, 1.0, 1.0, 1.0],
+                "knot_v": [0.0, 1.0],
+                "degree_u": 3,
+                "degree_v": 1,
                 "cvs": [
-                    (3.190849749433228, 11.681435047807645, -0.11962986183530845, 1.0),
-                    (3.4606944666280897, 11.118711144368435, 0.016484997330898452, 1.0),
-                    (3.730539183822951, 10.55598724092923, 0.15259985649710447, 1.0),
-                    (4.000383901017809, 9.993263337490019, 0.2887147156633093, 1.0),
-                    (4.270228618212672, 9.430539434050807, 0.424829574829517, 1.0),
-                    (3.200063817657159, 11.662220508243697, -0.21733299595141722, 1.0),
-                    (3.469908534852017, 11.099496604804495, -0.08121813678521213, 1.0),
-                    (3.739753252046883, 10.536772701365283, 0.054896722380995966, 1.0),
-                    (4.009597969241742, 9.974048797926073, 0.1910115815472015, 1.0),
-                    (4.279442686436603, 9.411324894486862, 0.32712644071340824, 1.0),
-                    (3.20927788588109, 11.643005968679754, -0.315036130067526, 1.0),
-                    (3.4791226030759472, 11.080282065240555, -0.17892127090132195, 1.0),
-                    (3.7489673202708156, 10.517558161801338, -0.04280641173511264, 1.0),
-                    (4.018812037465672, 9.954834258362128, 0.09330844743109216, 1.0),
-                    (4.2886567546605345, 9.392110354922917, 0.22942330659729948, 1.0),
+                    (1.205986410170961, 5.0950014849106315, -0.2136228715616859, 1.0),
+                    (1.2070948673984767, 5.079253648636767, -0.014246911874914637, 1.0),
+                    (1.275569812138244, 4.106049437868076, -0.2921227802787598, 1.0),
+                    (1.27667826936576, 4.09030160159421, -0.09274682059198859, 1.0),
+                    (1.3451532141055262, 3.1170973908255166, -0.3706226889958337, 1.0),
+                    (1.3462616998590429, 3.1013495521250096, -0.17124673274091823, 1.0),
+                    (1.4147366425280232, 2.1281453412106135, -0.4491226011447592, 1.0),
+                    (1.4158451018263263, 2.112397505082451, -0.24974664145799225, 1.0),
+                    (1.4843200444953064, 1.1391932941680574, -0.5276225098618335, 1.0),
+                    (1.4854285037936092, 1.1234454580398952, -0.32824655017506643, 1.0),
                 ],
             },
         },
@@ -257,10 +247,10 @@ class Rig(component.Rig):
         try:
             value = int(line_edit.text())
             self["twist_joint_count"]["value"] = value
-            self["upper_output_v_values"]["value"] = [
+            self["upper_output_u_values"]["value"] = [
                 v / (value + 1) for v in range(value + 2)
             ]
-            self["lower_output_v_values"]["value"] = [
+            self["lower_output_u_values"]["value"] = [
                 v / (value + 1) for v in range(value + 2)
             ]
             self["initialize_output_matrix"]["value"] = [
@@ -1481,9 +1471,9 @@ class Rig(component.Rig):
             volume_position_attr=f"{upper_bend_ctl}.volume_position",
             volume_high_bound_attr=f"{upper_bend_ctl}.volume_high_bound",
             volume_low_bound_attr=f"{upper_bend_ctl}.volume_low_bound",
-            output_v_value_plugs=[
-                f"{self.rig_root}.upper_output_v_values[{i}]"
-                for i in range(len(self["upper_output_v_values"]["value"]))
+            output_u_value_plugs=[
+                f"{self.rig_root}.upper_output_u_values[{i}]"
+                for i in range(len(self["upper_output_u_values"]["value"]))
             ],
             negate_plug=f"{negate_condition}.outColorR",
         )
@@ -1495,23 +1485,23 @@ class Rig(component.Rig):
         cmds.sets(sc, edit=True, addElement=component.DEFORMER_WEIGHTS_SETS)
 
         cmds.skinPercent(
-            sc, f"{upper_ribbon_surface}.cv[*][0]", transformValue=[driver_joints[0], 1]
+            sc, f"{upper_ribbon_surface}.cv[0][1]", transformValue=[driver_joints[0], 1]
         )
         cmds.skinPercent(
             sc,
-            f"{upper_ribbon_surface}.cv[*][1]",
+            f"{upper_ribbon_surface}.cv[1][*]",
             transformValue=[(driver_joints[0], 0.5), (driver_joints[1], 0.5)],
         )
         cmds.skinPercent(
-            sc, f"{upper_ribbon_surface}.cv[*][2]", transformValue=[driver_joints[1], 1]
+            sc, f"{upper_ribbon_surface}.cv[2][*]", transformValue=[driver_joints[1], 1]
         )
         cmds.skinPercent(
             sc,
-            f"{upper_ribbon_surface}.cv[*][3]",
+            f"{upper_ribbon_surface}.cv[3][*]",
             transformValue=[(driver_joints[1], 0.5), (driver_joints[2], 0.5)],
         )
         cmds.skinPercent(
-            sc, f"{upper_ribbon_surface}.cv[*][4]", transformValue=[driver_joints[2], 1]
+            sc, f"{upper_ribbon_surface}.cv[4][*]", transformValue=[driver_joints[2], 1]
         )
 
         lower_auto_volume_multiple = [1]
@@ -1538,9 +1528,9 @@ class Rig(component.Rig):
             volume_position_attr=f"{lower_bend_ctl}.volume_position",
             volume_high_bound_attr=f"{lower_bend_ctl}.volume_high_bound",
             volume_low_bound_attr=f"{lower_bend_ctl}.volume_low_bound",
-            output_v_value_plugs=[
-                f"{self.rig_root}.lower_output_v_values[{i}]"
-                for i in range(len(self["lower_output_v_values"]["value"]))
+            output_u_value_plugs=[
+                f"{self.rig_root}.lower_output_u_values[{i}]"
+                for i in range(len(self["lower_output_u_values"]["value"]))
             ],
             negate_plug=f"{negate_condition}.outColorR",
         )
@@ -1552,23 +1542,23 @@ class Rig(component.Rig):
         cmds.sets(sc, edit=True, addElement=component.DEFORMER_WEIGHTS_SETS)
 
         cmds.skinPercent(
-            sc, f"{lower_ribbon_surface}.cv[*][0]", transformValue=[driver_joints[3], 1]
+            sc, f"{lower_ribbon_surface}.cv[0][*]", transformValue=[driver_joints[3], 1]
         )
         cmds.skinPercent(
             sc,
-            f"{lower_ribbon_surface}.cv[*][1]",
+            f"{lower_ribbon_surface}.cv[1][*]",
             transformValue=[(driver_joints[3], 0.5), (driver_joints[4], 0.5)],
         )
         cmds.skinPercent(
-            sc, f"{lower_ribbon_surface}.cv[*][2]", transformValue=[driver_joints[4], 1]
+            sc, f"{lower_ribbon_surface}.cv[2][*]", transformValue=[driver_joints[4], 1]
         )
         cmds.skinPercent(
             sc,
-            f"{lower_ribbon_surface}.cv[*][3]",
+            f"{lower_ribbon_surface}.cv[3][*]",
             transformValue=[(driver_joints[4], 0.5), (driver_joints[5], 0.5)],
         )
         cmds.skinPercent(
-            sc, f"{lower_ribbon_surface}.cv[*][4]", transformValue=[driver_joints[5], 1]
+            sc, f"{lower_ribbon_surface}.cv[4][*]", transformValue=[driver_joints[5], 1]
         )
         cmds.hide(ribbon_grp)
         # endregion
@@ -1940,6 +1930,7 @@ class Rig(component.Rig):
 
         upper_loft = cmds.createNode("loft")
         cmds.setAttr(f"{upper_loft}.degree", 1)
+        cmds.setAttr(f"{upper_loft}.reverseSurfaceNormals", 1)
         cmds.connectAttr(
             f"{cubic_rebuild_curve0}.outputCurve", f"{upper_loft}.inputCurve[0]"
         )
@@ -1950,10 +1941,10 @@ class Rig(component.Rig):
         cmds.connectAttr(
             f"{upper_loft}.outputSurface", f"{rebuild_surface}.inputSurface"
         )
-        cmds.setAttr(f"{rebuild_surface}.spansU", 1)
-        cmds.setAttr(f"{rebuild_surface}.spansV", 2)
-        cmds.setAttr(f"{rebuild_surface}.degreeU", 1)
-        cmds.setAttr(f"{rebuild_surface}.degreeV", 3)
+        cmds.setAttr(f"{rebuild_surface}.spansU", 2)
+        cmds.setAttr(f"{rebuild_surface}.spansV", 1)
+        cmds.setAttr(f"{rebuild_surface}.degreeU", 3)
+        cmds.setAttr(f"{rebuild_surface}.degreeV", 1)
         cmds.setAttr(f"{rebuild_surface}.direction", 2)
         cmds.setAttr(f"{rebuild_surface}.keepRange", 0)
         cmds.connectAttr(
@@ -1963,6 +1954,7 @@ class Rig(component.Rig):
 
         lower_loft = cmds.createNode("loft")
         cmds.setAttr(f"{lower_loft}.degree", 1)
+        cmds.setAttr(f"{lower_loft}.reverseSurfaceNormals", 1)
         cmds.connectAttr(
             f"{cubic_rebuild_curve2}.outputCurve", f"{lower_loft}.inputCurve[0]"
         )
@@ -1973,10 +1965,10 @@ class Rig(component.Rig):
         cmds.connectAttr(
             f"{lower_loft}.outputSurface", f"{rebuild_surface}.inputSurface"
         )
-        cmds.setAttr(f"{rebuild_surface}.spansU", 1)
-        cmds.setAttr(f"{rebuild_surface}.spansV", 2)
-        cmds.setAttr(f"{rebuild_surface}.degreeU", 1)
-        cmds.setAttr(f"{rebuild_surface}.degreeV", 3)
+        cmds.setAttr(f"{rebuild_surface}.spansU", 2)
+        cmds.setAttr(f"{rebuild_surface}.spansV", 1)
+        cmds.setAttr(f"{rebuild_surface}.degreeU", 3)
+        cmds.setAttr(f"{rebuild_surface}.degreeV", 1)
         cmds.setAttr(f"{rebuild_surface}.direction", 2)
         cmds.setAttr(f"{rebuild_surface}.keepRange", 0)
         cmds.connectAttr(

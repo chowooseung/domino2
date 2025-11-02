@@ -12,7 +12,6 @@
     "compounds": [
         {
             "name": "Domino::Components::humanspine01_guide",
-            "uriImported": "file:///humanspine01_guide.json",
             "metadata": [
                 {
                     "metaName": "io_nodes",
@@ -55,14 +54,14 @@
                                             ]
                                         },
                                         {
-                                            "metaName": "NodeWidthOffset",
-                                            "metaType": "string",
-                                            "metaValue": "-349.417"
-                                        },
-                                        {
                                             "metaName": "LayoutPos",
                                             "metaType": "string",
                                             "metaValue": "-1113.82 281.075"
+                                        },
+                                        {
+                                            "metaName": "NodeWidthOffset",
+                                            "metaType": "string",
+                                            "metaValue": "23.2178"
                                         },
                                         {
                                             "metaName": "zValue",
@@ -115,7 +114,7 @@
                                         {
                                             "metaName": "zValue",
                                             "metaType": "string",
-                                            "metaValue": "37.000000"
+                                            "metaValue": "36.000000"
                                         }
                                     ]
                                 }
@@ -129,34 +128,9 @@
                     "metaValue": "0"
                 },
                 {
-                    "metaName": "_recentNode_",
-                    "metaType": "string",
-                    "metaValue": "BifrostGraph,Domino::Compounds,offset_matrix"
-                },
-                {
-                    "metaName": "_recentNode_",
-                    "metaType": "string",
-                    "metaValue": "BifrostGraph,Core::Array,build_array"
-                },
-                {
-                    "metaName": "_recentNode_",
-                    "metaType": "string",
-                    "metaValue": "BifrostGraph,Core::Array,get_from_array"
-                },
-                {
-                    "metaName": "_recentNode_",
-                    "metaType": "string",
-                    "metaValue": "BifrostGraph,Diagnostic::Display,transform_scope"
-                },
-                {
-                    "metaName": "_recentNode_",
-                    "metaType": "string",
-                    "metaValue": "BifrostGraph,Core::Graph,terminal"
-                },
-                {
                     "metaName": "ViewportRect",
                     "metaType": "string",
-                    "metaValue": "538.579 326.18 813.045 721.89"
+                    "metaValue": "-761.926 -117.936 1362.77 1048.81"
                 },
                 {
                     "metaName": "DisplayMode",
@@ -166,25 +140,25 @@
                 {
                     "metaName": "LayoutPos",
                     "metaType": "string",
-                    "metaValue": "-98 -147"
+                    "metaValue": "315 10"
                 },
                 {
                     "metaName": "zValue",
                     "metaType": "string",
-                    "metaValue": "36.000000"
+                    "metaValue": "34.000000"
                 }
             ],
             "terminalStates": [
+                {
+                    "name": "Core::Graph::terminal::diagnostic",
+                    "enabled": "true"
+                },
                 {
                     "name": "Core::Graph::terminal::proxy",
                     "enabled": "true"
                 },
                 {
                     "name": "Core::Graph::terminal::final",
-                    "enabled": "true"
-                },
-                {
-                    "name": "Core::Graph::terminal::diagnostic",
                     "enabled": "true"
                 }
             ],
@@ -262,7 +236,6 @@
             "compounds": [
                 {
                     "name": "npo_matrix_compound",
-                    "uriImported": "file:///humanspine01_guide.json",
                     "metadata": [
                         {
                             "metaName": "io_nodes",
@@ -400,31 +373,6 @@
                                     "metaValue": "1703.69 1110.84 1457.13 1064.62"
                                 }
                             ]
-                        },
-                        {
-                            "metaName": "_recentNode_",
-                            "metaType": "string",
-                            "metaValue": "BifrostGraph,Core::Math,SRT_to_matrix"
-                        },
-                        {
-                            "metaName": "_recentNode_",
-                            "metaType": "string",
-                            "metaValue": "BifrostGraph,Core::Math,matrix_to_SRT"
-                        },
-                        {
-                            "metaName": "_recentNode_",
-                            "metaType": "string",
-                            "metaValue": "BifrostGraph,Core::Math,inverse_matrix"
-                        },
-                        {
-                            "metaName": "_recentNode_",
-                            "metaType": "string",
-                            "metaValue": "BifrostGraph,Core::Array,build_array"
-                        },
-                        {
-                            "metaName": "_recentNode_",
-                            "metaType": "string",
-                            "metaValue": "BifrostGraph,Core::Math,matrix_multiply"
                         },
                         {
                             "metaName": "ViewportRect",
@@ -1575,22 +1523,14 @@
                         {
                             "name": "output"
                         }
-                    ]
+                    ],
+                    "libraryDependencies": {
+                        "Amino": "2.15.0.11"
+                    }
                 },
                 {
                     "name": "for_each",
-                    "uriImported": "file:///humanspine01_guide.json",
                     "metadata": [
-                        {
-                            "metaName": "icon",
-                            "metaType": "string",
-                            "metaValue": "<NATIVE>../icons/LoopForEach.svg"
-                        },
-                        {
-                            "metaName": "icon",
-                            "metaType": "string",
-                            "metaValue": "<NATIVE>../icons/LoopForEach.svg"
-                        },
                         {
                             "metaName": "icon",
                             "metaType": "string",
@@ -1641,12 +1581,12 @@
                                                 {
                                                     "metaName": "LayoutPos",
                                                     "metaType": "string",
-                                                    "metaValue": "-29.1729 -49.3099"
+                                                    "metaValue": "265.605 -45.1648"
                                                 },
                                                 {
                                                     "metaName": "zValue",
                                                     "metaType": "string",
-                                                    "metaValue": "46.000000"
+                                                    "metaValue": "61.000000"
                                                 }
                                             ]
                                         }
@@ -1674,12 +1614,12 @@
                                                 {
                                                     "metaName": "LayoutPos",
                                                     "metaType": "string",
-                                                    "metaValue": "2205.02 -336.973"
+                                                    "metaValue": "4133.48 -54.581"
                                                 },
                                                 {
                                                     "metaName": "zValue",
                                                     "metaType": "string",
-                                                    "metaValue": "31.000000"
+                                                    "metaValue": "53.000000"
                                                 }
                                             ]
                                         }
@@ -1688,34 +1628,9 @@
                             ]
                         },
                         {
-                            "metaName": "_recentNode_",
-                            "metaType": "string",
-                            "metaValue": "BifrostGraph,Core::Constants,float"
-                        },
-                        {
-                            "metaName": "_recentNode_",
-                            "metaType": "string",
-                            "metaValue": "BifrostGraph,Core::Logic,if"
-                        },
-                        {
-                            "metaName": "_recentNode_",
-                            "metaType": "string",
-                            "metaValue": "BifrostGraph,Core::Math,multiply"
-                        },
-                        {
-                            "metaName": "_recentNode_",
-                            "metaType": "string",
-                            "metaValue": "BifrostGraph,Core::Math,subtract"
-                        },
-                        {
-                            "metaName": "_recentNode_",
-                            "metaType": "string",
-                            "metaValue": "BifrostGraph,Core::Logic,equal"
-                        },
-                        {
                             "metaName": "ViewportRect",
                             "metaType": "string",
-                            "metaValue": "1299.39 -543.08 957.235 839.81"
+                            "metaValue": "233.547 -1204.93 3687.73 2564.27"
                         }
                     ],
                     "ports": [
@@ -1765,14 +1680,19 @@
                                     "metaValue": "2"
                                 },
                                 {
+                                    "metaName": "NodeWidthOffset",
+                                    "metaType": "string",
+                                    "metaValue": "9.48325"
+                                },
+                                {
                                     "metaName": "LayoutPos",
                                     "metaType": "string",
-                                    "metaValue": "1149.85 -64.4584"
+                                    "metaValue": "781.817 184.891"
                                 },
                                 {
                                     "metaName": "zValue",
                                     "metaType": "string",
-                                    "metaValue": "39.000000"
+                                    "metaValue": "33.000000"
                                 }
                             ]
                         },
@@ -1788,53 +1708,12 @@
                                 {
                                     "metaName": "LayoutPos",
                                     "metaType": "string",
-                                    "metaValue": "1151 373.842"
+                                    "metaValue": "787.709 632.674"
                                 },
                                 {
                                     "metaName": "zValue",
                                     "metaType": "string",
-                                    "metaValue": "40.000000"
-                                }
-                            ]
-                        },
-                        {
-                            "nodeName": "aim_matrix",
-                            "nodeType": "Rigging::Solver::aim_matrix",
-                            "metadata": [
-                                {
-                                    "metaName": "DisplayMode",
-                                    "metaType": "string",
-                                    "metaValue": "2"
-                                },
-                                {
-                                    "metaName": "PortExpandedState",
-                                    "metadata": [
-                                        {
-                                            "metaName": "Primary Aim",
-                                            "metaType": "string",
-                                            "metaValue": "1"
-                                        },
-                                        {
-                                            "metaName": "Secondary Aim",
-                                            "metaType": "string",
-                                            "metaValue": "1"
-                                        }
-                                    ]
-                                },
-                                {
-                                    "metaName": "NodeWidthOffset",
-                                    "metaType": "string",
-                                    "metaValue": "0"
-                                },
-                                {
-                                    "metaName": "LayoutPos",
-                                    "metaType": "string",
-                                    "metaValue": "1860.77 -335.409"
-                                },
-                                {
-                                    "metaName": "zValue",
-                                    "metaType": "string",
-                                    "metaValue": "47.000000"
+                                    "metaValue": "31.000000"
                                 }
                             ]
                         },
@@ -1855,12 +1734,12 @@
                                 {
                                     "metaName": "LayoutPos",
                                     "metaType": "string",
-                                    "metaValue": "1149.41 159.028"
+                                    "metaValue": "786.119 417.86"
                                 },
                                 {
                                     "metaName": "zValue",
                                     "metaType": "string",
-                                    "metaValue": "41.000000"
+                                    "metaValue": "32.000000"
                                 }
                             ]
                         },
@@ -1876,12 +1755,12 @@
                                 {
                                     "metaName": "LayoutPos",
                                     "metaType": "string",
-                                    "metaValue": "1001.23 -1013.87"
+                                    "metaValue": "2272.95 -682.204"
                                 },
                                 {
                                     "metaName": "zValue",
                                     "metaType": "string",
-                                    "metaValue": "34.000000"
+                                    "metaValue": "51.000000"
                                 }
                             ]
                         },
@@ -1901,12 +1780,12 @@
                                 {
                                     "metaName": "LayoutPos",
                                     "metaType": "string",
-                                    "metaValue": "650.669 -983.122"
+                                    "metaValue": "1922.39 -651.456"
                                 },
                                 {
                                     "metaName": "zValue",
                                     "metaType": "string",
-                                    "metaValue": "33.000000"
+                                    "metaValue": "50.000000"
                                 }
                             ]
                         },
@@ -1920,14 +1799,19 @@
                                     "metaValue": "2"
                                 },
                                 {
+                                    "metaName": "NodeWidthOffset",
+                                    "metaType": "string",
+                                    "metaValue": "0"
+                                },
+                                {
                                     "metaName": "LayoutPos",
                                     "metaType": "string",
-                                    "metaValue": "303.872 -938.373"
+                                    "metaValue": "1575.6 -606.707"
                                 },
                                 {
                                     "metaName": "zValue",
                                     "metaType": "string",
-                                    "metaValue": "32.000000"
+                                    "metaValue": "49.000000"
                                 }
                             ]
                         },
@@ -1943,74 +1827,12 @@
                                 {
                                     "metaName": "LayoutPos",
                                     "metaType": "string",
-                                    "metaValue": "1383.59 -860.092"
+                                    "metaValue": "2998.43 -449.761"
                                 },
                                 {
                                     "metaName": "zValue",
                                     "metaType": "string",
-                                    "metaValue": "35.000000"
-                                }
-                            ]
-                        },
-                        {
-                            "nodeName": "value1",
-                            "valueType": "Math::float3",
-                            "metadata": [
-                                {
-                                    "metaName": "DisplayMode",
-                                    "metaType": "string",
-                                    "metaValue": "2"
-                                },
-                                {
-                                    "metaName": "PortExpandedState",
-                                    "metadata": [
-                                        {
-                                            "metaName": "value",
-                                            "metaType": "string",
-                                            "metaValue": "0"
-                                        }
-                                    ]
-                                },
-                                {
-                                    "metaName": "LayoutPos",
-                                    "metaType": "string",
-                                    "metaValue": "635.98 -589.888"
-                                },
-                                {
-                                    "metaName": "zValue",
-                                    "metaType": "string",
-                                    "metaValue": "37.000000"
-                                }
-                            ]
-                        },
-                        {
-                            "nodeName": "value2",
-                            "valueType": "Math::float3",
-                            "metadata": [
-                                {
-                                    "metaName": "DisplayMode",
-                                    "metaType": "string",
-                                    "metaValue": "2"
-                                },
-                                {
-                                    "metaName": "PortExpandedState",
-                                    "metadata": [
-                                        {
-                                            "metaName": "value",
-                                            "metaType": "string",
-                                            "metaValue": "0"
-                                        }
-                                    ]
-                                },
-                                {
-                                    "metaName": "LayoutPos",
-                                    "metaType": "string",
-                                    "metaValue": "632.58 -754.626"
-                                },
-                                {
-                                    "metaName": "zValue",
-                                    "metaType": "string",
-                                    "metaValue": "36.000000"
+                                    "metaValue": "52.000000"
                                 }
                             ]
                         },
@@ -2018,8 +1840,8 @@
                             "nodeName": "multiply",
                             "nodeType": "Core::Math::multiply",
                             "multiInPortNames": [
-                                "output1",
-                                "output2"
+                                "output2",
+                                "normalized"
                             ],
                             "metadata": [
                                 {
@@ -2028,19 +1850,19 @@
                                     "metaValue": "2"
                                 },
                                 {
-                                    "metaName": "LayoutPos",
-                                    "metaType": "string",
-                                    "metaValue": "996.173 -780.578"
-                                },
-                                {
                                     "metaName": "NodeWidthOffset",
                                     "metaType": "string",
                                     "metaValue": "0"
                                 },
                                 {
+                                    "metaName": "LayoutPos",
+                                    "metaType": "string",
+                                    "metaValue": "2230.23 -178.536"
+                                },
+                                {
                                     "metaName": "zValue",
                                     "metaType": "string",
-                                    "metaValue": "38.000000"
+                                    "metaValue": "48.000000"
                                 }
                             ]
                         },
@@ -2056,12 +1878,12 @@
                                 {
                                     "metaName": "LayoutPos",
                                     "metaType": "string",
-                                    "metaValue": "635.448 -431.941"
+                                    "metaValue": "1873.57 -144.689"
                                 },
                                 {
                                     "metaName": "zValue",
                                     "metaType": "string",
-                                    "metaValue": "42.000000"
+                                    "metaValue": "45.000000"
                                 }
                             ]
                         },
@@ -2077,12 +1899,12 @@
                                 {
                                     "metaName": "LayoutPos",
                                     "metaType": "string",
-                                    "metaValue": "281.495 -399.464"
+                                    "metaValue": "1527.69 -176.773"
                                 },
                                 {
                                     "metaName": "zValue",
                                     "metaType": "string",
-                                    "metaValue": "45.000000"
+                                    "metaValue": "47.000000"
                                 }
                             ]
                         },
@@ -2098,12 +1920,250 @@
                                 {
                                     "metaName": "LayoutPos",
                                     "metaType": "string",
-                                    "metaValue": "277.261 -241.404"
+                                    "metaValue": "1523.45 -18.7131"
                                 },
                                 {
                                     "metaName": "zValue",
                                     "metaType": "string",
-                                    "metaValue": "44.000000"
+                                    "metaValue": "46.000000"
+                                }
+                            ]
+                        },
+                        {
+                            "nodeName": "matrix_to_SRT",
+                            "nodeType": "Core::Math::matrix_to_SRT",
+                            "metadata": [
+                                {
+                                    "metaName": "DisplayMode",
+                                    "metaType": "string",
+                                    "metaValue": "2"
+                                },
+                                {
+                                    "metaName": "LayoutPos",
+                                    "metaType": "string",
+                                    "metaValue": "1128.76 180.259"
+                                },
+                                {
+                                    "metaName": "zValue",
+                                    "metaType": "string",
+                                    "metaValue": "34.000000"
+                                }
+                            ]
+                        },
+                        {
+                            "nodeName": "matrix_to_SRT1",
+                            "nodeType": "Core::Math::matrix_to_SRT",
+                            "metadata": [
+                                {
+                                    "metaName": "DisplayMode",
+                                    "metaType": "string",
+                                    "metaValue": "2"
+                                },
+                                {
+                                    "metaName": "LayoutPos",
+                                    "metaType": "string",
+                                    "metaValue": "1117.78 403.092"
+                                },
+                                {
+                                    "metaName": "zValue",
+                                    "metaType": "string",
+                                    "metaValue": "35.000000"
+                                }
+                            ]
+                        },
+                        {
+                            "nodeName": "matrix_to_SRT2",
+                            "nodeType": "Core::Math::matrix_to_SRT",
+                            "metadata": [
+                                {
+                                    "metaName": "DisplayMode",
+                                    "metaType": "string",
+                                    "metaValue": "2"
+                                },
+                                {
+                                    "metaName": "LayoutPos",
+                                    "metaType": "string",
+                                    "metaValue": "1114.64 676.141"
+                                },
+                                {
+                                    "metaName": "zValue",
+                                    "metaType": "string",
+                                    "metaValue": "36.000000"
+                                }
+                            ]
+                        },
+                        {
+                            "nodeName": "subtract1",
+                            "nodeType": "Core::Math::subtract",
+                            "multiInPortNames": [
+                                "translation",
+                                "translation1"
+                            ],
+                            "metadata": [
+                                {
+                                    "metaName": "DisplayMode",
+                                    "metaType": "string",
+                                    "metaValue": "2"
+                                },
+                                {
+                                    "metaName": "LayoutPos",
+                                    "metaType": "string",
+                                    "metaValue": "1502.25 374.846"
+                                },
+                                {
+                                    "metaName": "zValue",
+                                    "metaType": "string",
+                                    "metaValue": "39.000000"
+                                }
+                            ]
+                        },
+                        {
+                            "nodeName": "subtract2",
+                            "nodeType": "Core::Math::subtract",
+                            "multiInPortNames": [
+                                "translation",
+                                "translation1"
+                            ],
+                            "metadata": [
+                                {
+                                    "metaName": "DisplayMode",
+                                    "metaType": "string",
+                                    "metaValue": "2"
+                                },
+                                {
+                                    "metaName": "LayoutPos",
+                                    "metaType": "string",
+                                    "metaValue": "1483.41 665.156"
+                                },
+                                {
+                                    "metaName": "zValue",
+                                    "metaType": "string",
+                                    "metaValue": "37.000000"
+                                }
+                            ]
+                        },
+                        {
+                            "nodeName": "normalize",
+                            "nodeType": "Core::Math::normalize",
+                            "metadata": [
+                                {
+                                    "metaName": "DisplayMode",
+                                    "metaType": "string",
+                                    "metaValue": "2"
+                                },
+                                {
+                                    "metaName": "LayoutPos",
+                                    "metaType": "string",
+                                    "metaValue": "1808.25 371.707"
+                                },
+                                {
+                                    "metaName": "zValue",
+                                    "metaType": "string",
+                                    "metaValue": "40.000000"
+                                }
+                            ]
+                        },
+                        {
+                            "nodeName": "normalize1",
+                            "nodeType": "Core::Math::normalize",
+                            "metadata": [
+                                {
+                                    "metaName": "DisplayMode",
+                                    "metaType": "string",
+                                    "metaValue": "2"
+                                },
+                                {
+                                    "metaName": "LayoutPos",
+                                    "metaType": "string",
+                                    "metaValue": "1805.11 641.617"
+                                },
+                                {
+                                    "metaName": "zValue",
+                                    "metaType": "string",
+                                    "metaValue": "38.000000"
+                                }
+                            ]
+                        },
+                        {
+                            "nodeName": "value7",
+                            "valueType": "Math::float4x4",
+                            "metadata": [
+                                {
+                                    "metaName": "DisplayMode",
+                                    "metaType": "string",
+                                    "metaValue": "2"
+                                },
+                                {
+                                    "metaName": "LayoutPos",
+                                    "metaType": "string",
+                                    "metaValue": "3521.78 220.111"
+                                },
+                                {
+                                    "metaName": "PortExpandedState",
+                                    "metadata": [
+                                        {
+                                            "metaName": "value",
+                                            "metaType": "string",
+                                            "metaValue": "1"
+                                        },
+                                        {
+                                            "metaName": "value.c2",
+                                            "metaType": "string",
+                                            "metaValue": "0"
+                                        },
+                                        {
+                                            "metaName": "value.c1",
+                                            "metaType": "string",
+                                            "metaValue": "0"
+                                        }
+                                    ]
+                                },
+                                {
+                                    "metaName": "zValue",
+                                    "metaType": "string",
+                                    "metaValue": "60.000000"
+                                }
+                            ]
+                        },
+                        {
+                            "nodeName": "cross",
+                            "nodeType": "Core::Math::cross",
+                            "metadata": [
+                                {
+                                    "metaName": "DisplayMode",
+                                    "metaType": "string",
+                                    "metaValue": "2"
+                                },
+                                {
+                                    "metaName": "LayoutPos",
+                                    "metaType": "string",
+                                    "metaValue": "2198.99 505.039"
+                                },
+                                {
+                                    "metaName": "zValue",
+                                    "metaType": "string",
+                                    "metaValue": "54.000000"
+                                }
+                            ]
+                        },
+                        {
+                            "nodeName": "cross1",
+                            "nodeType": "Core::Math::cross",
+                            "metadata": [
+                                {
+                                    "metaName": "DisplayMode",
+                                    "metaType": "string",
+                                    "metaValue": "2"
+                                },
+                                {
+                                    "metaName": "LayoutPos",
+                                    "metaType": "string",
+                                    "metaValue": "2512.44 790.534"
+                                },
+                                {
+                                    "metaName": "zValue",
+                                    "metaType": "string",
+                                    "metaValue": "62.000000"
                                 }
                             ]
                         },
@@ -2121,24 +2181,44 @@
                                     "metaValue": "2"
                                 },
                                 {
-                                    "metaName": "NodeWidthOffset",
-                                    "metaType": "string",
-                                    "metaValue": "0"
-                                },
-                                {
                                     "metaName": "LayoutPos",
                                     "metaType": "string",
-                                    "metaValue": "995.378 -564.416"
+                                    "metaValue": "2602.89 -159.093"
                                 },
                                 {
                                     "metaName": "zValue",
                                     "metaType": "string",
-                                    "metaValue": "43.000000"
+                                    "metaValue": "55.000000"
                                 }
                             ]
                         },
                         {
-                            "nodeName": "if2",
+                            "nodeName": "multiply2",
+                            "nodeType": "Core::Math::multiply",
+                            "multiInPortNames": [
+                                "output2",
+                                "cross_product"
+                            ],
+                            "metadata": [
+                                {
+                                    "metaName": "DisplayMode",
+                                    "metaType": "string",
+                                    "metaValue": "2"
+                                },
+                                {
+                                    "metaName": "LayoutPos",
+                                    "metaType": "string",
+                                    "metaValue": "2647.39 151.656"
+                                },
+                                {
+                                    "metaName": "zValue",
+                                    "metaType": "string",
+                                    "metaValue": "57.000000"
+                                }
+                            ]
+                        },
+                        {
+                            "nodeName": "if3",
                             "nodeType": "Core::Logic::if",
                             "metadata": [
                                 {
@@ -2147,20 +2227,20 @@
                                     "metaValue": "2"
                                 },
                                 {
-                                    "metaName": "zValue",
-                                    "metaType": "string",
-                                    "metaValue": "51.000000"
-                                },
-                                {
                                     "metaName": "LayoutPos",
                                     "metaType": "string",
-                                    "metaValue": "1397.52 -362.178"
+                                    "metaValue": "3045.22 90.886"
+                                },
+                                {
+                                    "metaName": "zValue",
+                                    "metaType": "string",
+                                    "metaValue": "56.000000"
                                 }
                             ]
                         },
                         {
-                            "nodeName": "value5",
-                            "valueType": "Math::float3",
+                            "nodeName": "if4",
+                            "nodeType": "Core::Logic::if",
                             "metadata": [
                                 {
                                     "metaName": "DisplayMode",
@@ -2168,30 +2248,24 @@
                                     "metaValue": "2"
                                 },
                                 {
-                                    "metaName": "PortExpandedState",
-                                    "metadata": [
-                                        {
-                                            "metaName": "value",
-                                            "metaType": "string",
-                                            "metaValue": "0"
-                                        }
-                                    ]
+                                    "metaName": "LayoutPos",
+                                    "metaType": "string",
+                                    "metaValue": "3125.97 724.801"
                                 },
                                 {
                                     "metaName": "zValue",
                                     "metaType": "string",
-                                    "metaValue": "52.000000"
-                                },
-                                {
-                                    "metaName": "LayoutPos",
-                                    "metaType": "string",
-                                    "metaValue": "996.73 -420.635"
+                                    "metaValue": "59.000000"
                                 }
                             ]
                         },
                         {
-                            "nodeName": "value6",
-                            "valueType": "Math::float3",
+                            "nodeName": "multiply3",
+                            "nodeType": "Core::Math::multiply",
+                            "multiInPortNames": [
+                                "output2",
+                                "cross_product"
+                            ],
                             "metadata": [
                                 {
                                     "metaName": "DisplayMode",
@@ -2199,24 +2273,14 @@
                                     "metaValue": "2"
                                 },
                                 {
-                                    "metaName": "PortExpandedState",
-                                    "metadata": [
-                                        {
-                                            "metaName": "value",
-                                            "metaType": "string",
-                                            "metaValue": "0"
-                                        }
-                                    ]
+                                    "metaName": "LayoutPos",
+                                    "metaType": "string",
+                                    "metaValue": "2779.17 615.612"
                                 },
                                 {
                                     "metaName": "zValue",
                                     "metaType": "string",
-                                    "metaValue": "53.000000"
-                                },
-                                {
-                                    "metaName": "LayoutPos",
-                                    "metaType": "string",
-                                    "metaValue": "996.732 -220.979"
+                                    "metaValue": "58.000000"
                                 }
                             ]
                         }
@@ -2227,24 +2291,8 @@
                             "target": "get_from_array1.array"
                         },
                         {
-                            "source": "get_from_array.value",
-                            "target": "aim_matrix.transform"
-                        },
-                        {
-                            "source": "get_from_array1.value",
-                            "target": "aim_matrix.secondary_target_matrix"
-                        },
-                        {
                             "source": ".main_transforms",
                             "target": "get_from_array.array"
-                        },
-                        {
-                            "source": "get_from_array2.value",
-                            "target": "aim_matrix.primary_target_matrix"
-                        },
-                        {
-                            "source": "aim_matrix.out_transform",
-                            "target": ".initialize_output_matrix"
                         },
                         {
                             "source": ".next_transforms",
@@ -2283,18 +2331,6 @@
                             "target": "if.condition"
                         },
                         {
-                            "source": "if.output",
-                            "target": "aim_matrix.primary_input_axis"
-                        },
-                        {
-                            "source": "value2.output",
-                            "target": "multiply.first.output1"
-                        },
-                        {
-                            "source": "multiply.output",
-                            "target": "if.true_case"
-                        },
-                        {
                             "source": ".negate",
                             "target": "if1.condition"
                         },
@@ -2311,99 +2347,143 @@
                             "target": "multiply.first.output2"
                         },
                         {
-                            "source": "if1.output",
-                            "target": "multiply1.first.output2"
+                            "source": "get_from_array.value",
+                            "target": "matrix_to_SRT.transform"
                         },
                         {
-                            "source": "value1.output",
-                            "target": "multiply1.first.output1"
+                            "source": "get_from_array2.value",
+                            "target": "matrix_to_SRT1.transform"
                         },
                         {
-                            "source": "multiply1.output",
+                            "source": "get_from_array1.value",
+                            "target": "matrix_to_SRT2.transform"
+                        },
+                        {
+                            "source": "matrix_to_SRT1.translation",
+                            "target": "subtract1.first.translation"
+                        },
+                        {
+                            "source": "matrix_to_SRT.translation",
+                            "target": "subtract1.first.translation1"
+                        },
+                        {
+                            "source": "matrix_to_SRT.translation",
+                            "target": "subtract2.first.translation1"
+                        },
+                        {
+                            "source": "matrix_to_SRT2.translation",
+                            "target": "subtract2.first.translation"
+                        },
+                        {
+                            "source": "subtract1.output",
+                            "target": "normalize.value"
+                        },
+                        {
+                            "source": "subtract2.output",
+                            "target": "normalize1.value"
+                        },
+                        {
+                            "source": "matrix_to_SRT.translation",
+                            "target": "value7.value.c3"
+                        },
+                        {
+                            "source": "normalize.normalized",
+                            "target": "multiply.first.normalized"
+                        },
+                        {
+                            "source": "if.output",
+                            "target": "value7.value.c0"
+                        },
+                        {
+                            "source": "multiply.output",
                             "target": "if.false_case"
                         },
                         {
-                            "source": "value5.output",
-                            "target": "if2.true_case"
+                            "source": "multiply.output",
+                            "target": "multiply1.first.output1"
                         },
                         {
-                            "source": "value6.output",
-                            "target": "if2.false_case"
+                            "source": "value3.output",
+                            "target": "multiply1.first.output2"
+                        },
+                        {
+                            "source": "multiply1.output",
+                            "target": "if.true_case"
+                        },
+                        {
+                            "source": "value7.output",
+                            "target": ".initialize_output_matrix"
+                        },
+                        {
+                            "source": "normalize1.normalized",
+                            "target": "cross.second"
+                        },
+                        {
+                            "source": "normalize.normalized",
+                            "target": "cross.first"
+                        },
+                        {
+                            "source": "cross.cross_product",
+                            "target": "cross1.first"
+                        },
+                        {
+                            "source": "normalize.normalized",
+                            "target": "cross1.second"
+                        },
+                        {
+                            "source": "value3.output",
+                            "target": "multiply2.first.output2"
+                        },
+                        {
+                            "source": "equal.output",
+                            "target": "if3.condition"
+                        },
+                        {
+                            "source": "cross.cross_product",
+                            "target": "multiply2.first.cross_product"
+                        },
+                        {
+                            "source": "value3.output",
+                            "target": "multiply3.first.output2"
+                        },
+                        {
+                            "source": "cross1.cross_product",
+                            "target": "multiply3.first.cross_product"
+                        },
+                        {
+                            "source": "multiply2.output",
+                            "target": "if3.false_case"
+                        },
+                        {
+                            "source": "cross.cross_product",
+                            "target": "if3.true_case"
+                        },
+                        {
+                            "source": "if3.output",
+                            "target": "value7.value.c2"
                         },
                         {
                             "source": ".negate",
-                            "target": "if2.condition"
+                            "target": "if4.condition"
                         },
                         {
-                            "source": "if2.output",
-                            "target": "aim_matrix.secondary_input_axis"
+                            "source": "if4.output",
+                            "target": "value7.value.c1"
+                        },
+                        {
+                            "source": "multiply3.output",
+                            "target": "if4.false_case"
+                        },
+                        {
+                            "source": "cross1.cross_product",
+                            "target": "if4.true_case"
                         }
                     ],
                     "values": [
                         {
-                            "valueName": "aim_matrix.weight",
-                            "valueType": "double",
-                            "value": "1"
-                        },
-                        {
-                            "valueName": "aim_matrix.primary_mode",
-                            "valueType": "Rigging::Solver::AimMode",
-                            "value": "Aim"
-                        },
-                        {
-                            "valueName": "aim_matrix.primary_input_axis",
-                            "valueType": "Math::double3",
-                            "value": {
-                                "x": "1",
-                                "y": "0",
-                                "z": "0"
-                            }
-                        },
-                        {
-                            "valueName": "aim_matrix.secondary_mode",
-                            "valueType": "Rigging::Solver::AimMode",
-                            "value": "Aim"
-                        },
-                        {
-                            "valueName": "aim_matrix.secondary_input_axis",
-                            "valueType": "Math::double3",
-                            "value": {
-                                "x": "0",
-                                "y": "-1",
-                                "z": "0"
-                            }
-                        },
-                        {
-                            "valueName": "aim_matrix.secondary_target_vector",
-                            "valueType": "Math::double3",
-                            "value": {
-                                "x": "0",
-                                "y": "0",
-                                "z": "0"
-                            }
-                        },
-                        {
                             "valueName": "value.value",
                             "valueType": "long",
                             "value": "1"
-                        },
-                        {
-                            "valueName": "value1.value",
-                            "valueType": "Math::float3",
-                            "value": {
-                                "x": "1f",
-                                "y": "0f",
-                                "z": "0f"
-                            }
-                        },
-                        {
-                            "valueName": "value2.value",
-                            "valueType": "Math::float3",
-                            "value": {
-                                "x": "-1f",
-                                "y": "0f",
-                                "z": "0f"
-                            }
                         },
                         {
                             "valueName": "value3.value",
@@ -2414,24 +2494,6 @@
                             "valueName": "value4.value",
                             "valueType": "float",
                             "value": "1f"
-                        },
-                        {
-                            "valueName": "value5.value",
-                            "valueType": "Math::float3",
-                            "value": {
-                                "x": "0f",
-                                "y": "1f",
-                                "z": "0f"
-                            }
-                        },
-                        {
-                            "valueName": "value6.value",
-                            "valueType": "Math::float3",
-                            "value": {
-                                "x": "0f",
-                                "y": "-1f",
-                                "z": "0f"
-                            }
                         }
                     ],
                     "reservedNodeNames": [
@@ -2444,6 +2506,9 @@
                     ],
                     "forEachCompound": {
                         "ports": []
+                    },
+                    "libraryDependencies": {
+                        "Amino": "2.15.0.11"
                     }
                 }
             ],
@@ -2460,18 +2525,24 @@
                         {
                             "metaName": "LayoutPos",
                             "metaType": "string",
-                            "metaValue": "588.627 137.22"
+                            "metaValue": "614.048 96.8454"
                         },
                         {
                             "metaName": "zValue",
                             "metaType": "string",
-                            "metaValue": "47.000000"
+                            "metaValue": "50.000000"
                         }
                     ]
                 },
                 {
                     "nodeName": "for_each",
                     "nodeType": "for_each",
+                    "terminalStates": [
+                        {
+                            "name": "Core::Graph::terminal::diagnostic",
+                            "enabled": "true"
+                        }
+                    ],
                     "metadata": [
                         {
                             "metaName": "DisplayMode",
@@ -2479,14 +2550,14 @@
                             "metaValue": "2"
                         },
                         {
-                            "metaName": "zValue",
-                            "metaType": "string",
-                            "metaValue": "58.000000"
-                        },
-                        {
                             "metaName": "LayoutPos",
                             "metaType": "string",
                             "metaValue": "607.981 725.127"
+                        },
+                        {
+                            "metaName": "zValue",
+                            "metaType": "string",
+                            "metaValue": "54.000000"
                         }
                     ]
                 },
@@ -2512,7 +2583,7 @@
                         {
                             "metaName": "zValue",
                             "metaType": "string",
-                            "metaValue": "39.000000"
+                            "metaValue": "38.000000"
                         }
                     ]
                 },
@@ -2558,7 +2629,7 @@
                         {
                             "metaName": "zValue",
                             "metaType": "string",
-                            "metaValue": "40.000000"
+                            "metaValue": "39.000000"
                         }
                     ]
                 },
@@ -2639,14 +2710,14 @@
                             "metaValue": "2"
                         },
                         {
-                            "metaName": "zValue",
-                            "metaType": "string",
-                            "metaValue": "57.000000"
-                        },
-                        {
                             "metaName": "LayoutPos",
                             "metaType": "string",
                             "metaValue": "604.252 1068.3"
+                        },
+                        {
+                            "metaName": "zValue",
+                            "metaType": "string",
+                            "metaValue": "45.000000"
                         }
                     ]
                 },
@@ -2660,14 +2731,14 @@
                             "metaValue": "2"
                         },
                         {
-                            "metaName": "zValue",
-                            "metaType": "string",
-                            "metaValue": "53.000000"
-                        },
-                        {
                             "metaName": "LayoutPos",
                             "metaType": "string",
                             "metaValue": "1330.83 524.636"
+                        },
+                        {
+                            "metaName": "zValue",
+                            "metaType": "string",
+                            "metaValue": "44.000000"
                         }
                     ]
                 },
@@ -2688,7 +2759,7 @@
                         {
                             "metaName": "zValue",
                             "metaType": "string",
-                            "metaValue": "38.000000"
+                            "metaValue": "37.000000"
                         }
                     ]
                 },
@@ -2709,7 +2780,7 @@
                         {
                             "metaName": "zValue",
                             "metaType": "string",
-                            "metaValue": "41.000000"
+                            "metaValue": "40.000000"
                         }
                     ]
                 },
@@ -2730,7 +2801,7 @@
                         {
                             "metaName": "zValue",
                             "metaType": "string",
-                            "metaValue": "44.000000"
+                            "metaValue": "43.000000"
                         }
                     ]
                 },
@@ -2751,7 +2822,7 @@
                         {
                             "metaName": "zValue",
                             "metaType": "string",
-                            "metaValue": "42.000000"
+                            "metaValue": "41.000000"
                         }
                     ]
                 },
@@ -2776,7 +2847,7 @@
                         {
                             "metaName": "zValue",
                             "metaType": "string",
-                            "metaValue": "43.000000"
+                            "metaValue": "42.000000"
                         }
                     ]
                 },
@@ -2792,12 +2863,12 @@
                         {
                             "metaName": "zValue",
                             "metaType": "string",
-                            "metaValue": "66.000000"
+                            "metaValue": "63.000000"
                         },
                         {
                             "metaName": "LayoutPos",
                             "metaType": "string",
-                            "metaValue": "441.11 479.795"
+                            "metaValue": "-155.308 -103.816"
                         }
                     ]
                 },
@@ -2815,14 +2886,14 @@
                             "metaValue": "2"
                         },
                         {
-                            "metaName": "zValue",
-                            "metaType": "string",
-                            "metaValue": "61.000000"
-                        },
-                        {
                             "metaName": "LayoutPos",
                             "metaType": "string",
                             "metaValue": "989.326 561.975"
+                        },
+                        {
+                            "metaName": "zValue",
+                            "metaType": "string",
+                            "metaValue": "53.000000"
                         }
                     ]
                 },
@@ -2836,6 +2907,63 @@
                             "metaValue": "2"
                         },
                         {
+                            "metaName": "NodeWidthOffset",
+                            "metaType": "string",
+                            "metaValue": "0"
+                        },
+                        {
+                            "metaName": "LayoutPos",
+                            "metaType": "string",
+                            "metaValue": "687.355 385.827"
+                        },
+                        {
+                            "metaName": "zValue",
+                            "metaType": "string",
+                            "metaValue": "81.000000"
+                        }
+                    ]
+                },
+                {
+                    "nodeName": "if",
+                    "nodeType": "Core::Logic::if",
+                    "metadata": [
+                        {
+                            "metaName": "DisplayMode",
+                            "metaType": "string",
+                            "metaValue": "2"
+                        },
+                        {
+                            "metaName": "zValue",
+                            "metaType": "string",
+                            "metaValue": "64.000000"
+                        },
+                        {
+                            "metaName": "LayoutPos",
+                            "metaType": "string",
+                            "metaValue": "-137.687 106.932"
+                        }
+                    ]
+                },
+                {
+                    "nodeName": "value1",
+                    "valueType": "Math::float3",
+                    "metadata": [
+                        {
+                            "metaName": "DisplayMode",
+                            "metaType": "string",
+                            "metaValue": "2"
+                        },
+                        {
+                            "metaName": "PortExpandedState",
+                            "metadata": [
+                                {
+                                    "metaName": "value",
+                                    "metaType": "string",
+                                    "metaValue": "0"
+                                }
+                            ]
+                        },
+                        {
                             "metaName": "zValue",
                             "metaType": "string",
                             "metaValue": "67.000000"
@@ -2843,7 +2971,143 @@
                         {
                             "metaName": "LayoutPos",
                             "metaType": "string",
-                            "metaValue": "707.297 455.227"
+                            "metaValue": "191.137 32.0894"
+                        }
+                    ]
+                },
+                {
+                    "nodeName": "value2",
+                    "valueType": "float",
+                    "metadata": [
+                        {
+                            "metaName": "DisplayMode",
+                            "metaType": "string",
+                            "metaValue": "2"
+                        },
+                        {
+                            "metaName": "zValue",
+                            "metaType": "string",
+                            "metaValue": "65.000000"
+                        },
+                        {
+                            "metaName": "LayoutPos",
+                            "metaType": "string",
+                            "metaValue": "-448.616 -14.9546"
+                        }
+                    ]
+                },
+                {
+                    "nodeName": "value3",
+                    "valueType": "float",
+                    "metadata": [
+                        {
+                            "metaName": "DisplayMode",
+                            "metaType": "string",
+                            "metaValue": "2"
+                        },
+                        {
+                            "metaName": "zValue",
+                            "metaType": "string",
+                            "metaValue": "66.000000"
+                        },
+                        {
+                            "metaName": "LayoutPos",
+                            "metaType": "string",
+                            "metaValue": "-448.616 143.514"
+                        }
+                    ]
+                },
+                {
+                    "nodeName": "value4",
+                    "valueType": "Math::float3",
+                    "metadata": [
+                        {
+                            "metaName": "DisplayMode",
+                            "metaType": "string",
+                            "metaValue": "2"
+                        },
+                        {
+                            "metaName": "PortExpandedState",
+                            "metadata": [
+                                {
+                                    "metaName": "value",
+                                    "metaType": "string",
+                                    "metaValue": "1"
+                                }
+                            ]
+                        },
+                        {
+                            "metaName": "zValue",
+                            "metaType": "string",
+                            "metaValue": "82.000000"
+                        },
+                        {
+                            "metaName": "LayoutPos",
+                            "metaType": "string",
+                            "metaValue": "205.639 354.773"
+                        }
+                    ]
+                },
+                {
+                    "nodeName": "if1",
+                    "nodeType": "Core::Logic::if",
+                    "metadata": [
+                        {
+                            "metaName": "DisplayMode",
+                            "metaType": "string",
+                            "metaValue": "2"
+                        },
+                        {
+                            "metaName": "zValue",
+                            "metaType": "string",
+                            "metaValue": "83.000000"
+                        },
+                        {
+                            "metaName": "LayoutPos",
+                            "metaType": "string",
+                            "metaValue": "-127.916 348.921"
+                        }
+                    ]
+                },
+                {
+                    "nodeName": "value5",
+                    "valueType": "float",
+                    "metadata": [
+                        {
+                            "metaName": "DisplayMode",
+                            "metaType": "string",
+                            "metaValue": "2"
+                        },
+                        {
+                            "metaName": "zValue",
+                            "metaType": "string",
+                            "metaValue": "85.000000"
+                        },
+                        {
+                            "metaName": "LayoutPos",
+                            "metaType": "string",
+                            "metaValue": "-459.545 330.302"
+                        }
+                    ]
+                },
+                {
+                    "nodeName": "value6",
+                    "valueType": "float",
+                    "metadata": [
+                        {
+                            "metaName": "DisplayMode",
+                            "metaType": "string",
+                            "metaValue": "2"
+                        },
+                        {
+                            "metaName": "zValue",
+                            "metaType": "string",
+                            "metaValue": "86.000000"
+                        },
+                        {
+                            "metaName": "LayoutPos",
+                            "metaType": "string",
+                            "metaValue": "-457.82 484.063"
                         }
                     ]
                 }
@@ -2992,6 +3256,46 @@
                 {
                     "source": "offset_matrix1.matrix",
                     "target": "build_array1.first.value"
+                },
+                {
+                    "source": ".negate",
+                    "target": "if.condition"
+                },
+                {
+                    "source": "if.output",
+                    "target": "value1.value.z"
+                },
+                {
+                    "source": "value1.output",
+                    "target": "offset_matrix1.offset_scale"
+                },
+                {
+                    "source": "value2.output",
+                    "target": "if.true_case"
+                },
+                {
+                    "source": "value3.output",
+                    "target": "if.false_case"
+                },
+                {
+                    "source": ".negate",
+                    "target": "if1.condition"
+                },
+                {
+                    "source": "if1.output",
+                    "target": "value4.value.y"
+                },
+                {
+                    "source": "value4.output",
+                    "target": "offset_matrix1.offset_rotate"
+                },
+                {
+                    "source": "value6.output",
+                    "target": "if1.false_case"
+                },
+                {
+                    "source": "value5.output",
+                    "target": "if1.true_case"
                 }
             ],
             "values": [
@@ -3033,6 +3337,44 @@
                         "y": "0f",
                         "z": "90f"
                     }
+                },
+                {
+                    "valueName": "value1.value",
+                    "valueType": "Math::float3",
+                    "value": {
+                        "x": "1f",
+                        "y": "1f",
+                        "z": "0f"
+                    }
+                },
+                {
+                    "valueName": "value2.value",
+                    "valueType": "float",
+                    "value": "-1f"
+                },
+                {
+                    "valueName": "value3.value",
+                    "valueType": "float",
+                    "value": "1f"
+                },
+                {
+                    "valueName": "value4.value",
+                    "valueType": "Math::float3",
+                    "value": {
+                        "x": "0f",
+                        "y": "180f",
+                        "z": "90f"
+                    }
+                },
+                {
+                    "valueName": "value5.value",
+                    "valueType": "float",
+                    "value": "180f"
+                },
+                {
+                    "valueName": "value6.value",
+                    "valueType": "float",
+                    "value": "0f"
                 }
             ],
             "reservedNodeNames": [
@@ -3042,7 +3384,11 @@
                 {
                     "name": "output"
                 }
-            ]
+            ],
+            "libraryDependencies": {
+                "Amino": "2.15.0.11",
+                "Domino": "1.0.0"
+            }
         }
     ]
 }

@@ -140,7 +140,7 @@ DATA = [
         longName="offset_output_rotate_z", minValue=-360, maxValue=360
     ),
     attribute.Integer(longName="output_count", value=3),
-    attribute.Float(longName="output_v_values", multi=True, value=[0, 0.5, 1]),
+    attribute.Float(longName="output_u_values", multi=True, value=[0, 0.5, 1]),
     attribute.Matrix(
         longName="driver_matrix",
         multi=True,
@@ -157,7 +157,7 @@ DATA = [
         longName="ribbon_surface",
         value={
             "parent_name": "",
-            "surface_name": "tempRibbonSurface",
+            "surface_name": "ribbonSurf",
             "surface_matrix": [
                 1.0,
                 0.0,
@@ -172,43 +172,43 @@ DATA = [
                 1.0,
                 0.0,
                 0.0,
-                1.7763568394002505e-15,
-                -2.7755575615628914e-16,
+                0.0,
+                0.0,
                 1.0,
             ],
             "visibility": True,
             "surface": {
                 "form_u": 0,
                 "form_v": 0,
-                "knot_u": [0.0, 1.0],
-                "knot_v": [0.0, 0.0, 0.0, 0.5, 1.0, 1.0, 1.0],
-                "degree_u": 1,
-                "degree_v": 3,
+                "knot_u": [0.0, 0.0, 0.0, 0.5, 1.0, 1.0, 1.0],
+                "knot_v": [0.0, 1.0],
+                "degree_u": 3,
+                "degree_v": 1,
                 "cvs": [
                     (0.3239349977974598, 15.205301124732639, -0.19341314194903445, 1.0),
-                    (0.3239349977974598, 15.437891495373838, -0.19341313838958674, 1.0),
-                    (0.3239349977974601, 15.781718432567175, -0.06369525705588897, 1.0),
-                    (0.3239349977974598, 16.124175823166624, 0.0967264994978908, 1.0),
-                    (0.3239349977974598, 16.396925416387543, 0.08630332491025225, 1.0),
                     (
                         -0.3239349977974598,
                         15.205301124732639,
                         -0.19341314194903445,
                         1.0,
                     ),
+                    (0.3239349977974598, 15.437891495373838, -0.19341313838958674, 1.0),
                     (
                         -0.3239349977974598,
                         15.437891495373838,
                         -0.19341313838958674,
                         1.0,
                     ),
+                    (0.3239349977974601, 15.781718432567175, -0.06369525705588897, 1.0),
                     (
                         -0.3239349977974601,
                         15.781718432567175,
                         -0.06369525705588897,
                         1.0,
                     ),
+                    (0.3239349977974598, 16.124175823166624, 0.0967264994978908, 1.0),
                     (-0.3239349977974598, 16.124175823166624, 0.0967264994978908, 1.0),
+                    (0.3239349977974598, 16.396925416387543, 0.08630332491025225, 1.0),
                     (-0.3239349977974598, 16.396925416387543, 0.08630332491025225, 1.0),
                 ],
             },
@@ -250,7 +250,7 @@ class Rig(component.Rig):
             if value < 3:
                 return False
             self["output_count"]["value"] = value
-            self["output_v_values"]["value"] = [v / (value - 1) for v in range(value)]
+            self["output_u_values"]["value"] = [v / (value - 1) for v in range(value)]
             self["initialize_output_matrix"]["value"] = [
                 list(ORIGINMATRIX) for _ in range(value)
             ]
@@ -543,7 +543,7 @@ class Rig(component.Rig):
         )
         main_ik_joints = []
         parent = ribbon_grp
-        for i in range(len(self["output_v_values"]["value"])):
+        for i in range(len(self["output_u_values"]["value"])):
             ins = Joint(
                 parent=parent,
                 name=name,
@@ -556,7 +556,7 @@ class Rig(component.Rig):
             parent = main_ik_joints[i]
         up_ik_joints = []
         parent = ribbon_grp
-        for i in range(len(self["output_v_values"]["value"])):
+        for i in range(len(self["output_u_values"]["value"])):
             ins = Joint(
                 parent=parent,
                 name=name,
@@ -568,9 +568,9 @@ class Rig(component.Rig):
             up_ik_joints.append(ins.create())
             parent = up_ik_joints[i]
 
-        output_v_values = self["output_v_values"]["value"]
-        half_list = output_v_values[: int(len(output_v_values) / 2)]
-        if len(output_v_values) % 2 == 1:
+        output_u_values = self["output_u_values"]["value"]
+        half_list = output_u_values[: int(len(output_u_values) / 2)]
+        if len(output_u_values) % 2 == 1:
             value = 1 / (len(half_list))
             half_list = [x * value for x in range(len(half_list))]
             auto_volume_multiple = half_list + [1] + list(reversed(half_list))
@@ -604,8 +604,8 @@ class Rig(component.Rig):
             volume_position_attr=f"{host_ctl}.volume_position",
             volume_high_bound_attr=f"{host_ctl}.volume_high_bound",
             volume_low_bound_attr=f"{host_ctl}.volume_low_bound",
-            output_v_value_plugs=[
-                f"{self.rig_root}.output_v_values[{i}]"
+            output_u_value_plugs=[
+                f"{self.rig_root}.output_u_values[{i}]"
                 for i in range(self["output_count"]["value"])
             ],
             negate_plug=f"{condition}.outColorR",
@@ -619,13 +619,13 @@ class Rig(component.Rig):
 
         cmds.hide(ribbon_grp, ribbon0_jnt, ribbon1_jnt, ribbon2_jnt)
         cmds.skinPercent(
-            sc, f"{ribbon_surface}.cv[*][0:1]", transformValue=[ribbon0_jnt, 1]
+            sc, f"{ribbon_surface}.cv[0:1][*]", transformValue=[ribbon0_jnt, 1]
         )
         cmds.skinPercent(
-            sc, f"{ribbon_surface}.cv[*][2]", transformValue=[ribbon1_jnt, 1]
+            sc, f"{ribbon_surface}.cv[2][*]", transformValue=[ribbon1_jnt, 1]
         )
         cmds.skinPercent(
-            sc, f"{ribbon_surface}.cv[*][3:4]", transformValue=[ribbon2_jnt, 1]
+            sc, f"{ribbon_surface}.cv[3:4][*]", transformValue=[ribbon2_jnt, 1]
         )
 
         head_rot_fix = cmds.createNode(
@@ -842,12 +842,12 @@ class Rig(component.Rig):
         cmds.connectAttr(f"{surface}.worldSpace[0]", f"{uvpin}.deformedGeometry")
 
         c = 0
-        for i in range(len(self["output_v_values"]["value"])):
+        for i in range(len(self["output_u_values"]["value"])):
             cmds.connectAttr(
-                f"{self.guide_root}.output_v_values[{i}]",
-                f"{uvpin}.coordinate[{c}].coordinateV",
+                f"{self.guide_root}.output_u_values[{i}]",
+                f"{uvpin}.coordinate[{c}].coordinateU",
             )
-            cmds.setAttr(f"{uvpin}.coordinate[{c}].coordinateU", 0.5)
+            cmds.setAttr(f"{uvpin}.coordinate[{c}].coordinateV", 0.5)
             cmds.connectAttr(
                 f"{uvpin}.outputMatrix[{c}]", f"{graph}.main_transforms[{i}]"
             )
@@ -871,10 +871,10 @@ class Rig(component.Rig):
         cmds.setAttr(f"{head_guide}.tx", lock=True, keyable=False)
         cmds.setAttr(f"{head_guide}.ty", lock=True, keyable=False)
         cmds.setAttr(f"{head_guide}.tz", lock=True, keyable=False)
-        for i in range(len(self["output_v_values"]["value"])):
+        for i in range(len(self["output_u_values"]["value"])):
             cmds.connectAttr(
-                f"{self.guide_root}.output_v_values[{i}]",
-                f"{uvpin}.coordinate[{c}].coordinateV",
+                f"{self.guide_root}.output_u_values[{i}]",
+                f"{uvpin}.coordinate[{c}].coordinateU",
             )
             cmds.connectAttr(
                 f"{uvpin}.outputMatrix[{c}]", f"{graph}.up_transforms[{i}]"
