@@ -365,68 +365,80 @@ controllerpanel.show()"""
 
 reset_command = """from domino.core import Controller
 from maya import cmds
-for sel in cmds.ls(selection=True):
-    if not cmds.objExists(sel + ".is_domino_controller"):
-        continue
-    Controller.reset(node=sel, srt={0})"""
-
-reset_child_command = """from domino.core import Controller
-from maya import cmds
-selected = cmds.ls(selection=True)
+selected = [
+    x for x in cmds.ls(selection=True) if cmds.objExists(x + ".is_domino_controller")
+]
 controllers = []
 for sel in selected:
-    if cmds.objExists(sel + ".is_domino_controller"):
-        controllers.append(sel)
+    controllers.append(sel)
+    if {0}:
         controllers.extend(Controller.get_child_controller(sel))
-for con in set(controllers):
-    Controller.reset(node=con, srt={0})"""
+for ctl in set(controllers):
+    Controller.reset(node=ctl, srt={1})"""
 
-rt_mirror_controller_command = """from maya import cmds
+mirror_controller_command = """from maya import cmds
 from domino.core import Controller
 
 selected = [
     x for x in cmds.ls(selection=True) if cmds.objExists(x + ".is_domino_controller")
 ]
-attrs = ["tx", "ty", "tz", "rx", "ry", "rz"]
+controllers = []
 for sel in selected:
-    mirror_ctl = cmds.getAttr(sel + ".mirror_controller_name")
-    if not cmds.objExists(mirror_ctl) or mirror_ctl == sel:
+    controllers.append(sel)
+    if {0}:
+        controllers.extend(Controller.get_child_controller(sel))
+controllers = list(set(controllers))
+attrs = ["tx", "ty", "tz", "rx", "ry", "rz"]
+for ctl in controllers:
+    mirror_ctl = cmds.getAttr(ctl + ".mirror_controller_name")
+    if not cmds.objExists(mirror_ctl) or mirror_ctl == ctl:
         continue
-    orig_t = cmds.getAttr(sel + ".t")[0]
-    orig_r = cmds.getAttr(sel + ".r")[0]
-    mirror_type = cmds.getAttr(sel + ".mirror_type")
+    orig_t = cmds.getAttr(ctl + ".t")[0]
+    orig_r = cmds.getAttr(ctl + ".r")[0]
+    mirror_type = cmds.getAttr(ctl + ".mirror_type")
     t, r = Controller.get_mirror_RT(t=orig_t, r=orig_r, mirror_type=mirror_type)
     for attr, value in zip(attrs, t + r):
         if cmds.getAttr(mirror_ctl + "." + attr, lock=True):
             continue   
         cmds.setAttr(mirror_ctl + "." + attr, value)"""
 
-rt_flip_controller_command = """from maya import cmds
+flip_controller_command = """from maya import cmds
 from domino.core import Controller
 
 selected = [
     x for x in cmds.ls(selection=True) if cmds.objExists(x + ".is_domino_controller")
 ]
-attrs = ["tx", "ty", "tz", "rx", "ry", "rz"]
+controllers = []
 for sel in selected:
-    mirror_ctl = cmds.getAttr(sel + ".mirror_controller_name")
-    if not cmds.objExists(mirror_ctl) or mirror_ctl == sel:
+    controllers.append(sel)
+    if {0}:
+        controllers.extend(Controller.get_child_controller(sel))
+controllers = list(set(controllers))
+attrs = ["tx", "ty", "tz", "rx", "ry", "rz"]
+for ctl in controllers:
+    mirror_ctl = cmds.getAttr(ctl + ".mirror_controller_name")
+    if not cmds.objExists(mirror_ctl) or mirror_ctl == ctl:
         continue
-    for attr in attrs:
-        if cmds.getAttr(mirror_ctl + "." + attr, lock=True):
-            continue   
-        mirror_value = cmds.getAttr(mirror_ctl + "." + attr)
-        sel_value = cmds.getAttr(sel + "." + attr)
-        cmds.setAttr(sel + "." + attr, mirror_value)
-        cmds.setAttr(mirror_ctl + "." + attr, sel_value)"""
-
-matrix_mirror_controller_command = """"""
-matrix_flip_controller_command = """"""
+    target_t = cmds.getAttr(mirror_ctl + ".t")[0]
+    target_r = cmds.getAttr(mirror_ctl + ".r")[0]
+    source_t = cmds.getAttr(ctl + ".t")[0]
+    source_r = cmds.getAttr(ctl + ".r")[0]
+    mirror_type = cmds.getAttr(ctl + ".mirror_type")
+    target_t, target_r = Controller.get_mirror_RT(t=target_t, r=target_r, mirror_type=mirror_type)
+    source_t, source_r = Controller.get_mirror_RT(t=source_t, r=source_r, mirror_type=mirror_type)
+    for attr, target_value, source_value in zip(attrs, target_t + target_r, source_t + source_r):
+        if not cmds.getAttr(mirror_ctl + "." + attr, lock=True):
+            cmds.setAttr(mirror_ctl + "." + attr, source_value)
+        if not cmds.getAttr(ctl + "." + attr, lock=True):
+            cmds.setAttr(ctl + "." + attr, target_value)"""
 
 preroll_command = """from domino.core import Controller
 from maya import cmds 
-cogCtl = "origin_COG_ctl"
-"""
+
+controllers = Controller.get_child_controller("origin_ctl")
+for ctl in set(controllers):
+    Controller.reset(node=ctl, srt=False)
+cmds.setKeyframe(controllers)"""
 
 select_origin_controller_command = """from maya import cmds
 selection = cmds.ls(selection=True)
@@ -445,7 +457,12 @@ for sel in cmds.ls(selection=True):
     controllers.extend(Controller.get_child_controller(node=sel))
 cmds.select(controllers)"""
 
-fkik_switch_command = """"""
+fkik_switch_command = """
+a_time_slider = mel.eval('$tmpVar=$gPlayBackSlider')
+time_range = cmds.timeControl(a_time_slider, query=True, rangeArray=True)"""
+
+dynamic_tools_command = """from domino import dynamicmanager
+dynamicmanager.show_dynamic_tools_ui()"""
 # endregion
 
 
@@ -471,9 +488,9 @@ def controller_menu(
         label="Reset",
         radialPosition="NE",
         command=(
-            reset_child_command.format(True)
+            reset_command.format(True, True)
             if apply_children_state
-            else reset_command.format(True)
+            else reset_command.format(False, True)
         ),
         image="refresh.png",
         enableCommandRepeat=True,
@@ -482,10 +499,11 @@ def controller_menu(
         parent=parent_menu,
         optionBox=True,
         command=(
-            reset_child_command.format(False)
+            reset_command.format(True, False)
             if apply_children_state
-            else reset_command.format(False)
+            else reset_command.format(False, False)
         ),
+        enableCommandRepeat=True,
     )
     if has_fkik_switch:
         cmds.menuItem(
@@ -510,25 +528,23 @@ def controller_menu(
         parent=parent_menu,
         label="Mirror",
         image="symmetryConstraint.svg",
-        command=rt_mirror_controller_command,
+        command=(
+            mirror_controller_command.format(True)
+            if apply_children_state
+            else mirror_controller_command.format(False)
+        ),
         enableCommandRepeat=True,
-    )
-    cmds.menuItem(
-        parent=parent_menu,
-        optionBox=True,
-        command='print("Mirror Set Key")',
     )
     cmds.menuItem(
         parent=parent_menu,
         label="Flip",
         image="arrows-exchange.svg",
-        command=rt_flip_controller_command,
+        command=(
+            flip_controller_command.format(True)
+            if apply_children_state
+            else flip_controller_command.format(False)
+        ),
         enableCommandRepeat=True,
-    )
-    cmds.menuItem(
-        parent=parent_menu,
-        optionBox=True,
-        command='print("Flip Set Key")',
     )
     cmds.menuItem(parent=parent_menu, divider=True)
     if not is_assembly:
@@ -553,6 +569,13 @@ def controller_menu(
             label="Set pre-roll frame",
             image="character.svg",
             command=preroll_command,
+            enableCommandRepeat=True,
+        )
+        cmds.menuItem(
+            parent=parent_menu,
+            label="Dynamic tools(WIP)",
+            image="flag.svg",
+            command=dynamic_tools_command,
             enableCommandRepeat=True,
         )
 
