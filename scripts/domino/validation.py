@@ -169,15 +169,15 @@ def check_default_value_controller():
         keyable = cmds.listAttr(ctl, userDefined=True, keyable=True) or []
         channelbox = cmds.listAttr(ctl, userDefined=True, channelBox=True) or []
         for attr in tr:
-            if cmds.getAttr(f"{ctl}{attr}") != 0.0:
+            if round(cmds.getAttr(f"{ctl}{attr}"), 3) != 0.0:
                 result.append(f"{ctl}{attr}")
         for attr in s:
-            if cmds.getAttr(f"{ctl}{attr}") != 1.0:
+            if round(cmds.getAttr(f"{ctl}{attr}"), 3) != 1.0:
                 result.append(f"{ctl}{attr}")
         attrs = keyable + channelbox
         for attr in [f".{x}" for x in attrs]:
             default_value = cmds.addAttr(f"{ctl}{attr}", query=True, defaultValue=True)
-            if default_value != cmds.getAttr(f"{ctl}{attr}"):
+            if default_value != round(cmds.getAttr(f"{ctl}{attr}"), 3):
                 result.append(f"{ctl}{attr}")
     return (
         WARNING if result else SUCCESS,
@@ -193,10 +193,16 @@ def check_output_joint():
     output_joints = [
         x for x in cmds.ls(type="joint") if cmds.objExists(f"{x}.is_domino_skel")
     ]
-    attrs = [".rx", ".ry", ".rz", ".sx", ".sy", ".sz"]
+    r_attrs = [".rx", ".ry", ".rz"]
+    s_attrs = [".sx", ".sy", ".sz"]
     result = []
     for joint in output_joints:
-        for attr, check_value in zip(attrs, [0.0, 0.0, 0.0, 1.0, 1.0, 1.0]):
+        for attr in r_attrs:
+            value = round(cmds.getAttr(f"{joint}{attr}"), 3)
+            # 360, -360은 constraint 으로 인해 발생할 수 있음.
+            if value not in (0.0, 360.0, -360.0):
+                result.append(f"{joint}{attr}")
+        for attr, check_value in zip(s_attrs, [1.0, 1.0, 1.0]):
             value = round(cmds.getAttr(f"{joint}{attr}"), 3)
             if value != check_value:
                 result.append(f"{joint}{attr}")
