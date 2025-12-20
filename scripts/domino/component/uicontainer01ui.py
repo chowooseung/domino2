@@ -781,7 +781,7 @@ class UIContainer01(DynamicWidget):
             min_value=1,
             max_value=999,
         )
-        slider_count_spin_box.editingFinished.disconnect()
+        slider_count_spin_box.valueChanged.disconnect()
         slider_count_spin_box.editingFinished.connect(edit_slider_count)
 
         selected = cmds.ls(selection=True)

@@ -483,8 +483,9 @@ class UIGenerator:
         spin_box = QtWidgets.QSpinBox()
         spin_box.setRange(min_value, max_value)
         spin_box.setValue(old_value)
+        spin_box.setFixedWidth(50)
         spin_box.setSizePolicy(
-            QtWidgets.QSizePolicy.Policy.Expanding,
+            QtWidgets.QSizePolicy.Policy.Fixed,
             QtWidgets.QSizePolicy.Policy.Fixed,
         )
 
@@ -494,17 +495,17 @@ class UIGenerator:
             _slider.setOrientation(QtCore.Qt.Orientation.Horizontal)
             _slider.setRange(min_value, max_value)
             _slider.setValue(old_value)
-            spin_box.editingFinished.connect(_slider.setValue)
+            spin_box.valueChanged.connect(_slider.setValue)
             _slider.valueChanged.connect(spin_box.setValue)
             h_layout = QtWidgets.QHBoxLayout()
             h_layout.addWidget(spin_box)
             h_layout.addWidget(_slider)
             child = h_layout
             spin_box.setSizePolicy(
-                QtWidgets.QSizePolicy.Policy.Fixed,
+                QtWidgets.QSizePolicy.Policy.Expanding,
                 QtWidgets.QSizePolicy.Policy.Fixed,
             )
-        spin_box.editingFinished.connect(change_attribute)
+        spin_box.valueChanged.connect(change_attribute)
 
         parent_layout = parent.layout()
         parent_layout.addRow(label, child)
