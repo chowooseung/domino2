@@ -251,27 +251,23 @@ cmds.evalDeferred(command)"""
         layout.setMenuBar(self.menu_bar)
 
         self.command_menu = self.menu_bar.addMenu("Commands")
-        self.refresh_ui_action = QtGui.QAction("Refresh")
-        self.refresh_ui_action.triggered.connect(self.refresh)
         self.build_new_scene_action = QtGui.QAction("Build in new scene")
         self.build_new_scene_action.triggered.connect(partial(self.build, True))
         self.print_component_action = QtGui.QAction("Print component")
         self.print_component_action.triggered.connect(self.print_component)
-        self.add_deformer_weights_sets_action = QtGui.QAction(
-            f"Add {DEFORMER_WEIGHTS_SETS}"
-        )
-        self.add_blendshape_sets_action = QtGui.QAction(f"Add {BLENDSHAPE_SETS}")
-        self.command_menu.addAction(self.refresh_ui_action)
         self.command_menu.addAction(self.build_new_scene_action)
         self.command_menu.addAction(self.print_component_action)
-        self.command_menu.addAction(self.add_deformer_weights_sets_action)
-        self.command_menu.addAction(self.add_blendshape_sets_action)
 
         self.template_menu = self.menu_bar.addMenu("Templates")
         # endregion
 
         # region -    Manager / domino path
         domino_layout = QtWidgets.QHBoxLayout()
+        self.refresh_btn = QtWidgets.QPushButton()
+        self.refresh_btn.setIcon(QtGui.QIcon((icon_dir / "refresh.svg").as_posix()))
+        self.refresh_btn.setFixedWidth(24)
+        self.refresh_btn.setFixedHeight(18)
+        self.refresh_btn.clicked.connect(self.refresh)
         self.domino_path_line_edit = QtWidgets.QLineEdit()
         self.domino_path_line_edit.setReadOnly(True)
         self.domino_path_line_edit.setPlaceholderText("Domino Path")
@@ -291,6 +287,7 @@ cmds.evalDeferred(command)"""
         self.domino_path_version_up_btn.setFixedHeight(18)
         self.domino_path_version_up_btn.clicked.connect(self.save)
         self.domino_path_version_up_btn.setToolTip("Version up file")
+        domino_layout.addWidget(self.refresh_btn)
         domino_layout.addWidget(self.domino_path_line_edit)
         domino_layout.addWidget(self.domino_path_load_btn)
         domino_layout.addWidget(self.domino_path_version_up_btn)
@@ -388,11 +385,16 @@ QTreeView::branch:open:has-children  {{
         layout.addWidget(self.component_list_widget)
         self.component_list_widget.doubleClicked.connect(self.add_component)
 
+    def set_domino_work_path(self, path):
+        self.domino_path_line_edit.setText(path)
+        os.environ["DOMINO_RIG_WORK_PATH"] = path
+
     def refresh(self):
         self.rig_tree_model.serialize()
         self.rig_tree_model.populate_model()
         self.component_list_widget.clear()
         self.component_list_widget.addItems(COMPONENTLIST)
+        os.environ.pop("DOMINO_RIG_WORK_PATH", None)
 
         if self.rig_tree_model.rig and cmds.objExists(
             self.rig_tree_model.rig.guide_root
@@ -401,7 +403,7 @@ QTreeView::branch:open:has-children  {{
                 f"{self.rig_tree_model.rig.guide_root}.domino_path"
             )
             if domino_path:
-                self.domino_path_line_edit.setText(domino_path)
+                self.set_domino_work_path(domino_path)
 
         template_dir = os.getenv("DOMINO_RIG_TEMPLATE_DIR", None)
         # 메모리에서 제거되는거 방지.
@@ -725,7 +727,7 @@ QTreeView::branch:open:has-children  {{
         save(file_path, data)
         if cmds.objExists(data.guide_root):
             cmds.setAttr(f"{data.guide_root}.domino_path", file_path, type="string")
-        self.domino_path_line_edit.setText(file_path)
+        self.set_domino_work_path(file_path)
         ui = Settings.get_instance()
         ui.refresh()
 
@@ -812,7 +814,7 @@ global proc DominoLoadOptionsUICommit(string $parent)
 
             load(file_path[0], create=True, break_point=break_point)
             self.refresh()
-            self.domino_path_line_edit.setText(file_path[0])
+            self.set_domino_work_path(file_path[0])
 
     def load_template(self, file_path, create):
         """file_line_edit 에 path 를 기록하지 않고 load 합니다."""
@@ -837,7 +839,7 @@ global proc DominoLoadOptionsUICommit(string $parent)
                 build({}, rig)
         orig_path = self.domino_path_line_edit.text()
         self.refresh()
-        self.domino_path_line_edit.setText(orig_path)
+        self.set_domino_work_path(orig_path)
 
     def showEvent(self, e):
         cmds.workspaceControl(self.control_name, edit=True, uiScript=self.ui_script)
