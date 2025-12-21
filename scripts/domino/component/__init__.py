@@ -948,9 +948,16 @@ class Rig(dict):
             cmds.connectAttr(
                 f"{decom_m}.outputRotate", f"{cons}.constraintJointOrient", force=True
             )
-            cons = cmds.scaleConstraint(output, output_joint, maintainOffset=False)[0]
-            cmds.parent(cons, SKEL)
-            cmds.setAttr(f"{cons}.hiddenInOutliner", True)
+            mult_m = cmds.createNode("multMatrix")
+            cmds.connectAttr(f"{output}.worldMatrix[0]", f"{mult_m}.matrixIn[0]")
+            cmds.connectAttr(
+                f"{output_joint}.parentInverseMatrix", f"{mult_m}.matrixIn[1]"
+            )
+            decom_m = cmds.createNode("decomposeMatrix")
+            cmds.connectAttr(f"{mult_m}.matrixSum", f"{decom_m}.inputMatrix")
+            cmds.connectAttr(f"{decom_m}.outputScaleX", f"{output_joint}.sx")
+            cmds.connectAttr(f"{decom_m}.outputScaleY", f"{output_joint}.sy")
+            cmds.connectAttr(f"{decom_m}.outputScaleZ", f"{output_joint}.sz")
 
     # endregion
 
@@ -1400,12 +1407,18 @@ class Rig(dict):
                 ):
                     nodes.append(node)
             stack.extend(component["children"])
-        if nodes:
-            cmds.delete(nodes)
         if cmds.objExists(self.rig_root):
-            cmds.delete(self.rig_root)
+            nodes += [self.rig_root]
         if cmds.objExists(self.guide_root):
-            cmds.delete(self.guide_root)
+            nodes += [self.guide_root]
+        if nodes:
+            curve_infos = cmds.ls(type="curveInfo")
+            for ci in curve_infos:
+                cmds.setAttr(f"{ci}.nodeState", 2)
+            cmds.delete(nodes)
+            for ci in curve_infos:
+                if cmds.objExists(ci):
+                    cmds.setAttr(f"{ci}.nodeState", 0)
         if self.get_parent() == None:
             if cmds.objExists(RIG):
                 cmds.delete(RIG)
