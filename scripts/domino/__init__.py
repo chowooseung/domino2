@@ -50,19 +50,25 @@ attributes = cmds.channelBox("mainChannelBox", query=True, selectedMainAttribute
 if main_objects and attributes:
     for obj in main_objects:
         for attr in attributes:
-            value = cmds.getAttr(obj + "." + attr)
-            result_str += "\\n" + set_attr_format.format(
-                node=obj, attr=attr, value=value
-            )
+            try:
+                value = cmds.getAttr(obj + "." + attr)
+                result_str += "\\n" + set_attr_format.format(
+                    node=obj, attr=attr, value=value
+                )
+            except Exception as e:
+                pass
 shape_objects = cmds.channelBox("mainChannelBox", query=True, shapeObjectList=True)
 attributes = cmds.channelBox("mainChannelBox", query=True, selectedShapeAttributes=True)
 if shape_objects and attributes:
     for obj in shape_objects:
         for attr in attributes:
-            value = cmds.getAttr(obj + "." + attr)
-            result_str += "\\n" + set_attr_format.format(
-                node=obj, attr=attr, value=value
-            )
+            try:
+                value = cmds.getAttr(obj + "." + attr)
+                result_str += "\\n" + set_attr_format.format(
+                    node=obj, attr=attr, value=value
+                )
+            except Exception as e:
+                pass    
 history_objects = cmds.channelBox("mainChannelBox", query=True, historyObjectList=True)
 attributes = cmds.channelBox(
     "mainChannelBox", query=True, selectedHistoryAttributes=True
@@ -70,10 +76,13 @@ attributes = cmds.channelBox(
 if history_objects and attributes:
     for obj in history_objects:
         for attr in attributes:
-            value = cmds.getAttr(obj + "." + attr)
-            result_str += "\\n" + set_attr_format.format(
-                node=obj, attr=attr, value=value
-            )
+            try:
+                value = cmds.getAttr(obj + "." + attr)
+                result_str += "\\n" + set_attr_format.format(
+                    node=obj, attr=attr, value=value
+                )
+            except Exception as e:
+                pass
 print(result_str)"""
 
 controller_panel_command = """from domino import controllerpanel
