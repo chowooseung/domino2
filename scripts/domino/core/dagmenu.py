@@ -435,7 +435,8 @@ for ctl in controllers:
 preroll_command = """from domino.core import Controller
 from maya import cmds 
 
-controllers = Controller.get_child_controller("origin_ctl")
+origin_ctl = cmds.ls(selection=True)[0]
+controllers = Controller.get_child_controller(origin_ctl)
 for ctl in set(controllers):
     Controller.reset(node=ctl, srt=False)
 cmds.setKeyframe(controllers)"""
@@ -444,8 +445,8 @@ select_origin_controller_command = """from maya import cmds
 selection = cmds.ls(selection=True)
 if selection:
     _, namespace = cmds.ls(selection[0], showNamespace=True)
-    if cmds.objExists(f"{namespace}origin_ctl"):
-        cmds.select(f"{namespace}origin_ctl")"""
+    if cmds.objExists(f"{namespace}:origin_ctl"):
+        cmds.select(f"{namespace}:origin_ctl")"""
 
 select_child_controller_command = """from domino.core import Controller
 from maya import cmds
@@ -573,7 +574,7 @@ def controller_menu(
         )
         cmds.menuItem(
             parent=parent_menu,
-            label="Dynamic tools(WIP)",
+            label="Dynamic Tools",
             image="flag.svg",
             command=dynamic_tools_command,
             enableCommandRepeat=True,
