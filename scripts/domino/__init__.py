@@ -38,6 +38,9 @@ selected = cmds.ls(orderedSelection=True, flatten=True)
 if selected:
     for sel in selected:
         t = cmds.xform(sel, query=True, translation=True, worldSpace=True)
+        if len(t) > 3:
+            count = int(len(t) / 3)
+            t = [sum(t[0::3])/count, sum(t[1::3])/count, sum(t[2::3])/count]
         loc = cmds.spaceLocator(name="locators")[0]
         cmds.setAttr(loc + ".t", *t)"""
 
@@ -93,7 +96,7 @@ from maya.api import OpenMaya as om
 
 positions = [
     cmds.xform(x, query=True, translation=True, worldSpace=True)
-    for x in cmds.ls(orderedSelection=True)
+    for x in cmds.ls(orderedSelection=True, type="transform")
 ]
 meshes = []
 v1 = om.MVector((0.1, 0, -0.1))
@@ -133,12 +136,14 @@ from maya import mel
 
 selected = cmds.ls(orderedSelection=True, flatten=True)
 if selected:
+    cmds.ogs(pause=True)
     vertices = [x for x in selected if "vtx" in x]
     cmds.select(vertices[0])
     mel.eval('doCopyVertexWeightsArgList 1 { "1" };')
     cmds.select(vertices[1:])
     mel.eval('doPasteVertexWeightsArgList 1 { "1" };')
-    cmds.select(selected)"""
+    cmds.select(selected)
+    cmds.ogs(pause=True)"""
 
 
 def install_rig_commands_menu(menu_id):
