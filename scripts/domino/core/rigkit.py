@@ -1293,8 +1293,525 @@ def ribbon_uv(
     return surface, outputs
 
 
+def ribbon_chain_spline_ik(
+    parent,
+    driver_joints,
+    driver_inverse_plugs,
+    surface,
+    main_ik_joints,
+    up_ik_joints,
+    dyn_ik_joints,
+    stretch_attr,
+    squash_attr,
+    squash_pin_method_attr,
+    scale_attr,
+    initial_chain_distance_attr,
+    volume_high_position_attr,
+    volume_high_value_attr,
+    volume_mid_position_attr,
+    volume_mid_value_attr,
+    volume_low_position_attr,
+    volume_low_value_attr,
+    dynamic_enable_attr,
+    negate_plug=None,
+    primary_axis=(1, 0, 0),
+    secondary_axis=(0, 0, 1),
+):
+    surface = cmds.parent(surface, parent)[0]
+
+    # initialize skincluster
+    temp = cmds.duplicate(surface, name="copyskindummy")[0]
+
+    temp_sc = cmds.skinCluster(
+        driver_joints + [temp],
+        normalizeWeights=True,
+        obeyMaxInfluences=False,
+        weightDistribution=1,
+        multi=True,
+    )[0]
+
+    sc = cmds.deformer(
+        surface, type="skinCluster", deformerTools=True, name=f"{surface}0_sc"
+    )[0]
+    cmds.setAttr(f"{sc}.relativeSpaceMode", 1)
+    cmds.setAttr(f"{sc}.weightDistribution", 1)
+
+    c = 0
+    for driver_jnt, inverse_plug in zip(driver_joints, driver_inverse_plugs):
+        cmds.connectAttr(f"{driver_jnt}.worldMatrix", f"{sc}.matrix[{c}]", force=1)
+        cmds.connectAttr(inverse_plug, f"{sc}.bindPreMatrix[{c}]", force=1)
+        c += 1
+    cmds.copySkinWeights(
+        sourceSkin=temp_sc,
+        destinationSkin=sc,
+        noMirror=True,
+        surfaceAssociation="closestPoint",
+        influenceAssociation="closestJoint",
+    )
+    cmds.delete(temp)
+
+    shape, orig = cmds.listRelatives(surface, shapes=True)
+
+    # initialize curve
+    main_orig_crv, main_orig_crv_iso = cmds.duplicateCurve(
+        f"{orig}.v[0.5]",
+        name=f"{surface}_mainCrvOrig",
+        constructionHistory=True,
+        rn=False,
+        local=True,
+    )
+    main_orig_crv = cmds.parent(main_orig_crv, parent)[0]
+    up_orig_crv, up_orig_crv_iso = cmds.duplicateCurve(
+        f"{orig}.v[0]",
+        name=f"{surface}_upCrvOrig",
+        constructionHistory=True,
+        rn=False,
+        local=True,
+    )
+    up_orig_crv = cmds.parent(up_orig_crv, parent)[0]
+    main_crv, main_crv_iso = cmds.duplicateCurve(
+        f"{shape}.v[0.5]",
+        name=f"{surface}_mainCrv",
+        constructionHistory=True,
+        rn=False,
+        local=True,
+    )
+    main_crv = cmds.parent(main_crv, parent)[0]
+    up_crv, up_crv_iso = cmds.duplicateCurve(
+        f"{shape}.v[0]",
+        name=f"{surface}_upCrv",
+        constructionHistory=True,
+        rn=False,
+        local=True,
+    )
+    up_crv = cmds.parent(up_crv, parent)[0]
+
+    nucleus = create_nucleus(name=f"{surface}_nucleus")
+    cmds.hide(nucleus)
+    dyn_crv = cmds.duplicate(main_orig_crv, name=f"{surface}_dynCrv")[0]
+    cmds.rebuildCurve(
+        dyn_crv,
+        fitRebuild=False,
+        keepControlPoints=True,
+        keepRange=1,
+        degree=1,
+        constructionHistory=False,
+        replaceOriginal=True,
+    )
+    hair_system, follicles, input_curves = assign_nhair(
+        parent=parent,
+        name=f"{surface}_nhair",
+        nucleus=nucleus,
+        curves=[dyn_crv],
+        degree=3,
+    )
+    for crv in input_curves:
+        cmds.connectAttr(f"{main_crv_iso}.outputCurve", f"{crv}.create")
+
+    main_ikh, effector = cmds.ikHandle(
+        startJoint=main_ik_joints[0],
+        endEffector=main_ik_joints[-1],
+        solver="ikSplineSolver",
+        name=f"{surface}_mainIkh",
+        curve=main_crv,
+        createCurve=False,
+    )
+    main_ikh = cmds.parent(main_ikh, parent)[0]
+    up_ikh, effector = cmds.ikHandle(
+        startJoint=up_ik_joints[0],
+        endEffector=up_ik_joints[-1],
+        solver="ikSplineSolver",
+        name=f"{surface}_upIkh",
+        curve=up_crv,
+        createCurve=False,
+    )
+    up_ikh = cmds.parent(up_ikh, parent)[0]
+    dyn_ikh, effector = cmds.ikHandle(
+        startJoint=dyn_ik_joints[0],
+        endEffector=dyn_ik_joints[-1],
+        solver="ikSplineSolver",
+        name=f"{surface}_dynIkh",
+        curve=dyn_crv,
+        createCurve=False,
+    )
+    dyn_ikh = cmds.parent(dyn_ikh, parent)[0]
+
+    curve_info = cmds.createNode("curveInfo")
+    cmds.connectAttr(f"{main_crv}.local", f"{curve_info}.inputCurve")
+    main_curve_length = f"{curve_info}.arcLength"
+    curve_info = cmds.createNode("curveInfo")
+    cmds.connectAttr(f"{main_orig_crv}.local", f"{curve_info}.inputCurve")
+    main_orig_curve_length = f"{curve_info}.arcLength"
+
+    divide = cmds.createNode("divide")
+    cmds.connectAttr(main_curve_length, f"{divide}.input1")
+    cmds.connectAttr(main_orig_curve_length, f"{divide}.input2")
+    ratio = f"{divide}.output"
+
+    multiply = cmds.createNode("multiply")
+    cmds.connectAttr(initial_chain_distance_attr, f"{multiply}.input[0]")
+    cmds.connectAttr(ratio, f"{multiply}.input[1]")
+
+    rvs = []
+    choices = []
+    multiplies = []
+    multiply = cmds.createNode("multiply")
+    cmds.setAttr(f"{multiply}.input[0]", 0.00000001)
+    cmds.connectAttr(negate_plug, f"{multiply}.input[1]")
+    negate_min_translate_plug = f"{multiply}.output"
+    is_negate = True if cmds.getAttr(negate_plug) < 0 else False
+    for i in range(len(main_ik_joints[1:])):
+        choice = cmds.createNode("choice")
+        cmds.connectAttr(squash_pin_method_attr, f"{choice}.selector")
+        # uniform squash
+        cmds.connectAttr(f"{multiply}.output", f"{choice}.input[0]")
+
+        rv = cmds.createNode("remapValue")
+        cmds.connectAttr(main_curve_length, f"{rv}.inputValue")
+        cmds.connectAttr(initial_chain_distance_attr, f"{rv}.outputMin")
+        cmds.setAttr(f"{rv}.outputMax", 0)
+
+        m = cmds.createNode("multiply")
+        cmds.setAttr(f"{m}.input[0]", i + 1)
+        cmds.connectAttr(initial_chain_distance_attr, f"{m}.input[1]")
+        cmds.connectAttr(f"{m}.output", f"{rv}.inputMin")
+        try:
+            previous_m = multiplies[i - 1]
+            cmds.connectAttr(f"{previous_m}.output", f"{rv}.inputMax")
+        except:
+            pass
+        multiplies.append(m)
+        # end stack
+        cmds.connectAttr(f"{rv}.outValue", f"{choice}.input[2]")
+        rvs.append(rv)
+        choices.append(choice)
+
+        if is_negate:
+            cmds.transformLimits(
+                main_ik_joints[i + 1],
+                translationX=(-1, -0.00000001),
+                enableTranslationX=(0, 1),
+            )
+            cmds.transformLimits(
+                up_ik_joints[i + 1],
+                translationX=(-1, -0.00000001),
+                enableTranslationX=(0, 1),
+            )
+            cmds.connectAttr(
+                negate_min_translate_plug, f"{main_ik_joints[i + 1]}.maxTransXLimit"
+            )
+            cmds.connectAttr(
+                negate_min_translate_plug, f"{up_ik_joints[i + 1]}.maxTransXLimit"
+            )
+        else:
+            cmds.transformLimits(
+                main_ik_joints[i + 1],
+                translationX=(0.00000001, 1),
+                enableTranslationX=(1, 0),
+            )
+            cmds.transformLimits(
+                up_ik_joints[i + 1],
+                translationX=(0.00000001, 1),
+                enableTranslationX=(1, 0),
+            )
+            cmds.connectAttr(
+                negate_min_translate_plug, f"{main_ik_joints[i + 1]}.minTransXLimit"
+            )
+            cmds.connectAttr(
+                negate_min_translate_plug, f"{up_ik_joints[i + 1]}.minTransXLimit"
+            )
+
+    i = 0
+    stretch_squash_results = []
+    for rv, choice in zip(reversed(rvs), choices):
+        # start stack
+        cmds.connectAttr(f"{rv}.outValue", f"{choice}.input[1]")
+
+        squash_bta = cmds.createNode("blendTwoAttr")
+        cmds.connectAttr(squash_attr, f"{squash_bta}.attributesBlender")
+        cmds.connectAttr(initial_chain_distance_attr, f"{squash_bta}.input[0]")
+        cmds.connectAttr(f"{choice}.output", f"{squash_bta}.input[1]")
+
+        stretch_bta = cmds.createNode("blendTwoAttr")
+        cmds.connectAttr(stretch_attr, f"{stretch_bta}.attributesBlender")
+        cmds.connectAttr(initial_chain_distance_attr, f"{stretch_bta}.input[0]")
+        cmds.connectAttr(f"{multiply}.output", f"{stretch_bta}.input[1]")
+
+        condition = cmds.createNode("condition")
+        cmds.connectAttr(ratio, f"{condition}.firstTerm")
+        cmds.setAttr(f"{condition}.secondTerm", 1)
+        cmds.setAttr(f"{condition}.operation", 2)
+        cmds.connectAttr(f"{squash_bta}.output", f"{condition}.colorIfFalseR")
+        cmds.connectAttr(f"{stretch_bta}.output", f"{condition}.colorIfTrueR")
+
+        stretch_squash_results.append(f"{condition}.outColorR")
+        i += 1
+
+    # volume
+    master_remap_value = cmds.createNode("remapValue")
+    cmds.setAttr(f"{master_remap_value}.value[0].value_Interp", 3)
+    cmds.setAttr(f"{master_remap_value}.value[1].value_Interp", 3)
+    cmds.setAttr(f"{master_remap_value}.value[2].value_Interp", 3)
+    cmds.connectAttr(
+        volume_mid_value_attr, f"{master_remap_value}.value[1].value_FloatValue"
+    )
+    cmds.connectAttr(
+        volume_mid_position_attr, f"{master_remap_value}.value[1].value_Position"
+    )
+    cmds.connectAttr(
+        volume_high_position_attr, f"{master_remap_value}.value[2].value_Position"
+    )
+    cmds.connectAttr(
+        volume_high_value_attr, f"{master_remap_value}.value[2].value_FloatValue"
+    )
+    cmds.connectAttr(
+        volume_low_position_attr, f"{master_remap_value}.value[0].value_Position"
+    )
+    cmds.connectAttr(
+        volume_low_value_attr, f"{master_remap_value}.value[0].value_FloatValue"
+    )
+
+    for i, result in enumerate(stretch_squash_results):
+        rv = cmds.createNode("remapValue")
+        cmds.connectAttr(f"{master_remap_value}.value[0]", f"{rv}.value[0]")
+        cmds.connectAttr(f"{master_remap_value}.value[1]", f"{rv}.value[1]")
+        cmds.connectAttr(f"{master_remap_value}.value[2]", f"{rv}.value[2]")
+        cmds.setAttr(f"{rv}.inputValue", i / (len(main_ik_joints) - 1))
+
+        pma = cmds.createNode("plusMinusAverage")
+        cmds.setAttr(f"{pma}.input1D[0]", 1)
+        cmds.connectAttr(f"{rv}.outValue", f"{pma}.input1D[1]")
+
+        multiply = cmds.createNode("multiply")
+        cmds.connectAttr(result, f"{multiply}.input[0]")
+        cmds.connectAttr(f"{pma}.output1D", f"{multiply}.input[1]")
+
+        negate_multiply = cmds.createNode("multiply")
+        cmds.connectAttr(f"{multiply}.output", f"{negate_multiply}.input[0]")
+        cmds.connectAttr(negate_plug, f"{negate_multiply}.input[1]")
+        cmds.connectAttr(f"{negate_multiply}.output", f"{main_ik_joints[i + 1]}.tx")
+        cmds.connectAttr(f"{negate_multiply}.output", f"{up_ik_joints[i + 1]}.tx")
+
+    for i in range(len(main_ik_joints)):
+        cmds.connectAttr(f"{main_ik_joints[i]}.tx", f"{dyn_ik_joints[i]}.tx")
+
+    # splineIk
+    main_ik_joints  # splineik
+    up_ik_joints  # splineik
+
+    spline_ik_outs = []
+
+    md = cmds.createNode("multiplyDivide")
+    cmds.setAttr(f"{md}.input1", *primary_axis)
+    cmds.connectAttr(negate_plug, f"{md}.input2X")
+    cmds.connectAttr(negate_plug, f"{md}.input2Y")
+    cmds.connectAttr(negate_plug, f"{md}.input2Z")
+    primary_vector_plug = f"{md}.output"
+    md = cmds.createNode("multiplyDivide")
+    cmds.setAttr(f"{md}.input1", *secondary_axis)
+    cmds.connectAttr(negate_plug, f"{md}.input2X")
+    cmds.connectAttr(negate_plug, f"{md}.input2Y")
+    cmds.connectAttr(negate_plug, f"{md}.input2Z")
+    secondary_vector_plug = f"{md}.output"
+
+    result_parent = parent
+    for i in range(len(main_ik_joints) - 1):
+        t = cmds.createNode(
+            "transform", parent=result_parent, name=f"{surface}_splineIKOut{i}"
+        )
+        aim_m = cmds.createNode("aimMatrix")
+        cmds.connectAttr(primary_vector_plug, f"{aim_m}.primaryInputAxis")
+        cmds.connectAttr(secondary_vector_plug, f"{aim_m}.secondaryInputAxis")
+        cmds.setAttr(f"{aim_m}.primaryMode", 1)
+        cmds.setAttr(f"{aim_m}.secondaryMode", 1)
+        cmds.connectAttr(f"{main_ik_joints[i]}.worldMatrix[0]", f"{aim_m}.inputMatrix")
+        cmds.connectAttr(
+            f"{main_ik_joints[i + 1]}.worldMatrix[0]",
+            f"{aim_m}.primaryTargetMatrix",
+        )
+        cmds.connectAttr(
+            f"{up_ik_joints[i]}.worldMatrix[0]", f"{aim_m}.secondaryTargetMatrix"
+        )
+
+        mult_m = cmds.createNode("multMatrix")
+        cmds.connectAttr(f"{aim_m}.outputMatrix", f"{mult_m}.matrixIn[0]")
+        cmds.connectAttr(
+            f"{result_parent}.worldInverseMatrix[0]", f"{mult_m}.matrixIn[1]"
+        )
+        decom_m = cmds.createNode("decomposeMatrix")
+        cmds.connectAttr(f"{mult_m}.matrixSum", f"{decom_m}.inputMatrix")
+
+        pair_b = cmds.createNode("pairBlend")
+        cmds.setAttr(f"{pair_b}.rotInterpolation", 1)
+        cmds.connectAttr(f"{decom_m}.outputTranslate", f"{pair_b}.inTranslate1")
+        cmds.connectAttr(f"{decom_m}.outputRotate", f"{pair_b}.inRotate1")
+
+        decom_m = cmds.createNode("decomposeMatrix")
+        cmds.connectAttr(f"{dyn_ik_joints[i]}.dagLocalMatrix", f"{decom_m}.inputMatrix")
+        cmds.connectAttr(f"{decom_m}.outputTranslate", f"{pair_b}.inTranslate2")
+        cmds.connectAttr(f"{decom_m}.outputRotate", f"{pair_b}.inRotate2")
+        cmds.connectAttr(dynamic_enable_attr, f"{pair_b}.weight")
+        cmds.connectAttr(f"{pair_b}.outTranslate", f"{t}.t")
+        cmds.connectAttr(f"{pair_b}.outRotate", f"{t}.r")
+
+        result_parent = t
+        spline_ik_outs.append(t)
+
+    outputs = []
+    for i in range(len(spline_ik_outs)):
+        output = cmds.createNode(
+            "transform", name=f"{surface}_output{i}", parent=parent
+        )
+        cmds.parentConstraint(spline_ik_outs[i], output)
+
+        # scale
+        divide = cmds.createNode("divide")
+        cmds.connectAttr(f"{main_ik_joints[i + 1]}.tx", f"{divide}.input1")
+        cmds.connectAttr(initial_chain_distance_attr, f"{divide}.input2")
+
+        absolute = cmds.createNode("absolute")
+        cmds.connectAttr(f"{divide}.output", f"{absolute}.input")
+
+        bta = cmds.createNode("blendTwoAttr")
+        cmds.setAttr(f"{bta}.input[0]", 1)
+        cmds.connectAttr(f"{absolute}.output", f"{bta}.input[1]")
+        cmds.connectAttr(scale_attr, f"{bta}.attributesBlender")
+        cmds.connectAttr(f"{bta}.output", f"{output}.sx")
+        cmds.connectAttr(f"{bta}.output", f"{output}.sy")
+        cmds.connectAttr(f"{bta}.output", f"{output}.sz")
+        outputs.append(output)
+
+    return surface, outputs, nucleus, hair_system, follicles
+
+
 def spline_ik():
     pass
+
+
+# endregion
+
+
+# region dynamic
+def create_nucleus(name=""):
+    if cmds.objExists(name if name else "nucleus0"):
+        return name if name else "nucleus0"
+    nucleus = cmds.createNode(
+        "nucleus", name=name if name else "nucleus0", parent="origin_ctl"
+    )
+    cmds.expression(
+        name=f"{name}_startFrame_expr" if name else "nucleus0_startFrame_expr",
+        string=f"{nucleus}.startFrame = `playbackOptions -query -minTime`;",
+        alwaysEvaluate=True,
+        timeDependent=False,
+        safe=True,
+        unitConversion="all",
+    )
+    cmds.connectAttr("time1.outTime", f"{nucleus}.currentTime")
+
+    cmds.addAttr(
+        nucleus, longName="is_domino_nucleus", attributeType="bool", keyable=False
+    )
+    cmds.addAttr(nucleus, longName="host_controller", attributeType="message")
+    cmds.addAttr(
+        nucleus, longName="bake_controllers", attributeType="message", multi=True
+    )
+    return nucleus
+
+
+def assign_nhair(parent, name, nucleus, curves, degree=3):
+    hair_system_t = cmds.createNode("transform", name=name, parent=parent)
+    hair_system = cmds.createNode(
+        "hairSystem", name=f"{name}Shape", parent=hair_system_t
+    )
+    cmds.connectAttr("time1.outTime", f"{hair_system}.currentTime")
+    cmds.connectAttr(f"{nucleus}.startFrame", f"{hair_system}.startFrame")
+
+    index = len(cmds.listConnections(f"{nucleus}.inputActive", source=True) or [])
+    cmds.connectAttr(f"{hair_system}.currentState", f"{nucleus}.inputActive[{index}]")
+    cmds.connectAttr(
+        f"{hair_system}.startState", f"{nucleus}.inputActiveStart[{index}]"
+    )
+    cmds.connectAttr(f"{nucleus}.outputObjects[{index}]", f"{hair_system}.nextState")
+
+    intermediates = []
+    follicles = []
+    inputs = []
+    for i, curve in enumerate(curves):
+        curve_shape = cmds.listRelatives(curve, shapes=True, noIntermediate=True)[0]
+        input_curve = cmds.duplicateCurve(
+            curve_shape, constructionHistory=False, name=f"{curve}_input"
+        )[0]
+        rebuild = cmds.createNode("rebuildCurve")
+        cmds.setAttr(f"{rebuild}.rebuildType", 0)
+        cmds.setAttr(f"{rebuild}.degree", 1)
+        cmds.setAttr(f"{rebuild}.endKnots", 1)
+        cmds.setAttr(f"{rebuild}.keepRange", 0)
+        cmds.setAttr(f"{rebuild}.keepEndPoints", 1)
+        cmds.setAttr(f"{rebuild}.keepTangents", 0)
+        cmds.setAttr(f"{rebuild}.keepControlPoints", 1)
+        cmds.connectAttr(f"{input_curve}.local", f"{rebuild}.inputCurve")
+
+        intermediate = cmds.duplicateCurve(
+            curve_shape, constructionHistory=False, name=f"{curve}_intermediate"
+        )[0]
+        intermediates.append(intermediate)
+        intermediate_shape = cmds.listRelatives(intermediate, shapes=True)[0]
+        cmds.setAttr(f"{intermediate_shape}.intermediateObject", 1)
+        cmds.parent(intermediate_shape, input_curve, shape=True, relative=True)
+        cmds.connectAttr(f"{rebuild}.outputCurve", f"{intermediate_shape}.create")
+
+        follicle_t = cmds.createNode(
+            "transform", name=f"{curve}_follicle", parent=parent
+        )
+        follicle = cmds.createNode(
+            "follicle", name=f"{curve}_follicleShape", parent=follicle_t
+        )
+        follicles.append(follicle)
+        cmds.setAttr(f"{follicle}.restPose", 1)
+        cmds.setAttr(f"{follicle}.degree", 3)
+        cmds.setAttr(f"{follicle}.simulationMethod", 2)
+        cmds.setAttr(f"{follicle}.startDirection", 1)
+        cmds.connectAttr(
+            f"{hair_system}.outputHair[{i}]", f"{follicle}.currentPosition"
+        )
+        input_curve = cmds.parent(input_curve, follicle_t)[0]
+        inputs.append(input_curve)
+
+        cmds.connectAttr(f"{follicle}.outHair", f"{hair_system}.inputHair[{i}]")
+        cmds.connectAttr(
+            f"{input_curve}.worldMatrix[0]", f"{follicle}.startPositionMatrix"
+        )
+        cmds.connectAttr(f"{intermediate_shape}.local", f"{follicle}.startPosition")
+
+        rebuild = cmds.createNode("rebuildCurve")
+        cmds.setAttr(f"{rebuild}.rebuildType", 0)
+        cmds.setAttr(f"{rebuild}.degree", degree)
+        cmds.setAttr(f"{rebuild}.endKnots", 1)
+        cmds.setAttr(f"{rebuild}.keepRange", 0)
+        cmds.setAttr(f"{rebuild}.keepEndPoints", 0)
+        cmds.setAttr(f"{rebuild}.keepTangents", 0)
+        cmds.setAttr(f"{rebuild}.keepControlPoints", 1)
+        cmds.setAttr(f"{rebuild}.fitRebuild", 0)
+        cmds.connectAttr(f"{follicle}.outCurve", f"{rebuild}.inputCurve")
+
+        tg = cmds.createNode("transformGeometry")
+        cmds.connectAttr(f"{rebuild}.outputCurve", f"{tg}.inputGeometry")
+        cmds.connectAttr(f"{input_curve}.worldInverseMatrix[0]", f"{tg}.transform")
+        cmds.connectAttr(f"{tg}.outputGeometry", f"{curve_shape}.create")
+
+    cmds.delete(intermediates)
+    cmds.setAttr(f"{hair_system}.active", 1)
+    cmds.setAttr(f"{hair_system}.clumpWidth", 0)
+    cmds.setAttr(f"{hair_system}.clumpWidthScale[1].clumpWidthScale_FloatValue", 1)
+    cmds.setAttr(f"{hair_system}.hairWidthScale[1].hairWidthScale_FloatValue", 1)
+    cmds.setAttr(f"{hair_system}.mass", 10)
+    cmds.setAttr(f"{hair_system}.damp", 0.1)
+    cmds.setAttr(f"{hair_system}.simulationMethod", 3)
+    cmds.setAttr(f"{hair_system}.selfCollide", 1)
+    cmds.setAttr(f"{hair_system}.stretchResistance", 10)
+    cmds.setAttr(f"{hair_system}.compressionResistance", 5)
+    cmds.setAttr(f"{hair_system}.bendResistance", 0)
+    return hair_system_t, follicles, inputs
 
 
 # endregion
@@ -1703,6 +2220,9 @@ def import_weight(file_path):
     deformer_name = data["deformerWeight"]["deformers"][0]["name"]
     deformer_type = data["deformerWeight"]["deformers"][0]["type"]
     shape_name = data["deformerWeight"]["shapes"][0]["name"]
+
+    if not cmds.objExists(shape_name):
+        return logger.warning(f"{shape_name} 가 존재하지 않습니다.")
 
     flags = {
         "im": True,

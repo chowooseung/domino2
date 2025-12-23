@@ -1,4 +1,5 @@
 # domino
+from domino.dynamicmanager import DYNAMIC_MANAGER, export_dynamic, import_dynamic
 from domino.psdmanager import PSD_MANAGER, PSD_SETS, export_psd, import_psd
 from domino.sdkmanager import SDK_MANAGER, SDK_SETS, export_sdk, import_sdk
 from domino.spacemanager import (
@@ -54,6 +55,7 @@ COMPONENTLIST = [
     "humanarm01",
     "humanleg01",
     "psd01",
+    "ironchain01",
 ]
 GUIDE = "guide"
 RIG = "rig"
@@ -1696,14 +1698,19 @@ def build(context, component, attach_guide=False):
         if component["domino_path"]["value"]:
             sdk_dir = metadata_dir / "sdk"
             if sdk_dir.exists():
-                import_psd((sdk_dir / "setDriven.sdk").as_posix())
+                import_sdk((sdk_dir / "setDriven.sdk").as_posix())
                 cmds.parent(SDK_MANAGER, RIG)
 
         # BREAK POINT SDK
         if component["break_point"] == BREAK_POINT_SDKMANAGER:
             return context
 
-        # TODO DYNAMICMANAGER
+        # DYNAMICMANAGER
+        if component["domino_path"]["value"]:
+            dynamic_dir = metadata_dir / "dynamic"
+            if dynamic_dir.exists():
+                import_dynamic((dynamic_dir / "dynamic.dyn").as_posix())
+                cmds.parent(DYNAMIC_MANAGER, RIG)
 
         # BREAK POINT DYNAMICMANAGER
         if component["break_point"] == BREAK_POINT_DYNAMICMANAGER:
@@ -2118,7 +2125,12 @@ def save(file_path, data=None):
             sdk_dir.mkdir()
         export_sdk((sdk_dir / "setDriven.sdk").as_posix())
 
-    # TODO DYNAMIC
+    # DYNAMIC
+    if cmds.objExists(DYNAMIC_MANAGER):
+        dynamic_dir = metadata_dir / "dynamic"
+        if not dynamic_dir.exists():
+            dynamic_dir.mkdir()
+        export_dynamic((dynamic_dir / "dynamic.dyn").as_posix())
 
     # deformerWeights
     if data["deformer_weights"]:

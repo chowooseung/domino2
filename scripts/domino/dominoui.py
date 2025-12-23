@@ -513,6 +513,58 @@ class UIGenerator:
         return spin_box
 
     @classmethod
+    def add_double_spin_box(
+        cls, parent, label, attribute, slider, min_value, max_value
+    ):
+
+        def change_attribute():
+            if not cmds.objExists(attribute):
+                return
+
+            value = spin_box.value()
+            cmds.setAttr(attribute, value)
+
+        old_value = cmds.getAttr(attribute)
+        spin_box = QtWidgets.QDoubleSpinBox()
+        spin_box.setDecimals(2)
+        spin_box.setSingleStep(0.1)
+        spin_box.setRange(min_value, max_value)
+        spin_box.setValue(old_value)
+        spin_box.setFixedWidth(50)
+        spin_box.setSizePolicy(
+            QtWidgets.QSizePolicy.Policy.Fixed,
+            QtWidgets.QSizePolicy.Policy.Fixed,
+        )
+
+        child = spin_box
+        _slider = None
+        if slider:
+            _slider = QtWidgets.QSlider()
+            _slider.setOrientation(QtCore.Qt.Orientation.Horizontal)
+            _slider.setRange(min_value * 100, max_value * 100)
+            _slider.setValue(old_value * 100)
+            spin_box.valueChanged.connect(
+                lambda: _slider.setValue(spin_box.value() * 100)
+            )
+            _slider.valueChanged.connect(
+                lambda: spin_box.setValue(_slider.value() / 100)
+            )
+            h_layout = QtWidgets.QHBoxLayout()
+            h_layout.addWidget(spin_box)
+            h_layout.addWidget(_slider)
+            child = h_layout
+            spin_box.setSizePolicy(
+                QtWidgets.QSizePolicy.Policy.Expanding,
+                QtWidgets.QSizePolicy.Policy.Fixed,
+            )
+        spin_box.valueChanged.connect(change_attribute)
+
+        parent_layout = parent.layout()
+        parent_layout.addRow(label, child)
+
+        return spin_box, _slider
+
+    @classmethod
     def add_combo_box(cls, parent, label, attribute):
 
         def change_index():
