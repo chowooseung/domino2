@@ -20,7 +20,7 @@ from domino.component.humanneck01ui import HumanNeck01
 from domino.component.humanarm01ui import HumanArm01
 from domino.component.humanleg01ui import HumanLeg01
 from domino.component.psd01ui import Psd01
-from domino.component.ironchain01ui import IronChain01
+from domino.component.chain01ui import Chain01
 
 
 UITABLE = {
@@ -36,7 +36,7 @@ UITABLE = {
     "humanarm01": HumanArm01,
     "humanleg01": HumanLeg01,
     "psd01": Psd01,
-    "ironchain01": IronChain01,
+    "chain01": Chain01,
 }
 
 

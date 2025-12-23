@@ -19,8 +19,6 @@ from domino.component import (
     load,
     Name,
     SKEL,
-    DEFORMER_WEIGHTS_SETS,
-    BLENDSHAPE_SETS,
     BREAK_POINT_RIG,
     BREAK_POINT_PRECUSTOMSCRIPTS,
     BREAK_POINT_BLENDSHAPE,

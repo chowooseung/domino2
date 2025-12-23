@@ -28,7 +28,7 @@ from PySide6 import QtWidgets
 ORIGINMATRIX = om.MMatrix()
 matrices = [list(ORIGINMATRIX)]
 DATA = [
-    attribute.String(longName="component", value="ironchain01"),
+    attribute.String(longName="component", value="chain01"),
     attribute.String(longName="name", value="chain"),
     attribute.Enum(longName="side", enumName=Name.side_list, value=0),
     attribute.Integer(longName="index", minValue=0),
@@ -1403,10 +1403,23 @@ DATA = [
     ),
 ]
 
-description = """## COG01
+description = """## chain01
 ---
 
-COG 컨트롤러 입니다."""
+chain(쇠사슬) 컴포넌트 입니다. 
+
+두 가지 레이어의 컨트롤러 갯수와 쇠사슬의 갯수를 입력받습니다.
+Guide 에서 각 사슬의 크기를 정할 수 있습니다. 
+
+chain은 stretch, squash 기능을 포함합니다. 
+chain 이 stretch 될 때 각 사슬이 떨어지지 않도록 
+스케일을 조정 할 수 있습니다.
+chain 이 squash 될 때 균등하게 줄어들지, 시작지점에 쌓일지, 마지막지점에 쌓일지 
+정할수있습니다.
+
+nhair 를 사용한 dynamic 설정도 포함됩니다.
+dynamic manager 와 같이 사용할 수 있습니다.
+"""
 
 # endregion
 

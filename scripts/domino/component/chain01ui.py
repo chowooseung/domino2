@@ -2,10 +2,10 @@
 from domino.dominoui import DynamicWidget, UIGenerator
 
 
-class IronChain01(DynamicWidget):
+class Chain01(DynamicWidget):
 
     def __init__(self, parent=None, root=None):
-        super(IronChain01, self).__init__(parent=parent, root=root)
+        super(Chain01, self).__init__(parent=parent, root=root)
         UIGenerator.add_common_component_settings(self.parent_widget, root)
 
         UIGenerator.add_double_spin_box(

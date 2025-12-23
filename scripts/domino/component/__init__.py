@@ -55,7 +55,7 @@ COMPONENTLIST = [
     "humanarm01",
     "humanleg01",
     "psd01",
-    "ironchain01",
+    "chain01",
 ]
 GUIDE = "guide"
 RIG = "rig"
