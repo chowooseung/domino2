@@ -72,6 +72,9 @@ class Name:
         >>> # return : arm_S0_ik_jnt
     """
 
+    center = center
+    left = left
+    right = right
     controller_name_convention = controller_name_convention
     joint_name_convention = joint_name_convention
     side_str_list = side_list = [center, left, right]

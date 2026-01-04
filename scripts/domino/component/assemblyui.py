@@ -93,9 +93,10 @@ class Assembly(DynamicWidget):
                 _list_widget.addItem(_text)
 
         def add_script(_list_widget, _attribute):
+            start_directroy = os.getenv("DOMINO_RIG_WORK_PATH", None)
             start_directroy = (
                 Path(start_directroy).with_suffix(".metadata") / "scripts"
-                if os.getenv("DOMINO_RIG_WORK_PATH", None)
+                if start_directroy
                 else cmds.workspace(query=True, rootDirectory=True)
             )
             file_path = cmds.fileDialog2(
@@ -125,9 +126,10 @@ class Assembly(DynamicWidget):
             set_script_path(rig_root, _attribute, _script_paths, _list_widget)
 
         def create_script(_list_widget, _attribute):
+            start_directroy = os.getenv("DOMINO_RIG_WORK_PATH", None)
             start_directroy = (
                 Path(start_directroy).with_suffix(".metadata") / "scripts"
-                if os.getenv("DOMINO_RIG_WORK_PATH", None)
+                if start_directroy
                 else cmds.workspace(query=True, rootDirectory=True)
             )
             file_path = cmds.fileDialog2(

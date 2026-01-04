@@ -1,14 +1,6 @@
 # domino
 from domino import component
-from domino.core import (
-    attribute,
-    Name,
-    controller_extension,
-    joint_extension,
-    center,
-    left,
-    right,
-)
+from domino.core import attribute, Name
 from domino.core.utils import build_log
 
 # maya
@@ -24,11 +16,11 @@ ORIGINMATRIX = om.MMatrix()
 matrices = [list(ORIGINMATRIX)]
 DATA = [
     attribute.String(longName="component", value="assembly"),
-    attribute.String(longName="side_c_str", value=center),
-    attribute.String(longName="side_l_str", value=left),
-    attribute.String(longName="side_r_str", value=right),
-    attribute.String(longName="controller_extension", value=controller_extension),
-    attribute.String(longName="joint_extension", value=joint_extension),
+    attribute.String(longName="side_c_str", value=Name.center),
+    attribute.String(longName="side_l_str", value=Name.left),
+    attribute.String(longName="side_r_str", value=Name.right),
+    attribute.String(longName="controller_extension", value=Name.controller_extension),
+    attribute.String(longName="joint_extension", value=Name.joint_extension),
     attribute.Matrix(longName="guide_matrix", multi=True, value=matrices),
     attribute.Matrix(longName="npo_matrix", multi=True, value=matrices),
     attribute.Matrix(
@@ -59,11 +51,9 @@ description = """## assembly
 #### Guide
 > guide 는 controller 를 조절하지 않습니다. 다른 guide를 drive하거나 할 때 사용됩니다.
 
-
 #### Settings
 - Custom Scripts  
-> build 시 같이 실행되는 pre, post script 를 관리합니다.  
-> Manager 에서 domino path 를 버전업 하게되면 script 또한 버전업 되어서 저장됩니다."""
+> build 시 같이 실행되는 pre, post script 를 관리합니다."""
 # endregion
 
 
@@ -124,6 +114,43 @@ class Rig(component.Rig):
             keyable=True,
             defaultValue=1,
         )
+        cmds.addAttr(
+            origin_ctl,
+            longName="_visibility",
+            attributeType="enum",
+            enumName="____________",
+            keyable=False,
+        )
+        cmds.setAttr(f"{origin_ctl}._visibility", channelBox=True)
+        cmds.addAttr(
+            origin_ctl,
+            longName="hide_on_playback_controller",
+            attributeType="bool",
+            keyable=False,
+            defaultValue=1,
+        )
+        cmds.setAttr(f"{origin_ctl}.hide_on_playback_controller", channelBox=True)
+        cmds.connectAttr(
+            f"{origin_ctl}.hide_on_playback_controller",
+            f"{origin_ctl}.hideOnPlayback",
+        )
+        cmds.addAttr(
+            origin_ctl,
+            longName="controller_visibility",
+            attributeType="bool",
+            keyable=False,
+            defaultValue=1,
+        )
+        cmds.setAttr(f"{origin_ctl}.controller_visibility", channelBox=True)
+        cmds.addAttr(
+            origin_ctl,
+            longName="joint_visibility",
+            attributeType="bool",
+            keyable=False,
+            defaultValue=1,
+        )
+        cmds.setAttr(f"{origin_ctl}.joint_visibility", channelBox=True)
+        cmds.connectAttr(f"{origin_ctl}.joint_visibility", f"{component.SKEL}.v")
         cmds.setAttr(f"{origin_ctl}.sx", lock=False)
         cmds.setAttr(f"{origin_ctl}.sy", lock=False)
         cmds.setAttr(f"{origin_ctl}.sz", lock=False)
@@ -145,6 +172,7 @@ class Rig(component.Rig):
             ),
             color=21,
         )
+        cmds.connectAttr(f"{origin_ctl}.controller_visibility", f"{sub_npo}.v")
         # output
         self["output"][0].connect()
 

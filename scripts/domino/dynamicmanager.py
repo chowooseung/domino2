@@ -4,7 +4,6 @@ from maya import mel
 from maya.app.general.mayaMixin import MayaQWidgetDockableMixin
 
 # built-ins
-from pathlib import Path
 import json
 
 # gui
@@ -453,9 +452,12 @@ def show_dynamic_tools_ui():
 
     _, namespace = cmds.ls(selection=True, showNamespace=True)
     if namespace == ":":
+        namespace = ""
+
+    if not cmds.objExists(f"{namespace}:{DYNAMIC_MANAGER}"):
         return
 
-    window_name = "dominoDynamicToolsWindow"
+    window_name = "domino_dynamic_tools_window"
     button_width = 150
 
     if cmds.window(window_name, exists=True):

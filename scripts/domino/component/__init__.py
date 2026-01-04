@@ -1,6 +1,6 @@
 # domino
 from domino.dynamicmanager import DYNAMIC_MANAGER, export_dynamic, import_dynamic
-from domino.psdmanager import PSD_MANAGER, PSD_SETS, export_psd, import_psd
+from domino.psdmanager import PSD_MANAGER, export_psd, import_psd
 from domino.sdkmanager import SDK_MANAGER, SDK_SETS, export_sdk, import_sdk
 from domino.spacemanager import (
     SPACE_MANAGER,
@@ -54,6 +54,7 @@ COMPONENTLIST = [
     "humanneck01",
     "humanarm01",
     "humanleg01",
+    "foot01",
     "psd01",
     "chain01",
 ]
@@ -536,21 +537,6 @@ class Rig(dict):
             rig_instance=self,
         )
 
-    @build_log(logging.DEBUG)
-    def add_joint(self, parent, description, m):
-        name, side, index = self.identifier
-        ins = Joint(
-            parent=parent,
-            name=name,
-            side=side,
-            index=index,
-            description=description,
-            extension=Name.joint_extension,
-            m=m,
-            use_joint_convention=False,
-        )
-        return ins.create()
-
     # region -    RIG / _Output
     class _Output(dict):
 
@@ -1025,8 +1011,6 @@ class Rig(dict):
             controller_sets = cmds.sets(name=CONTROLLER_SETS, empty=True)
             blendshape_sets = cmds.sets(name=BLENDSHAPE_SETS, empty=True)
             sdk_sets = cmds.sets(name=SDK_SETS, empty=True)
-            psd_sets = cmds.sets(name=PSD_SETS, empty=True)
-            dynamic_sets = cmds.sets(name=DYNAMIC_SETS, empty=True)
             deformer_weights_sets = cmds.sets(name=DEFORMER_WEIGHTS_SETS, empty=True)
             deformer_order_sets = cmds.sets(name=DEFORMER_ORDER_SETS, empty=True)
             cmds.sets(
@@ -1037,8 +1021,6 @@ class Rig(dict):
                     controller_sets,
                     blendshape_sets,
                     sdk_sets,
-                    psd_sets,
-                    dynamic_sets,
                     deformer_weights_sets,
                     deformer_order_sets,
                 ],

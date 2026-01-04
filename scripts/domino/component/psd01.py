@@ -1,6 +1,6 @@
 # domino
-from domino import component
-from domino.core import attribute, Name, Transform, Joint, nurbscurve, Controller
+from domino import component, psdmanager
+from domino.core import attribute, Name, Transform, Joint
 from domino.core.utils import build_log
 
 # maya
@@ -168,10 +168,10 @@ class Rig(component.Rig):
             cmds.connectAttr(f"{condition}.outColorR", f"{npo_loc}.sz")
             cmds.connectAttr(f"{condition}.outColorR", f"{ctl_loc}.sz")
 
-            if not cmds.objExists(component.PSD_SETS):
-                cmds.sets(name=component.PSD_SETS, empty=True)
-                cmds.sets(component.PSD_SETS, edit=True, addElement=component.RIG_SETS)
-            cmds.sets(ctl, edit=True, addElement=component.PSD_SETS)
+            if not cmds.objExists(psdmanager.PSD_SETS):
+                cmds.sets(name=psdmanager.PSD_SETS, empty=True)
+                cmds.sets(psdmanager.PSD_SETS, edit=True, addElement=component.RIG_SETS)
+            cmds.sets(ctl, edit=True, addElement=psdmanager.PSD_SETS)
 
             # output
             ins = Joint(

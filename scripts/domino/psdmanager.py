@@ -278,7 +278,7 @@ def add_driven(intp_name, driven):
 
     data = get_data()
 
-    grp = f"{driven}_grp"
+    grp = f"{driven}_psd"
     blend_m = f"{driven}_bm"
 
     if driven in data[intp_name]["driven"]:
@@ -395,7 +395,7 @@ def remove_intp(intp_name):
     else:
         delete_list = []
         for driven in data[intp_name]["driven"]:
-            grp = f"{driven}_grp"
+            grp = f"{driven}_psd"
             parent = cmds.listRelatives(grp, parent=True)
             if parent:
                 cmds.parent(driven, parent[0])
@@ -457,7 +457,7 @@ def remove_driven(intp_name, driven):
     if data[intp_name]["is_blendshape"]:
         return
 
-    grp = f"{driven}_grp"
+    grp = f"{driven}_psd"
     blend_m = f"{driven}_bm"
 
     if not cmds.objExists(blend_m):
@@ -737,7 +737,7 @@ def mirror_intp(intp_name):
             )
 
             # add driven npo
-            grp = f"{target_driven}_grp"
+            grp = f"{target_driven}_psd"
             if not cmds.objExists(grp):
                 parent = cmds.listRelatives(target_driven, parent=True)
                 grp = cmds.createNode(

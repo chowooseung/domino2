@@ -200,7 +200,7 @@ def check_output_joint():
         for attr in r_attrs:
             value = round(cmds.getAttr(f"{joint}{attr}"), 3)
             # 360, -360은 constraint 으로 인해 발생할 수 있음.
-            if value not in (0.0, 360.0, -360.0):
+            if value not in (0.0, 360.0, -360.0, 180, -180):
                 result.append(f"{joint}{attr}")
         for attr, check_value in zip(s_attrs, [1.0, 1.0, 1.0]):
             value = round(cmds.getAttr(f"{joint}{attr}"), 3)
