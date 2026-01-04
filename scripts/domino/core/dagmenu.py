@@ -464,6 +464,9 @@ time_range = cmds.timeControl(a_time_slider, query=True, rangeArray=True)"""
 
 dynamic_tools_command = """from domino import dynamicmanager
 dynamicmanager.show_dynamic_tools_ui()"""
+
+reorder_option_box_command = """from maya import mel
+mel.eval("pythonRunTimeCommand reorder_rotation.ui 1;")"""
 # endregion
 
 
@@ -545,6 +548,13 @@ def controller_menu(
             if apply_children_state
             else flip_controller_command.format(False)
         ),
+        enableCommandRepeat=True,
+    )
+    cmds.menuItem(parent=parent_menu, divider=True)
+    cmds.menuItem(
+        parent=parent_menu,
+        label="Reorder Rotation",
+        command=reorder_option_box_command,
         enableCommandRepeat=True,
     )
     cmds.menuItem(parent=parent_menu, divider=True)
