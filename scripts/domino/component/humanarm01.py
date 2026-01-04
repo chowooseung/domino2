@@ -811,7 +811,7 @@ class Rig(component.Rig):
         cmds.setAttr(f"{ik_pos_ctl}.rx", lock=True, keyable=False)
         cmds.setAttr(f"{ik_pos_ctl}.ry", lock=True, keyable=False)
         cmds.setAttr(f"{ik_pos_ctl}.rz", lock=True, keyable=False)
-        cmds.setAttr(f"{ik_pos_ctl}.mirror_type", 2)
+        cmds.setAttr(f"{ik_pos_ctl}.mirror_type", 0)
 
         pole_vec_npo, pole_vec_ctl = self["controller"][7].create(
             parent=clavicle_bone_npo_inverse,
@@ -825,7 +825,7 @@ class Rig(component.Rig):
         cmds.setAttr(f"{pole_vec_ctl}.rx", lock=True, keyable=False)
         cmds.setAttr(f"{pole_vec_ctl}.ry", lock=True, keyable=False)
         cmds.setAttr(f"{pole_vec_ctl}.rz", lock=True, keyable=False)
-        cmds.setAttr(f"{pole_vec_ctl}.mirror_type", 2)
+        cmds.setAttr(f"{pole_vec_ctl}.mirror_type", 0)
         cmds.connectAttr(
             f"{self.rig_root}.pole_vector_matrix", f"{pole_vec_npo}.offsetParentMatrix"
         )
@@ -1001,6 +1001,7 @@ class Rig(component.Rig):
             color=12,
             npo_matrix_index=7,
         )
+        cmds.setAttr(f"{ik_local_ctl}.mirror_type", 1)
         if self["unlock_last_scale"]["value"]:
             cmds.setAttr(f"{ik_local_ctl}.sx", lock=False, keyable=True)
             cmds.setAttr(f"{ik_local_ctl}.sy", lock=False, keyable=True)
@@ -1009,10 +1010,21 @@ class Rig(component.Rig):
             cmds.setAttr(f"{ik_local_ctl}.sx", lock=True, keyable=False)
             cmds.setAttr(f"{ik_local_ctl}.sy", lock=True, keyable=False)
             cmds.setAttr(f"{ik_local_ctl}.sz", lock=True, keyable=False)
+        ik_local_loc = cmds.createNode(
+            "transform",
+            name=Name.create(
+                Name.controller_name_convention,
+                name=name,
+                side=side,
+                index=index,
+                description="ikLocal",
+                extension=Name.loc_extension,
+            ),
+            parent=ik_local_ctl,
+        )
 
-        cmds.setAttr(f"{ik_local_ctl}.mirror_type", 1)
-        cmds.orientConstraint(ik_local_ctl, ik2_jnt, maintainOffset=False)
-        cmds.scaleConstraint(ik_local_ctl, ik2_jnt, maintainOffset=False)
+        cmds.orientConstraint(ik_local_loc, ik2_jnt, maintainOffset=False)
+        cmds.scaleConstraint(ik_local_loc, ik2_jnt, maintainOffset=False)
 
         cmds.connectAttr(f"{host_ctl}.fkik", f"{ik_pos_npo}.v")
         cmds.connectAttr(f"{host_ctl}.fkik", f"{pole_vec_npo}.v")
@@ -1034,7 +1046,7 @@ class Rig(component.Rig):
         )
         ik_aim_grp = ins.create()
         cmds.aimConstraint(
-            ik_local_ctl, ik_aim_grp, maintainOffset=False, aimVector=(1, 0, 0)
+            ik_local_loc, ik_aim_grp, maintainOffset=False, aimVector=(1, 0, 0)
         )
         cmds.setAttr(f"{ik_aim_grp}.t", 0, 0, 0)
 
@@ -1105,7 +1117,7 @@ class Rig(component.Rig):
             initial_ik_curve=original_distance_curve,
             joints=[ik0_jnt, ik1_jnt, ik2_jnt],
             ik_pos_driver=ik_pos_ctl,
-            ik_driver=ik_local_ctl,
+            ik_driver=ik_local_loc,
             pole_vector=pole_vec_ctl,
             attach_pole_vector_attr=f"{ik_ctl}.attach_to_PV",
             scale_attr=f"{ik_ctl}.ik_scale",

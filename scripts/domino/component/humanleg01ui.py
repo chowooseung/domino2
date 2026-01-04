@@ -45,15 +45,5 @@ class HumanLeg01(DynamicWidget):
             f"{root}.unlock_last_scale",
         )
         check_box.toggled.connect(toggle_unlock_last_scale)
-        UIGenerator.add_combo_box(
-            self.parent_widget,
-            "Controller primary axis",
-            f"{root}.controller_primary_axis",
-        )
-        UIGenerator.add_combo_box(
-            self.parent_widget,
-            "Controller secondary axis",
-            f"{root}.controller_secondary_axis",
-        )
 
         UIGenerator.add_notes(self.parent_widget, f"{root}.notes")

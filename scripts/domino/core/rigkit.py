@@ -22,10 +22,20 @@ def connect_blended_joint(source, destination, weight=0.5):
     else:
         orig = cmds.parent(orig, worlld=True)[0]
 
+    cmds.addAttr(
+        destination,
+        longName="weight",
+        attributeType="float",
+        minValue=0,
+        maxValue=1,
+        defaultValue=weight,
+        keyable=True,
+    )
+
     blend_m = cmds.createNode("blendMatrix")
     cmds.connectAttr(f"{orig}.worldMatrix[0]", f"{blend_m}.inputMatrix")
     cmds.connectAttr(f"{source}.worldMatrix[0]", f"{blend_m}.target[0].targetMatrix")
-    cmds.setAttr(f"{blend_m}.target[0].weight", weight)
+    cmds.connectAttr(f"{destination}.weight", f"{blend_m}.target[0].weight")
 
     mult_m = cmds.createNode("multMatrix")
     cmds.connectAttr(f"{blend_m}.outputMatrix", f"{mult_m}.matrixIn[0]")
@@ -156,10 +166,11 @@ def ik_2jnt(
     slided_total_distance_plug = f"{pma1}.output1D"
 
     # softik
+    soft_ik_grp = cmds.createNode("transform", name=f"{name}_grp", parent=parent)
     ikh = cmds.ikHandle(
         startJoint=joints[0], endEffector=joints[2], solver="ikRPsolver", name=name
     )[0]
-    cmds.parent(ikh, parent)
+    cmds.parent(ikh, soft_ik_grp)
     cmds.poleVectorConstraint(pole_vector, ikh)
     cmds.setAttr(f"{ikh}.t", 0, 0, 0)
     cmds.setAttr(f"{ikh}.r", 0, 0, 0)
@@ -341,7 +352,7 @@ def ik_2jnt(
     cmds.setAttr(f"{bta1}.input[1]", 0)
     cmds.connectAttr(attach_pole_vector_attr, f"{bta1}.attributesBlender")
 
-    cmds.connectAttr(f"{bta1}.output", f"{ikh}.tx")
+    cmds.connectAttr(f"{bta1}.output", f"{soft_ik_grp}.tx")
 
 
 def ik_3jnt(
@@ -1700,8 +1711,8 @@ def create_nucleus(name=""):
     )
     cmds.expression(
         name=f"{name}_startFrame_expr" if name else "nucleus0_startFrame_expr",
-        string=f"{nucleus}.startFrame = `playbackOptions -query -minTime`;",
-        alwaysEvaluate=True,
+        string=f"{nucleus}.startFrame = `playbackOptions -query -minTime` * `getAttr {nucleus}.enable`;",
+        alwaysEvaluate=False,
         timeDependent=False,
         safe=True,
         unitConversion="all",
