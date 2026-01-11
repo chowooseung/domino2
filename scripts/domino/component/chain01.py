@@ -3005,6 +3005,16 @@ class Rig(component.Rig):
 
         primary_objs = main_joints[1:] + [main_joints[-2]]
         i = 0
+        compose_m = cmds.createNode("composeMatrix")
+        cmds.connectAttr(
+            f"{self.guide_root}.offset_output_rotate_x", f"{compose_m}.inputRotateX"
+        )
+        cmds.connectAttr(
+            f"{self.guide_root}.offset_output_rotate_y", f"{compose_m}.inputRotateY"
+        )
+        cmds.connectAttr(
+            f"{self.guide_root}.offset_output_rotate_z", f"{compose_m}.inputRotateZ"
+        )
         for m_j, u_j in zip(main_joints, up_joints):
             pick_m = cmds.createNode("pickMatrix")
             cmds.setAttr(f"{pick_m}.useScale", 0)
@@ -3035,9 +3045,10 @@ class Rig(component.Rig):
             cmds.connectAttr(f"{u_j}.worldMatrix[0]", f"{pick_m}.inputMatrix")
             cmds.connectAttr(f"{pick_m}.outputMatrix", f"{aim_m}.secondaryTargetMatrix")
             mult_m = cmds.createNode("multMatrix")
-            cmds.connectAttr(f"{aim_m}.outputMatrix", f"{mult_m}.matrixIn[0]")
+            cmds.connectAttr(f"{compose_m}.outputMatrix", f"{mult_m}.matrixIn[0]")
+            cmds.connectAttr(f"{aim_m}.outputMatrix", f"{mult_m}.matrixIn[1]")
             cmds.connectAttr(
-                f"{self.guide_root}.worldInverseMatrix[0]", f"{mult_m}.matrixIn[1]"
+                f"{self.guide_root}.worldInverseMatrix[0]", f"{mult_m}.matrixIn[2]"
             )
             if i < len(main_joints) - 1:
                 decom_m = cmds.createNode("decomposeMatrix")
