@@ -1058,7 +1058,7 @@ def ribbon_uv(
         closest_surface = cmds.createNode("closestPointOnSurface")
         cmds.connectAttr(f"{poci}.result.position", f"{closest_surface}.inPosition")
         cmds.connectAttr(f"{orig}.local", f"{closest_surface}.inputSurface")
-        main_orig_parameter_plugs.append(f"{closest_surface}.result.parameterV")
+        main_orig_parameter_plugs.append(f"{closest_surface}.result.parameterU")
 
         poci = cmds.createNode("pointOnCurveInfo")
         cmds.setAttr(f"{poci}.turnOnPercentage", 1)
@@ -1067,7 +1067,7 @@ def ribbon_uv(
         closest_surface = cmds.createNode("closestPointOnSurface")
         cmds.connectAttr(f"{poci}.result.position", f"{closest_surface}.inPosition")
         cmds.connectAttr(f"{orig}.local", f"{closest_surface}.inputSurface")
-        up_orig_parameter_plugs.append(f"{closest_surface}.result.parameterV")
+        up_orig_parameter_plugs.append(f"{closest_surface}.result.parameterU")
 
         poci = cmds.createNode("pointOnCurveInfo")
         cmds.setAttr(f"{poci}.turnOnPercentage", 1)
@@ -1091,12 +1091,12 @@ def ribbon_uv(
     cmds.connectAttr(f"{shape}.local", f"{uvpin}.deformedGeometry")
     c = 0
     for plug in main_orig_parameter_plugs:
-        cmds.setAttr(f"{uvpin}.coordinate[{c}].coordinateU", 0.5)
-        cmds.connectAttr(plug, f"{uvpin}.coordinate[{c}].coordinateV")
+        cmds.setAttr(f"{uvpin}.coordinate[{c}].coordinateV", 0.5)
+        cmds.connectAttr(plug, f"{uvpin}.coordinate[{c}].coordinateU")
         main_output_plugs.append(f"{uvpin}.outputMatrix[{c}]")
         c += 1
     for plug in up_orig_parameter_plugs:
-        cmds.connectAttr(plug, f"{uvpin}.coordinate[{c}].coordinateV")
+        cmds.connectAttr(plug, f"{uvpin}.coordinate[{c}].coordinateU")
         up_output_plugs.append(f"{uvpin}.outputMatrix[{c}]")
         c += 1
 
