@@ -63,6 +63,9 @@ def add_collide(solvers, meshes):
             cmds.connectAttr(f"{mesh}.worldMesh[0]", f"{temp_shape}.inMesh")
             dup_mesh = cmds.duplicate(temp_shape, name=f"{solver}_{mesh}_collide")[0]
             dup_mesh = cmds.parent(dup_mesh, mesh)[0]
+            cmds.setAttr(f"{dup_mesh}.t", 0, 0, 0)
+            cmds.setAttr(f"{dup_mesh}.r", 0, 0, 0)
+            cmds.setAttr(f"{dup_mesh}.s", 1, 1, 1)
             cmds.delete(temp_shape)
             cmds.connectAttr(f"{mesh}.worldMesh[0]", f"{dup_mesh}.inMesh")
             cmds.select([solver, dup_mesh])
