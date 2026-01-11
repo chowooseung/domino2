@@ -98,6 +98,76 @@ fkik0, fkik1, fkik2 guide 가 ik 를 생성하기 때문에
 # endregion
 
 
+fkik_match_command_str = """from maya import cmds
+
+def switch_fk_to_ik(_ik_match_sources, _ik_match_targets):
+    ik_pos_m = cmds.xform(_ik_match_sources[0], query=True, matrix=True, worldSpace=True)
+    pole_vec_m = cmds.xform(_ik_match_sources[1], query=True, matrix=True, worldSpace=True)
+    ik_m = cmds.xform(_ik_match_sources[2], query=True, matrix=True, worldSpace=True)
+
+    cmds.xform(_ik_match_targets[0], matrix=ik_pos_m, worldSpace=True)
+    cmds.xform(_ik_match_targets[1], matrix=pole_vec_m, worldSpace=True)
+    cmds.xform(_ik_match_targets[2], matrix=ik_m, worldSpace=True)
+    cmds.setAttr("{host}.fkik", 1)
+    cmds.setAttr(_ik_match_targets[2] + ".soft_ik", 0)
+
+def switch_ik_to_fk(_fk_match_sources, _fk_match_targets):
+    fk0_m = cmds.xform(_fk_match_sources[0], query=True, matrix=True, worldSpace=True)
+    fk1_m = cmds.xform(_fk_match_sources[1], query=True, matrix=True, worldSpace=True)
+    fk2_m = cmds.xform(_fk_match_sources[2], query=True, matrix=True, worldSpace=True)
+    cmds.xform(_fk_match_targets[0], matrix=fk0_m,  worldSpace=True)
+    cmds.xform(_fk_match_targets[1], matrix=fk1_m,  worldSpace=True)
+    cmds.xform(_fk_match_targets[2], matrix=fk2_m,  worldSpace=True)
+    cmds.setAttr("{host}.fkik", 0)
+
+ik_match_sources = cmds.listConnections("{host}.ik_match_sources", source=True, destination=False)
+ik_match_targets = cmds.listConnections("{host}.ik_match_targets", source=True, destination=False)
+fk_match_sources = cmds.listConnections("{host}.fk_match_sources", source=True, destination=False)
+fk_match_targets = cmds.listConnections("{host}.fk_match_targets", source=True, destination=False)
+
+current_status = int(cmds.getAttr("{host}.fkik"))
+if {setkey}:
+    a_time_slider = mel.eval('$tmpVar=$gPlayBackSlider')
+    time_range = cmds.timeControl(a_time_slider, query=True, rangeArray=True)
+
+    if current_status == 0:
+        source_targets = fk_match_targets
+        destination_targets = ik_match_targets
+    else:
+        source_targets = ik_match_targets
+        destination_targets = fk_match_targets
+
+    srt_attrs = [".tx", ".ty", ".tz", ".rx", ".ry", ".rz", ".sx", ".sy", ".sz"]
+    attributes = [f"{host}.fkik"]
+    for source_target in source_targets:
+        for attr in srt_attrs:
+            attributes.append(source_target + attr)
+    times = sorted(list(set(cmds.keyframe(attributes, query=True)) | set([time_range[0], time_range[1] - 1])))
+    for destination_target in destination_targets:
+        for attr in cmds.listAttr(destination_target, keyable=True):
+            if cmds.keyframe(destination_target + "." + attr, query=True):
+                cmds.setKeyframe(destination_target + "." + attr, time=(time_range[0] - 1, time_range[1]))
+            else:
+                cmds.setKeyframe(destination_target + "." + attr, insert=True, time=(time_range[0] - 1, time_range[1]))
+    cmds.cutKey(destination_targets, time=(time_range[0], time_range[1] - 1), clear=True)
+
+    if {option} == 1:
+        times = range(int(time_range[0]), int(time_range[1]))
+    for time in times:
+        if time_range[0] <= time < time_range[1]:
+            cmds.currentTime(time)
+            if current_status == 0:
+                switch_fk_to_ik(ik_match_sources, ik_match_targets)
+            else:
+                switch_ik_to_fk(fk_match_sources, fk_match_targets)
+            cmds.setKeyframe(destination_targets, time=(time, ))
+else:
+    if current_status == 0:
+        switch_fk_to_ik(ik_match_sources, ik_match_targets)
+    else:
+        switch_ik_to_fk(fk_match_sources, fk_match_targets)"""
+
+
 class Rig(component.Rig):
 
     def __init__(self):
@@ -158,6 +228,7 @@ class Rig(component.Rig):
             ),
             color=12,
             host=True,
+            fkik_match_command=fkik_match_command_str,
         )
         cmds.setAttr(f"{host_ctl}.tx", lock=True, keyable=False)
         cmds.setAttr(f"{host_ctl}.ty", lock=True, keyable=False)
@@ -194,6 +265,8 @@ class Rig(component.Rig):
             npo_matrix_index=0,
         )
         cmds.setAttr(f"{fk0_ctl}.mirror_type", 1)
+        cmds.connectAttr(f"{fk0_ctl}.message", f"{host_ctl}.fk_match_targets[0]")
+        cmds.connectAttr(f"{fk0_ctl}.message", f"{host_ctl}.ik_match_sources[0]")
         ins = Transform(
             parent=fk0_ctl,
             name=name,
@@ -233,6 +306,30 @@ class Rig(component.Rig):
             npo_matrix_index=1,
         )
         cmds.setAttr(f"{fk1_ctl}.mirror_type", 1)
+        cmds.connectAttr(f"{fk1_ctl}.message", f"{host_ctl}.fk_match_targets[1]")
+        pole_vec_match = cmds.createNode(
+            "transform",
+            name=Name.create(
+                Name.controller_name_convention,
+                name=name,
+                side=side,
+                index=index,
+                description="poleVec",
+                extension="match",
+            ),
+            parent=fk1_ctl,
+        )
+        mult_m = cmds.createNode("multMatrix")
+        cmds.connectAttr(f"{self.rig_root}.pole_vector_matrix", f"{mult_m}.matrixIn[0]")
+        inv_m = cmds.createNode("inverseMatrix")
+        cmds.connectAttr(f"{self.rig_root}.npo_matrix[0]", f"{inv_m}.inputMatrix")
+        cmds.connectAttr(f"{inv_m}.outputMatrix", f"{mult_m}.matrixIn[1]")
+        inv_m = cmds.createNode("inverseMatrix")
+        cmds.connectAttr(f"{self.rig_root}.npo_matrix[1]", f"{inv_m}.inputMatrix")
+        cmds.connectAttr(f"{inv_m}.outputMatrix", f"{mult_m}.matrixIn[2]")
+        cmds.connectAttr(f"{mult_m}.matrixSum", f"{pole_vec_match}.offsetParentMatrix")
+        cmds.connectAttr(f"{pole_vec_match}.message", f"{host_ctl}.ik_match_sources[1]")
+
         ins = Transform(
             parent=fk1_ctl,
             name=name,
@@ -280,6 +377,40 @@ class Rig(component.Rig):
             cmds.setAttr(f"{fk2_ctl}.sx", lock=True, keyable=False)
             cmds.setAttr(f"{fk2_ctl}.sy", lock=True, keyable=False)
             cmds.setAttr(f"{fk2_ctl}.sz", lock=True, keyable=False)
+        cmds.connectAttr(f"{fk2_ctl}.message", f"{host_ctl}.fk_match_targets[2]")
+        ik_match_source2 = cmds.createNode(
+            "transform",
+            name=Name.create(
+                Name.controller_name_convention,
+                name=name,
+                side=side,
+                index=index,
+                description="ik2",
+                extension="match",
+            ),
+            parent=fk2_ctl,
+        )
+        mult_m = cmds.createNode("multMatrix")
+        inv = cmds.createNode("inverseMatrix")
+        cmds.connectAttr(f"{self.rig_root}.npo_matrix[0]", f"{inv}.inputMatrix")
+        cmds.connectAttr(f"{inv}.outputMatrix", f"{mult_m}.matrixIn[0]")
+        inv = cmds.createNode("inverseMatrix")
+        cmds.connectAttr(f"{self.rig_root}.npo_matrix[1]", f"{inv}.inputMatrix")
+        cmds.connectAttr(f"{inv}.outputMatrix", f"{mult_m}.matrixIn[1]")
+        inv = cmds.createNode("inverseMatrix")
+        cmds.connectAttr(f"{self.rig_root}.npo_matrix[2]", f"{inv}.inputMatrix")
+        cmds.connectAttr(f"{inv}.outputMatrix", f"{mult_m}.matrixIn[2]")
+        pick_m = cmds.createNode("pickMatrix")
+        cmds.connectAttr(f"{mult_m}.matrixSum", f"{pick_m}.inputMatrix")
+        cmds.setAttr(f"{pick_m}.useTranslate", 0)
+        cmds.setAttr(f"{pick_m}.useScale", 0)
+        cmds.setAttr(f"{pick_m}.useShear", 0)
+        cmds.connectAttr(
+            f"{pick_m}.outputMatrix", f"{ik_match_source2}.offsetParentMatrix"
+        )
+        cmds.connectAttr(
+            f"{ik_match_source2}.message", f"{host_ctl}.ik_match_sources[2]"
+        )
 
         ik_pos_npo, ik_pos_ctl = self["controller"][4].create(
             parent=self.rig_root,
@@ -295,6 +426,7 @@ class Rig(component.Rig):
         cmds.setAttr(f"{ik_pos_ctl}.ry", lock=True, keyable=False)
         cmds.setAttr(f"{ik_pos_ctl}.rz", lock=True, keyable=False)
         cmds.setAttr(f"{ik_pos_ctl}.mirror_type", 2)
+        cmds.connectAttr(f"{ik_pos_ctl}.message", f"{host_ctl}.ik_match_targets[0]")
 
         pole_vec_npo, pole_vec_ctl = self["controller"][5].create(
             parent=self.rig_root,
@@ -309,6 +441,7 @@ class Rig(component.Rig):
         cmds.setAttr(f"{pole_vec_ctl}.ry", lock=True, keyable=False)
         cmds.setAttr(f"{pole_vec_ctl}.rz", lock=True, keyable=False)
         cmds.setAttr(f"{pole_vec_ctl}.mirror_type", 2)
+        cmds.connectAttr(f"{pole_vec_ctl}.message", f"{host_ctl}.ik_match_targets[1]")
         cmds.connectAttr(
             f"{self.rig_root}.pole_vector_matrix", f"{pole_vec_npo}.offsetParentMatrix"
         )
@@ -338,6 +471,7 @@ class Rig(component.Rig):
             use_joint_convention=False,
         )
         ik0_jnt = ins.create()
+        cmds.connectAttr(f"{ik0_jnt}.message", f"{host_ctl}.fk_match_sources[0]")
 
         ins = Joint(
             parent=ik0_jnt,
@@ -350,6 +484,7 @@ class Rig(component.Rig):
             use_joint_convention=False,
         )
         ik1_jnt = ins.create()
+        cmds.connectAttr(f"{ik1_jnt}.message", f"{host_ctl}.fk_match_sources[1]")
         mult_m = cmds.createNode("multMatrix")
         cmds.connectAttr(f"{pole_vec_ctl}.worldMatrix[0]", f"{mult_m}.matrixIn[0]")
         cmds.connectAttr(
@@ -378,6 +513,7 @@ class Rig(component.Rig):
             use_joint_convention=False,
         )
         ik2_jnt = ins.create()
+        cmds.connectAttr(f"{ik2_jnt}.message", f"{host_ctl}.fk_match_sources[2]")
         cmds.pointConstraint(ik_pos_ctl, ik0_jnt, maintainOffset=False)
         cmds.hide(ik0_jnt)
 
@@ -400,6 +536,7 @@ class Rig(component.Rig):
             cmds.setAttr(f"{ik_ctl}.sx", lock=True, keyable=False)
             cmds.setAttr(f"{ik_ctl}.sy", lock=True, keyable=False)
             cmds.setAttr(f"{ik_ctl}.sz", lock=True, keyable=False)
+        cmds.connectAttr(f"{ik_ctl}.message", f"{host_ctl}.ik_match_targets[2]")
 
         cmds.addAttr(
             ik_ctl,
@@ -602,6 +739,7 @@ class Rig(component.Rig):
             f"{ik0_jnt}.jointOrient", source=True, destination=False, plugs=True
         )[0]
         cmds.connectAttr(plug, f"{blend0_jnt}.jointOrient")
+        cmds.hide(blend0_jnt)
 
         start_roll = cmds.createNode(
             "transform",

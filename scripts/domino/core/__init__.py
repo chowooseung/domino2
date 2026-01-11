@@ -564,9 +564,17 @@ class Controller(Transform):
 
     @property
     def root(self):
-        return cmds.listConnections(
-            f"{self._node}.message", source=False, destination=True, type="transform"
-        )[0]
+        for node in (
+            cmds.listConnections(
+                f"{self._node}.message",
+                source=False,
+                destination=True,
+                type="transform",
+            )
+            or []
+        ):
+            if cmds.objExists(f"{node}.is_domino_rig_root"):
+                return node
 
     @property
     def npo(self):

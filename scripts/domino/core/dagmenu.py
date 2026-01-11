@@ -64,18 +64,19 @@ def popup_menu(parent_menu, *args, **kwargs):
 
     # 마야가 pSphere1.vtx[0].is_domino_guide 같은것도 true 로 반환한다. fuck
     if selection and "." not in selection[0]:
-        if cmds.objExists(f"{selection[0]}.is_domino_guide") or cmds.objExists(
-            f"{selection[0]}.is_domino_guide_root"
+        node = selection[0]
+        if cmds.objExists(f"{node}.is_domino_guide") or cmds.objExists(
+            f"{node}.is_domino_guide_root"
         ):
             guide_menu(parent_menu)
             maya_dag_menu = True
-        elif cmds.objExists(f"{selection[0]}.is_domino_rig"):
+        elif cmds.objExists(f"{node}.is_domino_rig"):
             rig_menu(parent_menu)
             maya_dag_menu = True
-        elif cmds.objExists(f"{selection[0]}.is_domino_controller"):
+        elif cmds.objExists(f"{node}.is_domino_controller"):
             stack = (
                 cmds.listConnections(
-                    f"{selection[0]}.message",
+                    f"{node}.message",
                     source=False,
                     destination=True,
                     type="transform",
@@ -94,18 +95,18 @@ def popup_menu(parent_menu, *args, **kwargs):
                 )
                 or []
             )
+            fkik_match = False
+            if host:
+                if cmds.objExists(f"{host[0]}.fkik_match_command"):
+                    fkik_match = True
             controller_menu(
                 parent_menu,
-                True if host else False,
-                (
-                    True
-                    if cmds.getAttr(f"{selection[0]}.component") == "assembly"
-                    else False
-                ),
-                True if cmds.objExists(f"{selection[0]}.fkik_command_attr") else False,
+                (True if cmds.getAttr(f"{node}.component") == "assembly" else False),
+                host[0] if host else None,
+                fkik_match,
             )
             maya_dag_menu = True
-        elif cmds.objExists(f"{selection[0]}.is_domino_skel"):
+        elif cmds.objExists(f"{node}.is_domino_skel"):
             skel_menu(parent_menu)
             maya_dag_menu = True
     if not maya_dag_menu:
@@ -458,10 +459,6 @@ for sel in cmds.ls(selection=True):
     controllers.extend(Controller.get_child_controller(node=sel))
 cmds.select(controllers)"""
 
-fkik_switch_command = """
-a_time_slider = mel.eval('$tmpVar=$gPlayBackSlider')
-time_range = cmds.timeControl(a_time_slider, query=True, rangeArray=True)"""
-
 dynamic_tools_command = """from domino import dynamicmanager
 dynamicmanager.show_dynamic_tools_ui()"""
 
@@ -471,15 +468,57 @@ mel.eval("pythonRunTimeCommand reorder_rotation.ui 1;")"""
 
 
 # region Controller Menu
-def controller_menu(
-    parent_menu, has_host=False, is_assembly=False, has_fkik_switch=False
-):
+def show_fkik_match_option_ui(command="", host=""):
+    window_name = "domino_fkik_match_option_ui"
+
+    # 이미 창이 열려있다면 닫기
+    if cmds.window(window_name, exists=True):
+        cmds.deleteUI(window_name)
+
+    # UI 생성
+    cmds.window(window_name, title="Match Opts", widthHeight=(230, 110))
+    # 레이아웃 설정
+    cmds.columnLayout(adjustableColumn=True, rowSpacing=5, columnOffset=("both", 10))
+
+    cmds.separator(height=10, style="none")
+    cmds.text(label="set keyframe opts :", align="left", font="boldLabelFont")
+
+    radio_grp = cmds.radioButtonGrp(
+        labelArray2=["매 프레임", "존재하는 키 프레임"],
+        numberOfRadioButtons=2,
+        select=2,  # 기본값은 Current Frame
+        columnWidth2=[90, 90],
+        height=25,
+    )
+
+    cmds.separator(height=5, style="in")
+    # 5. 작게 조정한 버튼 (height 값을 낮게 설정)
+    cmds.rowLayout(numberOfColumns=1, adj=1, columnAlign=(1, "center"))
+    cmds.button(
+        label="Match",
+        width=100,
+        height=25,  # 버튼 높이 축소
+        backgroundColor=(0.35, 0.35, 0.35),
+        command=lambda _: cmds.evalDeferred(
+            command.format(
+                host=host,
+                setkey=True,
+                option=cmds.radioButtonGrp(radio_grp, query=True, select=True),
+            )
+        ),
+    )
+    cmds.setParent("..")
+
+    cmds.showWindow(window_name)
+
+
+def controller_menu(parent_menu, is_assembly=False, host=None, has_fkik_match=False):
     cmds.menu(parent_menu, edit=True, deleteAllItems=True)
     if CONTROLLER_APPLY_CHILDREN_OPTION not in cmds.optionVar(list=True):
         cmds.optionVar(intValue=(CONTROLLER_APPLY_CHILDREN_OPTION, 0))
     apply_children_state = cmds.optionVar(query=CONTROLLER_APPLY_CHILDREN_OPTION)
 
-    if has_host:
+    if host:
         cmds.menuItem(
             parent=parent_menu,
             label="Go to host",
@@ -509,18 +548,20 @@ def controller_menu(
         ),
         enableCommandRepeat=True,
     )
-    if has_fkik_switch:
+    if has_fkik_match:
+        component_command = cmds.getAttr(f"{host}.fkik_match_command")
         cmds.menuItem(
             parent=parent_menu,
-            label="FK / IK Switch",
-            radialPosition="E",
-            command=fkik_switch_command,
+            label="FK / IK Match",
+            radialPosition="SW",
+            image="status-change.svg",
+            command=component_command.format(host=host, setkey=False, option=2),
             enableCommandRepeat=True,
         )
         cmds.menuItem(
             parent=parent_menu,
             optionBox=True,
-            command='print("fk/ik Set Key")',
+            command=lambda _: show_fkik_match_option_ui(component_command, host),
         )
     cmds.menuItem(
         parent=parent_menu,

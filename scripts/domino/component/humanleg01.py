@@ -1,5 +1,6 @@
 # domino
 from domino import component
+from domino.component import fkik2jnt01
 from domino.core import attribute, Name, Transform, Joint, rigkit, NurbsSurface
 from domino.core.utils import build_log
 
@@ -364,6 +365,7 @@ class Rig(component.Rig):
             ),
             color=12,
             host=True,
+            fkik_match_command=fkik2jnt01.fkik_match_command_str,
         )
         cmds.setAttr(f"{host_ctl}.tx", lock=True, keyable=False)
         cmds.setAttr(f"{host_ctl}.ty", lock=True, keyable=False)
@@ -435,6 +437,8 @@ class Rig(component.Rig):
             npo_matrix_index=0,
         )
         cmds.setAttr(f"{thigh_ctl}.mirror_type", 1)
+        cmds.connectAttr(f"{thigh_ctl}.message", f"{host_ctl}.fk_match_targets[0]")
+        cmds.connectAttr(f"{thigh_ctl}.message", f"{host_ctl}.ik_match_sources[0]")
         ins = Transform(
             parent=thigh_ctl,
             name=name,
@@ -471,6 +475,30 @@ class Rig(component.Rig):
         cmds.setAttr(f"{knee_ctl}.rx", lock=True, keyable=False)
         cmds.setAttr(f"{knee_ctl}.rz", lock=True, keyable=False)
         cmds.setAttr(f"{knee_ctl}.mirror_type", 1)
+        cmds.connectAttr(f"{knee_ctl}.message", f"{host_ctl}.fk_match_targets[1]")
+        pole_vec_match = cmds.createNode(
+            "transform",
+            name=Name.create(
+                Name.controller_name_convention,
+                name=name,
+                side=side,
+                index=index,
+                description="poleVec",
+                extension="match",
+            ),
+            parent=knee_ctl,
+        )
+        mult_m = cmds.createNode("multMatrix")
+        cmds.connectAttr(f"{self.rig_root}.pole_vector_matrix", f"{mult_m}.matrixIn[0]")
+        inv_m = cmds.createNode("inverseMatrix")
+        cmds.connectAttr(f"{self.rig_root}.npo_matrix[0]", f"{inv_m}.inputMatrix")
+        cmds.connectAttr(f"{inv_m}.outputMatrix", f"{mult_m}.matrixIn[1]")
+        inv_m = cmds.createNode("inverseMatrix")
+        cmds.connectAttr(f"{self.rig_root}.npo_matrix[1]", f"{inv_m}.inputMatrix")
+        cmds.connectAttr(f"{inv_m}.outputMatrix", f"{mult_m}.matrixIn[2]")
+        cmds.connectAttr(f"{mult_m}.matrixSum", f"{pole_vec_match}.offsetParentMatrix")
+        cmds.connectAttr(f"{pole_vec_match}.message", f"{host_ctl}.ik_match_sources[1]")
+
         ins = Transform(
             parent=knee_ctl,
             name=name,
@@ -513,6 +541,40 @@ class Rig(component.Rig):
             cmds.setAttr(f"{ankle_ctl}.sx", lock=True, keyable=False)
             cmds.setAttr(f"{ankle_ctl}.sy", lock=True, keyable=False)
             cmds.setAttr(f"{ankle_ctl}.sz", lock=True, keyable=False)
+        cmds.connectAttr(f"{ankle_ctl}.message", f"{host_ctl}.fk_match_targets[2]")
+        ik_match_source2 = cmds.createNode(
+            "transform",
+            name=Name.create(
+                Name.controller_name_convention,
+                name=name,
+                side=side,
+                index=index,
+                description="ik2",
+                extension="match",
+            ),
+            parent=ankle_ctl,
+        )
+        mult_m = cmds.createNode("multMatrix")
+        inv = cmds.createNode("inverseMatrix")
+        cmds.connectAttr(f"{self.rig_root}.npo_matrix[0]", f"{inv}.inputMatrix")
+        cmds.connectAttr(f"{inv}.outputMatrix", f"{mult_m}.matrixIn[0]")
+        inv = cmds.createNode("inverseMatrix")
+        cmds.connectAttr(f"{self.rig_root}.npo_matrix[1]", f"{inv}.inputMatrix")
+        cmds.connectAttr(f"{inv}.outputMatrix", f"{mult_m}.matrixIn[1]")
+        inv = cmds.createNode("inverseMatrix")
+        cmds.connectAttr(f"{self.rig_root}.npo_matrix[2]", f"{inv}.inputMatrix")
+        cmds.connectAttr(f"{inv}.outputMatrix", f"{mult_m}.matrixIn[2]")
+        pick_m = cmds.createNode("pickMatrix")
+        cmds.connectAttr(f"{mult_m}.matrixSum", f"{pick_m}.inputMatrix")
+        cmds.setAttr(f"{pick_m}.useTranslate", 0)
+        cmds.setAttr(f"{pick_m}.useScale", 0)
+        cmds.setAttr(f"{pick_m}.useShear", 0)
+        cmds.connectAttr(
+            f"{pick_m}.outputMatrix", f"{ik_match_source2}.offsetParentMatrix"
+        )
+        cmds.connectAttr(
+            f"{ik_match_source2}.message", f"{host_ctl}.ik_match_sources[2]"
+        )
 
         ik_pos_npo, ik_pos_ctl = self["controller"][4].create(
             parent=self.rig_root,
@@ -528,6 +590,7 @@ class Rig(component.Rig):
         cmds.setAttr(f"{ik_pos_ctl}.ry", lock=True, keyable=False)
         cmds.setAttr(f"{ik_pos_ctl}.rz", lock=True, keyable=False)
         cmds.setAttr(f"{ik_pos_ctl}.mirror_type", 0)
+        cmds.connectAttr(f"{ik_pos_ctl}.message", f"{host_ctl}.ik_match_targets[0]")
 
         pole_vec_npo, pole_vec_ctl = self["controller"][5].create(
             parent=self.rig_root,
@@ -542,6 +605,7 @@ class Rig(component.Rig):
         cmds.setAttr(f"{pole_vec_ctl}.ry", lock=True, keyable=False)
         cmds.setAttr(f"{pole_vec_ctl}.rz", lock=True, keyable=False)
         cmds.setAttr(f"{pole_vec_ctl}.mirror_type", 0)
+        cmds.connectAttr(f"{pole_vec_ctl}.message", f"{host_ctl}.ik_match_targets[1]")
         cmds.connectAttr(
             f"{self.rig_root}.pole_vector_matrix", f"{pole_vec_npo}.offsetParentMatrix"
         )
@@ -616,6 +680,7 @@ class Rig(component.Rig):
             use_joint_convention=False,
         )
         ik0_jnt = ins.create()
+        cmds.connectAttr(f"{ik0_jnt}.message", f"{host_ctl}.fk_match_sources[0]")
 
         ins = Joint(
             parent=ik0_jnt,
@@ -628,6 +693,7 @@ class Rig(component.Rig):
             use_joint_convention=False,
         )
         ik1_jnt = ins.create()
+        cmds.connectAttr(f"{ik1_jnt}.message", f"{host_ctl}.fk_match_sources[1]")
 
         ins = Joint(
             parent=ik1_jnt,
@@ -642,6 +708,7 @@ class Rig(component.Rig):
         ik2_jnt = ins.create()
         cmds.pointConstraint(ik_pos_ctl, ik0_jnt, maintainOffset=False)
         cmds.hide(ik0_jnt)
+        cmds.connectAttr(f"{ik2_jnt}.message", f"{host_ctl}.fk_match_sources[2]")
 
         ik_npo, ik_ctl = self["controller"][6].create(
             parent=self.rig_root,
@@ -662,6 +729,7 @@ class Rig(component.Rig):
             cmds.setAttr(f"{ik_ctl}.sx", lock=True, keyable=False)
             cmds.setAttr(f"{ik_ctl}.sy", lock=True, keyable=False)
             cmds.setAttr(f"{ik_ctl}.sz", lock=True, keyable=False)
+        cmds.connectAttr(f"{ik_ctl}.message", f"{host_ctl}.ik_match_targets[2]")
 
         cmds.addAttr(
             ik_ctl,

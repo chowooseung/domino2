@@ -440,8 +440,8 @@ class Rig(dict):
             shape,
             color,
             npo_matrix_index=None,
-            fkik_command_attr="",
             host=False,
+            fkik_match_command="",
         ):
             parent_controllers_str = []
             for identifier, description in self["parent_controllers"]:
@@ -509,9 +509,6 @@ class Rig(dict):
             cmds.connectAttr(
                 f"{ctl}.message", f"{self.instance.rig_root}.controller[{next_index}]"
             )
-            if fkik_command_attr:
-                cmds.addAttr(ctl, longName="fkik_command_attr", dataType="message")
-                cmds.connectAttr(fkik_command_attr, f"{ctl}.fkik_command_attr")
             self.node = ctl
 
             cmds.setAttr(f"{ctl}.sx", lock=True, keyable=False)
@@ -519,6 +516,35 @@ class Rig(dict):
             cmds.setAttr(f"{ctl}.sz", lock=True, keyable=False)
             if host:
                 cmds.connectAttr(f"{ctl}.message", f"{self.instance.rig_root}.host")
+                if fkik_match_command:
+                    cmds.addAttr(ctl, longName="fkik_match_command", dataType="string")
+                    cmds.setAttr(
+                        f"{ctl}.fkik_match_command", fkik_match_command, type="string"
+                    )
+                    cmds.addAttr(
+                        ctl,
+                        longName="ik_match_sources",
+                        attributeType="message",
+                        multi=True,
+                    )
+                    cmds.addAttr(
+                        ctl,
+                        longName="ik_match_targets",
+                        attributeType="message",
+                        multi=True,
+                    )
+                    cmds.addAttr(
+                        ctl,
+                        longName="fk_match_sources",
+                        attributeType="message",
+                        multi=True,
+                    )
+                    cmds.addAttr(
+                        ctl,
+                        longName="fk_match_targets",
+                        attributeType="message",
+                        multi=True,
+                    )
             return npo, ctl
 
         def __init__(self, description, parent_controllers, rig_instance):
