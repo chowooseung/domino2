@@ -142,9 +142,9 @@ if {setkey}:
     for source_target in source_targets:
         for attr in srt_attrs:
             attributes.append(source_target + attr)
-    times = sorted(list(set(cmds.keyframe(attributes, query=True)) | set([time_range[0], time_range[1] - 1])))
+    times = sorted(list(set(cmds.keyframe(attributes, query=True) or []) | set([time_range[0], time_range[1] - 1])))
     for destination_target in destination_targets:
-        for attr in cmds.listAttr(destination_target, keyable=True):
+        for attr in cmds.listAttr(destination_target, keyable=True) or []:
             if cmds.keyframe(destination_target + "." + attr, query=True):
                 cmds.setKeyframe(destination_target + "." + attr, time=(time_range[0] - 1, time_range[1]))
             else:

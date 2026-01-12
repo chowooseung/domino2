@@ -481,7 +481,10 @@ def show_fkik_match_option_ui(command="", host=""):
     cmds.columnLayout(adjustableColumn=True, rowSpacing=5, columnOffset=("both", 10))
 
     cmds.separator(height=10, style="none")
-    cmds.text(label="set keyframe opts :", align="left", font="boldLabelFont")
+    component = "_".join(host.split("_")[:2])
+    cmds.text(
+        label=f"{component}\tSet Keyframe Opts :", align="left", font="boldLabelFont"
+    )
 
     radio_grp = cmds.radioButtonGrp(
         labelArray2=["매 프레임", "존재하는 키 프레임"],
