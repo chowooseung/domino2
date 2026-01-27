@@ -55,6 +55,7 @@ COMPONENTLIST = [
     "humanneck01",
     "humanarm01",
     "humanleg01",
+    "eye01",
     "foot01",
     "psd01",
     "chain01",
