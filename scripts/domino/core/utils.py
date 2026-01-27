@@ -117,11 +117,13 @@ def build_log(level):
 
                 result = func(*args, **kwargs)
                 execution_time = time.perf_counter() - start_time
+                minutes, seconds = divmod(execution_time, 60)
+                hours, minutes = divmod(minutes, 60)
 
                 completed_msg = ""
                 if level == logging.DEBUG:
                     completed_msg += log_format(indent=1, label="return", msg=result)
-                completed_msg += f"Completed `{func.__module__}` `{func.__name__}` Execution Time : {execution_time:.4f} second"
+                completed_msg += f"Completed `{func.__module__}` `{func.__name__}` Execution Time : {int(hours):01d}h {int(minutes):01d}m {seconds:.4f}s"
 
                 logger.log(level, call_msg + completed_msg)
                 return result

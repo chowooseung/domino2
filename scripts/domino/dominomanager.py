@@ -337,8 +337,6 @@ QTreeView::branch:open:has-children  {{
 
         self.expand_child_item_action = QtGui.QAction("Expand child Items")
         self.expand_child_item_action.triggered.connect(self.expand_items)
-        self.clear_action = QtGui.QAction("Clear")
-        self.clear_action.triggered.connect(self.clear_rig_view)
         self.settings_action = QtGui.QAction("Settings")
         self.settings_action.triggered.connect(self.open_settings)
         self.set_side_c_action = QtGui.QAction("Set Side C")
@@ -357,7 +355,6 @@ QTreeView::branch:open:has-children  {{
         self.remove_action.triggered.connect(self.remove_component)
 
         self.context_menu.addAction(self.expand_child_item_action)
-        self.context_menu.addAction(self.clear_action)
         self.context_menu.addSeparator()
         self.context_menu.addAction(self.settings_action)
         self.context_menu.addSeparator()
@@ -478,10 +475,6 @@ QTreeView::branch:open:has-children  {{
             guide_root = item.component.guide_root
             if cmds.objExists(guide_root):
                 cmds.select(guide_root)
-
-    def clear_rig_view(self):
-        self.rig_tree_model.rig = None
-        self.rig_tree_model.clear()
 
     def store_expand_state(self):
         self.expand_state.clear()

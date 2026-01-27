@@ -29,6 +29,7 @@ from domino.core.utils import (
 
 # maya
 from maya import cmds
+from maya import mel
 from maya.api import OpenMaya as om
 
 # built-ins
@@ -1545,7 +1546,8 @@ class Rig(dict):
 @build_log(logging.INFO)
 def build(context, component, attach_guide=False):
     try:
-        cmds.ogs(pause=True)
+        g_main_pane = mel.eval("global string $gMainPane; $temp = $gMainPane;")
+        cmds.paneLayout(g_main_pane, edit=True, manage=False)
         cmds.undoInfo(openChunk=True)
         start_time = time.perf_counter()
 
@@ -1554,6 +1556,7 @@ def build(context, component, attach_guide=False):
 
         # rig build
         stack = [component]
+        used_components = []
         while stack:
             c = stack.pop(0)
             c.rig()
@@ -1565,6 +1568,7 @@ def build(context, component, attach_guide=False):
                 "output": c["output"],
                 "output_joint": c["output_joint"],
             }
+            used_components.append([identifier, c["component"]["value"]])
             stack.extend(c["children"])
 
         # custom data
@@ -1785,21 +1789,24 @@ def build(context, component, attach_guide=False):
         hours, minutes = divmod(minutes, 60)
 
         # rig build info
-        info = "Maya Version\n\t" + maya_version()
+        info = "Maya Version\n\t" + maya_version() + "\n"
         info += "\nBifrost Version\n\t"
         info += bifrost_version()
         info += "\n\nUsed Plug-ins"
         plugins = used_plugins()
         for i in range(int(len(plugins) / 2)):
             info += f"\n\t{plugins[i * 2]:<20}{plugins[i * 2 + 1]}"
-        info += f"\n\nTotal Build Time : {int(hours):01d}h {int(minutes):01d}m {seconds:4f}s"
+        info += "\n\nUsed Components"
+        for identifier, component_value in used_components:
+            info += f"\n\t{identifier:<30}{component_value}"
+        info += f"\n\nTotal Build Time : {int(hours):01d}h {int(minutes):01d}m {seconds:.4f}s"
         cmds.addAttr(RIG, longName="notes", dataType="string")
         cmds.setAttr(f"{RIG}.notes", info, type="string")
         cmds.setAttr(f"{RIG}.notes", lock=True)
         cmds.select(RIG)
 
         cmds.undoInfo(closeChunk=True)
-        cmds.ogs(pause=True)
+        cmds.paneLayout(g_main_pane, edit=True, manage=True)
 
         # rig result logging
         @build_log(logging.DEBUG)

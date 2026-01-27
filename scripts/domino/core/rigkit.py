@@ -4,6 +4,7 @@ from maya import cmds
 # built-ins
 from pathlib import Path
 import json
+import time
 
 # domino
 from domino.core.utils import logger
@@ -2235,6 +2236,8 @@ def import_weight(file_path):
     if not cmds.objExists(shape_name):
         return logger.warning(f"{shape_name} 가 존재하지 않습니다.")
 
+    start_time = time.perf_counter()
+
     flags = {
         "im": True,
         "deformer": deformer_name,
@@ -2264,7 +2267,12 @@ def import_weight(file_path):
                 cmds.setAttr(f"{deformer_name}.{attr['name']}[{m_i}]", float(v_i))
         else:
             cmds.setAttr(f"{deformer_name}.{attr['name']}", float(attr["value"]))
-    logger.info(f"Imported {deformer_name} weights")
+    execution_time = time.perf_counter() - start_time
+    minutes, seconds = divmod(execution_time, 60)
+    hours, minutes = divmod(minutes, 60)
+    logger.info(
+        f"Imported {deformer_name} weights \nExecution Time : {int(hours):01d}h {int(minutes):01d}m {seconds:.4f}s"
+    )
 
 
 def import_weights_from_directory(directory):
@@ -2306,6 +2314,11 @@ def set_deformer_chain(geometry, chain):
         if chain[i] != new_chain[i]:
             cmds.reorderDeformers(new_chain[i], chain[i], geometry)
             new_chain = get_deformer_chain(geometry)
+
+    chain_str = f"{geometry}"
+    for c in reversed(chain):
+        chain_str += f"\n\t- {c}"
+    logger.info(f"Set deformer chain \n{chain_str}")
 
 
 # endregion
