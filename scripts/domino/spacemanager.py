@@ -443,6 +443,7 @@ class SpaceManager(MayaQWidgetDockableMixin, QtWidgets.QDialog):
                 attribute_name,
                 enum_name,
                 host,
+                default_value,
             ) = data[row]
             mirrored_str = mirror(sources=sources, destination=destination, host=host)
             mirrored_data = [
@@ -453,6 +454,7 @@ class SpaceManager(MayaQWidgetDockableMixin, QtWidgets.QDialog):
                 attribute_name,
                 enum_name,
                 mirrored_str[2],
+                default_value,
             ]
             if data[row] != mirrored_data:
                 data.append(mirrored_data)
