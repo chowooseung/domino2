@@ -383,6 +383,7 @@ class Rig(component.Rig):
     def populate_output(self):
         if not self["output"]:
             self.add_output(description="clavicle", extension=Name.output_extension)
+            self.add_output(description="scapular", extension=Name.output_extension)
             self.add_output(description="shoulder", extension=Name.output_extension)
             for i in range(self["twist_joint_count"]["value"]):
                 self.add_output(
@@ -394,11 +395,11 @@ class Rig(component.Rig):
                     description=f"lowerTwist{i}", extension=Name.output_extension
                 )
             self.add_output(description="wrist", extension=Name.output_extension)
-            self.add_output(description="scapular", extension=Name.output_extension)
 
     def populate_output_joint(self):
         if not self["output_joint"]:
             self.add_output_joint(parent_description=None, description="clavicle")
+            self.add_output_joint(parent_description="clavicle", description="scapular")
             self.add_output_joint(parent_description="clavicle", description="shoulder")
             parent_description = "shoulder"
             for i in range(self["twist_joint_count"]["value"]):
@@ -420,7 +421,6 @@ class Rig(component.Rig):
             self.add_output_joint(
                 parent_description=parent_description, description="wrist"
             )
-            self.add_output_joint(parent_description="clavicle", description="scapular")
 
     # region RIG
     @build_log(logging.INFO)
@@ -2220,6 +2220,20 @@ class Rig(component.Rig):
             name=name,
             side=side,
             index=index,
+            description="scapular",
+            extension=Name.output_extension,
+            m=ORIGINMATRIX,
+        )
+        scapular_output = ins.create()
+        cmds.setAttr(f"{scapular_output}.drawStyle", 2)
+        self["output"][c].connect(scapular_negate_inverse)
+
+        c += 1
+        ins = Joint(
+            parent=self.rig_root,
+            name=name,
+            side=side,
+            index=index,
             description="shoulder",
             extension=Name.output_extension,
             m=ORIGINMATRIX,
@@ -2289,20 +2303,6 @@ class Rig(component.Rig):
         wrist_output = ins.create()
         cmds.setAttr(f"{wrist_output}.drawStyle", 2)
         self["output"][c].connect(wrist_loc)
-
-        c += 1
-        ins = Joint(
-            parent=self.rig_root,
-            name=name,
-            side=side,
-            index=index,
-            description="scapular",
-            extension=Name.output_extension,
-            m=ORIGINMATRIX,
-        )
-        scapular_output = ins.create()
-        cmds.setAttr(f"{scapular_output}.drawStyle", 2)
-        self["output"][c].connect(scapular_negate_inverse)
 
         # output joint
         if self["create_output_joint"]["value"]:
