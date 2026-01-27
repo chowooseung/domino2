@@ -12,7 +12,6 @@
     "compounds": [
         {
             "name": "Domino::Components::humanarm01_guide",
-            "uriImported": "file:///humanarm01_guide.json",
             "metadata": [
                 {
                     "metaName": "NodeWidthOffset",
@@ -81,7 +80,7 @@
                                         {
                                             "metaName": "zValue",
                                             "metaType": "string",
-                                            "metaValue": "91.000000"
+                                            "metaValue": "86.000000"
                                         }
                                     ]
                                 }
@@ -140,7 +139,7 @@
                                         {
                                             "metaName": "zValue",
                                             "metaType": "string",
-                                            "metaValue": "90.000000"
+                                            "metaValue": "85.000000"
                                         }
                                     ]
                                 }
@@ -189,34 +188,9 @@
                     ]
                 },
                 {
-                    "metaName": "_recentNode_",
-                    "metaType": "string",
-                    "metaValue": "BifrostGraph,Core::Math,normalize"
-                },
-                {
-                    "metaName": "_recentNode_",
-                    "metaType": "string",
-                    "metaValue": "BifrostGraph,Core::Conversion,scalar_to_vector3"
-                },
-                {
-                    "metaName": "_recentNode_",
-                    "metaType": "string",
-                    "metaValue": "BifrostGraph,Core::Conversion,vector3_to_scalar"
-                },
-                {
-                    "metaName": "_recentNode_",
-                    "metaType": "string",
-                    "metaValue": "BifrostGraph,Core::Math,SRT_to_matrix"
-                },
-                {
-                    "metaName": "_recentNode_",
-                    "metaType": "string",
-                    "metaValue": "BifrostGraph,Core::Math,matrix_to_SRT"
-                },
-                {
                     "metaName": "ViewportRect",
                     "metaType": "string",
-                    "metaValue": "-950.022 230.77 2286.68 2171.97"
+                    "metaValue": "2457.3 2930.89 2042.14 1195.15"
                 },
                 {
                     "metaName": "DisplayMode",
@@ -226,12 +200,12 @@
                 {
                     "metaName": "LayoutPos",
                     "metaType": "string",
-                    "metaValue": "-122 -219"
+                    "metaValue": "315 10"
                 },
                 {
                     "metaName": "zValue",
                     "metaType": "string",
-                    "metaValue": "36.000000"
+                    "metaValue": "34.000000"
                 }
             ],
             "ports": [
@@ -336,33 +310,7 @@
             "compounds": [
                 {
                     "name": "fk_npo_matrix",
-                    "uriImported": "file:///humanarm01_guide.json",
                     "metadata": [
-                        {
-                            "metaName": "_recentNode_",
-                            "metaType": "string",
-                            "metaValue": "BifrostGraph,Core::Constants,float"
-                        },
-                        {
-                            "metaName": "_recentNode_",
-                            "metaType": "string",
-                            "metaValue": "BifrostGraph,Core::Conversion,scalar_to_vector3"
-                        },
-                        {
-                            "metaName": "_recentNode_",
-                            "metaType": "string",
-                            "metaValue": "BifrostGraph,Core::Conversion,scalar_to_vector4"
-                        },
-                        {
-                            "metaName": "_recentNode_",
-                            "metaType": "string",
-                            "metaValue": "BifrostGraph,Domino::Compounds,offset_matrix"
-                        },
-                        {
-                            "metaName": "_recentNode_",
-                            "metaType": "string",
-                            "metaValue": "BifrostGraph,Core::Array,build_array"
-                        },
                         {
                             "metaName": "io_nodes",
                             "metadata": [
@@ -2405,37 +2353,15 @@
                         {
                             "name": "output"
                         }
-                    ]
+                    ],
+                    "libraryDependencies": {
+                        "Amino": "2.15.0.11",
+                        "rigging": "2.15.0.11"
+                    }
                 },
                 {
                     "name": "place_guide_pole_vector",
-                    "uriImported": "file:///humanarm01_guide.json",
                     "metadata": [
-                        {
-                            "metaName": "_recentNode_",
-                            "metaType": "string",
-                            "metaValue": "BifrostGraph,Core::Constants,float"
-                        },
-                        {
-                            "metaName": "_recentNode_",
-                            "metaType": "string",
-                            "metaValue": "BifrostGraph,Core::Math,inverse_matrix"
-                        },
-                        {
-                            "metaName": "_recentNode_",
-                            "metaType": "string",
-                            "metaValue": "BifrostGraph,Core::Math,matrix_multiply"
-                        },
-                        {
-                            "metaName": "_recentNode_",
-                            "metaType": "string",
-                            "metaValue": "BifrostGraph,Core::Type_Conversion,to_float"
-                        },
-                        {
-                            "metaName": "_recentNode_",
-                            "metaType": "string",
-                            "metaValue": "BifrostGraph,Core::Array,get_from_array"
-                        },
                         {
                             "metaName": "ViewportRect",
                             "metaType": "string",
@@ -2853,22 +2779,14 @@
                         {
                             "name": "output"
                         }
-                    ]
+                    ],
+                    "libraryDependencies": {
+                        "Amino": "2.15.0.11"
+                    }
                 },
                 {
                     "name": "for_each",
-                    "uriImported": "file:///humanarm01_guide.json",
                     "metadata": [
-                        {
-                            "metaName": "icon",
-                            "metaType": "string",
-                            "metaValue": "<NATIVE>../icons/LoopForEach.svg"
-                        },
-                        {
-                            "metaName": "icon",
-                            "metaType": "string",
-                            "metaValue": "<NATIVE>../icons/LoopForEach.svg"
-                        },
                         {
                             "metaName": "icon",
                             "metaType": "string",
@@ -2961,31 +2879,6 @@
                                     ]
                                 }
                             ]
-                        },
-                        {
-                            "metaName": "_recentNode_",
-                            "metaType": "string",
-                            "metaValue": "BifrostGraph,Core::Math,add"
-                        },
-                        {
-                            "metaName": "_recentNode_",
-                            "metaType": "string",
-                            "metaValue": "BifrostGraph,Core::Math,multiply"
-                        },
-                        {
-                            "metaName": "_recentNode_",
-                            "metaType": "string",
-                            "metaValue": "BifrostGraph,Core::Math,divide"
-                        },
-                        {
-                            "metaName": "_recentNode_",
-                            "metaType": "string",
-                            "metaValue": "BifrostGraph,Core::Constants,float"
-                        },
-                        {
-                            "metaName": "_recentNode_",
-                            "metaType": "string",
-                            "metaValue": "BifrostGraph,Core::Math,subtract"
                         },
                         {
                             "metaName": "ViewportRect",
@@ -3330,51 +3223,18 @@
                     ],
                     "forEachCompound": {
                         "ports": []
+                    },
+                    "libraryDependencies": {
+                        "Amino": "2.15.0.11"
                     }
                 },
                 {
                     "name": "for_each1",
-                    "uriImported": "file:///humanarm01_guide.json",
                     "metadata": [
                         {
                             "metaName": "icon",
                             "metaType": "string",
                             "metaValue": "<NATIVE>../icons/LoopForEach.svg"
-                        },
-                        {
-                            "metaName": "icon",
-                            "metaType": "string",
-                            "metaValue": "<NATIVE>../icons/LoopForEach.svg"
-                        },
-                        {
-                            "metaName": "icon",
-                            "metaType": "string",
-                            "metaValue": "<NATIVE>../icons/LoopForEach.svg"
-                        },
-                        {
-                            "metaName": "_recentNode_",
-                            "metaType": "string",
-                            "metaValue": "BifrostGraph,Core::Math,add"
-                        },
-                        {
-                            "metaName": "_recentNode_",
-                            "metaType": "string",
-                            "metaValue": "BifrostGraph,Core::Math,multiply"
-                        },
-                        {
-                            "metaName": "_recentNode_",
-                            "metaType": "string",
-                            "metaValue": "BifrostGraph,Core::Math,divide"
-                        },
-                        {
-                            "metaName": "_recentNode_",
-                            "metaType": "string",
-                            "metaValue": "BifrostGraph,Core::Constants,float"
-                        },
-                        {
-                            "metaName": "_recentNode_",
-                            "metaType": "string",
-                            "metaValue": "BifrostGraph,Core::Math,subtract"
                         },
                         {
                             "metaName": "ViewportRect",
@@ -3807,11 +3667,13 @@
                     ],
                     "forEachCompound": {
                         "ports": []
+                    },
+                    "libraryDependencies": {
+                        "Amino": "2.15.0.11"
                     }
                 },
                 {
                     "name": "npo_matrix0",
-                    "uriImported": "file:///humanarm01_guide.json",
                     "metadata": [
                         {
                             "metaName": "io_nodes",
@@ -4184,7 +4046,10 @@
                         {
                             "name": "output"
                         }
-                    ]
+                    ],
+                    "libraryDependencies": {
+                        "Amino": "2.15.0.11"
+                    }
                 }
             ],
             "compoundNodes": [
@@ -4210,7 +4075,7 @@
                         {
                             "metaName": "zValue",
                             "metaType": "string",
-                            "metaValue": "69.000000"
+                            "metaValue": "68.000000"
                         }
                     ]
                 },
@@ -4315,7 +4180,7 @@
                         {
                             "metaName": "zValue",
                             "metaType": "string",
-                            "metaValue": "67.000000"
+                            "metaValue": "66.000000"
                         }
                     ]
                 },
@@ -4454,7 +4319,7 @@
                         {
                             "metaName": "zValue",
                             "metaType": "string",
-                            "metaValue": "68.000000"
+                            "metaValue": "67.000000"
                         }
                     ]
                 },
@@ -4475,7 +4340,7 @@
                         {
                             "metaName": "zValue",
                             "metaType": "string",
-                            "metaValue": "96.000000"
+                            "metaValue": "90.000000"
                         }
                     ]
                 },
@@ -4496,7 +4361,7 @@
                         {
                             "metaName": "zValue",
                             "metaType": "string",
-                            "metaValue": "95.000000"
+                            "metaValue": "89.000000"
                         }
                     ]
                 },
@@ -4725,7 +4590,7 @@
                         {
                             "metaName": "zValue",
                             "metaType": "string",
-                            "metaValue": "92.000000"
+                            "metaValue": "87.000000"
                         }
                     ]
                 },
@@ -4751,7 +4616,7 @@
                         {
                             "metaName": "zValue",
                             "metaType": "string",
-                            "metaValue": "94.000000"
+                            "metaValue": "88.000000"
                         }
                     ]
                 },
@@ -4772,7 +4637,7 @@
                         {
                             "metaName": "zValue",
                             "metaType": "string",
-                            "metaValue": "88.000000"
+                            "metaValue": "84.000000"
                         }
                     ]
                 },
@@ -4906,7 +4771,7 @@
                         {
                             "metaName": "zValue",
                             "metaType": "string",
-                            "metaValue": "73.000000"
+                            "metaValue": "70.000000"
                         }
                     ]
                 },
@@ -5208,7 +5073,7 @@
                         {
                             "metaName": "zValue",
                             "metaType": "string",
-                            "metaValue": "74.000000"
+                            "metaValue": "71.000000"
                         }
                     ]
                 },
@@ -5222,14 +5087,14 @@
                             "metaValue": "2"
                         },
                         {
-                            "metaName": "zValue",
-                            "metaType": "string",
-                            "metaValue": "98.000000"
-                        },
-                        {
                             "metaName": "LayoutPos",
                             "metaType": "string",
                             "metaValue": "-757.1 -154.621"
+                        },
+                        {
+                            "metaName": "zValue",
+                            "metaType": "string",
+                            "metaValue": "92.000000"
                         }
                     ]
                 },
@@ -5243,14 +5108,14 @@
                             "metaValue": "2"
                         },
                         {
-                            "metaName": "zValue",
-                            "metaType": "string",
-                            "metaValue": "97.000000"
-                        },
-                        {
                             "metaName": "LayoutPos",
                             "metaType": "string",
                             "metaValue": "-426.237 -164.977"
+                        },
+                        {
+                            "metaName": "zValue",
+                            "metaType": "string",
+                            "metaValue": "91.000000"
                         }
                     ]
                 },
@@ -5264,14 +5129,14 @@
                             "metaValue": "2"
                         },
                         {
-                            "metaName": "zValue",
-                            "metaType": "string",
-                            "metaValue": "187.000000"
-                        },
-                        {
                             "metaName": "LayoutPos",
                             "metaType": "string",
                             "metaValue": "-475.672 1095.98"
+                        },
+                        {
+                            "metaName": "zValue",
+                            "metaType": "string",
+                            "metaValue": "104.000000"
                         }
                     ]
                 },
@@ -5296,7 +5161,7 @@
                         {
                             "metaName": "zValue",
                             "metaType": "string",
-                            "metaValue": "71.000000"
+                            "metaValue": "69.000000"
                         }
                     ]
                 },
@@ -5310,14 +5175,14 @@
                             "metaValue": "2"
                         },
                         {
-                            "metaName": "zValue",
-                            "metaType": "string",
-                            "metaValue": "119.000000"
-                        },
-                        {
                             "metaName": "LayoutPos",
                             "metaType": "string",
                             "metaValue": "120.834 1571.72"
+                        },
+                        {
+                            "metaName": "zValue",
+                            "metaType": "string",
+                            "metaValue": "95.000000"
                         }
                     ]
                 },
@@ -5331,44 +5196,14 @@
                             "metaValue": "2"
                         },
                         {
-                            "metaName": "zValue",
-                            "metaType": "string",
-                            "metaValue": "118.000000"
-                        },
-                        {
                             "metaName": "LayoutPos",
                             "metaType": "string",
                             "metaValue": "116.684 1793.06"
-                        }
-                    ]
-                },
-                {
-                    "nodeName": "build_array4",
-                    "nodeType": "Core::Array::build_array",
-                    "multiInPortNames": [
-                        "value",
-                        "matrix",
-                        "transform",
-                        "matrix1",
-                        "transform1",
-                        "transform2",
-                        "value1"
-                    ],
-                    "metadata": [
-                        {
-                            "metaName": "DisplayMode",
-                            "metaType": "string",
-                            "metaValue": "2"
-                        },
-                        {
-                            "metaName": "LayoutPos",
-                            "metaType": "string",
-                            "metaValue": "3760.02 3196.62"
                         },
                         {
                             "metaName": "zValue",
                             "metaType": "string",
-                            "metaValue": "80.000000"
+                            "metaValue": "94.000000"
                         }
                     ]
                 },
@@ -5389,7 +5224,7 @@
                         {
                             "metaName": "zValue",
                             "metaType": "string",
-                            "metaValue": "76.000000"
+                            "metaValue": "73.000000"
                         }
                     ]
                 },
@@ -5414,7 +5249,7 @@
                         {
                             "metaName": "zValue",
                             "metaType": "string",
-                            "metaValue": "75.000000"
+                            "metaValue": "72.000000"
                         }
                     ]
                 },
@@ -5435,7 +5270,7 @@
                         {
                             "metaName": "zValue",
                             "metaType": "string",
-                            "metaValue": "78.000000"
+                            "metaValue": "75.000000"
                         }
                     ]
                 },
@@ -5460,7 +5295,7 @@
                         {
                             "metaName": "zValue",
                             "metaType": "string",
-                            "metaValue": "79.000000"
+                            "metaValue": "76.000000"
                         }
                     ]
                 },
@@ -5481,7 +5316,7 @@
                         {
                             "metaName": "zValue",
                             "metaType": "string",
-                            "metaValue": "77.000000"
+                            "metaValue": "74.000000"
                         }
                     ]
                 },
@@ -5502,7 +5337,7 @@
                         {
                             "metaName": "zValue",
                             "metaType": "string",
-                            "metaValue": "85.000000"
+                            "metaValue": "82.000000"
                         }
                     ]
                 },
@@ -5523,7 +5358,7 @@
                         {
                             "metaName": "zValue",
                             "metaType": "string",
-                            "metaValue": "81.000000"
+                            "metaValue": "78.000000"
                         }
                     ]
                 },
@@ -5544,7 +5379,7 @@
                         {
                             "metaName": "zValue",
                             "metaType": "string",
-                            "metaValue": "82.000000"
+                            "metaValue": "79.000000"
                         }
                     ]
                 },
@@ -5565,7 +5400,7 @@
                         {
                             "metaName": "zValue",
                             "metaType": "string",
-                            "metaValue": "83.000000"
+                            "metaValue": "80.000000"
                         }
                     ]
                 },
@@ -5586,7 +5421,7 @@
                         {
                             "metaName": "zValue",
                             "metaType": "string",
-                            "metaValue": "84.000000"
+                            "metaValue": "81.000000"
                         }
                     ]
                 },
@@ -5611,7 +5446,7 @@
                         {
                             "metaName": "zValue",
                             "metaType": "string",
-                            "metaValue": "87.000000"
+                            "metaValue": "83.000000"
                         }
                     ]
                 },
@@ -5632,7 +5467,7 @@
                         {
                             "metaName": "zValue",
                             "metaType": "string",
-                            "metaValue": "117.000000"
+                            "metaValue": "93.000000"
                         }
                     ]
                 },
@@ -5646,14 +5481,14 @@
                             "metaValue": "2"
                         },
                         {
-                            "metaName": "zValue",
-                            "metaType": "string",
-                            "metaValue": "166.000000"
-                        },
-                        {
                             "metaName": "LayoutPos",
                             "metaType": "string",
                             "metaValue": "-141.743 1098.39"
+                        },
+                        {
+                            "metaName": "zValue",
+                            "metaType": "string",
+                            "metaValue": "96.000000"
                         }
                     ]
                 },
@@ -5667,14 +5502,14 @@
                             "metaValue": "2"
                         },
                         {
-                            "metaName": "zValue",
-                            "metaType": "string",
-                            "metaValue": "180.000000"
-                        },
-                        {
                             "metaName": "LayoutPos",
                             "metaType": "string",
                             "metaValue": "1103.58 1094.82"
+                        },
+                        {
+                            "metaName": "zValue",
+                            "metaType": "string",
+                            "metaValue": "99.000000"
                         }
                     ]
                 },
@@ -5688,14 +5523,14 @@
                             "metaValue": "2"
                         },
                         {
-                            "metaName": "zValue",
-                            "metaType": "string",
-                            "metaValue": "183.000000"
-                        },
-                        {
                             "metaName": "LayoutPos",
                             "metaType": "string",
                             "metaValue": "158.35 934.899"
+                        },
+                        {
+                            "metaName": "zValue",
+                            "metaType": "string",
+                            "metaValue": "100.000000"
                         }
                     ]
                 },
@@ -5709,14 +5544,14 @@
                             "metaValue": "2"
                         },
                         {
-                            "metaName": "zValue",
-                            "metaType": "string",
-                            "metaValue": "184.000000"
-                        },
-                        {
                             "metaName": "LayoutPos",
                             "metaType": "string",
                             "metaValue": "150.444 1250.71"
+                        },
+                        {
+                            "metaName": "zValue",
+                            "metaType": "string",
+                            "metaValue": "101.000000"
                         }
                     ]
                 },
@@ -5745,14 +5580,14 @@
                             ]
                         },
                         {
-                            "metaName": "zValue",
-                            "metaType": "string",
-                            "metaValue": "175.000000"
-                        },
-                        {
                             "metaName": "LayoutPos",
                             "metaType": "string",
                             "metaValue": "477.937 1025.79"
+                        },
+                        {
+                            "metaName": "zValue",
+                            "metaType": "string",
+                            "metaValue": "97.000000"
                         }
                     ]
                 },
@@ -5766,14 +5601,14 @@
                             "metaValue": "2"
                         },
                         {
-                            "metaName": "zValue",
-                            "metaType": "string",
-                            "metaValue": "185.000000"
-                        },
-                        {
                             "metaName": "LayoutPos",
                             "metaType": "string",
                             "metaValue": "477.127 1256.61"
+                        },
+                        {
+                            "metaName": "zValue",
+                            "metaType": "string",
+                            "metaValue": "102.000000"
                         }
                     ]
                 },
@@ -5787,14 +5622,14 @@
                             "metaValue": "2"
                         },
                         {
-                            "metaName": "zValue",
-                            "metaType": "string",
-                            "metaValue": "179.000000"
-                        },
-                        {
                             "metaName": "LayoutPos",
                             "metaType": "string",
                             "metaValue": "475.806 1417.68"
+                        },
+                        {
+                            "metaName": "zValue",
+                            "metaType": "string",
+                            "metaValue": "98.000000"
                         }
                     ]
                 },
@@ -5808,14 +5643,44 @@
                             "metaValue": "2"
                         },
                         {
+                            "metaName": "LayoutPos",
+                            "metaType": "string",
+                            "metaValue": "813.283 1175.52"
+                        },
+                        {
                             "metaName": "zValue",
                             "metaType": "string",
-                            "metaValue": "186.000000"
+                            "metaValue": "103.000000"
+                        }
+                    ]
+                },
+                {
+                    "nodeName": "build_array5",
+                    "nodeType": "Core::Array::build_array",
+                    "multiInPortNames": [
+                        "value",
+                        "matrix",
+                        "transform",
+                        "matrix1",
+                        "transform1",
+                        "transform2",
+                        "value1"
+                    ],
+                    "metadata": [
+                        {
+                            "metaName": "DisplayMode",
+                            "metaType": "string",
+                            "metaValue": "2"
+                        },
+                        {
+                            "metaName": "zValue",
+                            "metaType": "string",
+                            "metaValue": "111.000000"
                         },
                         {
                             "metaName": "LayoutPos",
                             "metaType": "string",
-                            "metaValue": "813.283 1175.52"
+                            "metaValue": "3746.26 3256.34"
                         }
                     ]
                 }
@@ -6302,30 +6167,6 @@
                     "target": "for_each1.max_iterations"
                 },
                 {
-                    "source": "matrix_multiply5.matrix",
-                    "target": "build_array4.first.matrix"
-                },
-                {
-                    "source": "for_each.transform",
-                    "target": "build_array4.first.transform"
-                },
-                {
-                    "source": "matrix_multiply6.matrix",
-                    "target": "build_array4.first.matrix1"
-                },
-                {
-                    "source": "for_each1.transform",
-                    "target": "build_array4.first.transform1"
-                },
-                {
-                    "source": "get_from_array7.value",
-                    "target": "build_array4.first.value"
-                },
-                {
-                    "source": "build_array4.array",
-                    "target": "offset_matrix.parent_matrix"
-                },
-                {
                     "source": "offset_matrix.matrix",
                     "target": ".initialize_output_matrix"
                 },
@@ -6356,10 +6197,6 @@
                 {
                     "source": "get_from_array15.value",
                     "target": "matrix_multiply7.first.value"
-                },
-                {
-                    "source": "matrix_multiply7.matrix",
-                    "target": "build_array4.first.transform2"
                 },
                 {
                     "source": "get_from_array7.value",
@@ -6406,10 +6243,6 @@
                     "target": "matrix_multiply4.first.value"
                 },
                 {
-                    "source": "SRT_to_matrix7.transform",
-                    "target": "build_array4.first.value1"
-                },
-                {
                     "source": ".offset_output_rotate_x",
                     "target": "scalar_to_vector3.x"
                 },
@@ -6440,6 +6273,38 @@
                 {
                     "source": "if.output",
                     "target": "SRT_to_matrix7.scale"
+                },
+                {
+                    "source": "get_from_array7.value",
+                    "target": "build_array5.first.value"
+                },
+                {
+                    "source": "build_array5.array",
+                    "target": "offset_matrix.parent_matrix"
+                },
+                {
+                    "source": "SRT_to_matrix7.transform",
+                    "target": "build_array5.first.matrix"
+                },
+                {
+                    "source": "matrix_multiply5.matrix",
+                    "target": "build_array5.first.transform"
+                },
+                {
+                    "source": "for_each.transform",
+                    "target": "build_array5.first.matrix1"
+                },
+                {
+                    "source": "matrix_multiply6.matrix",
+                    "target": "build_array5.first.transform1"
+                },
+                {
+                    "source": "for_each1.transform",
+                    "target": "build_array5.first.transform2"
+                },
+                {
+                    "source": "matrix_multiply7.matrix",
+                    "target": "build_array5.first.value1"
                 }
             ],
             "values": [
@@ -6779,7 +6644,12 @@
                 {
                     "name": "output"
                 }
-            ]
+            ],
+            "libraryDependencies": {
+                "Amino": "2.15.0.11",
+                "Domino": "1.0.0",
+                "rigging": "2.15.0.11"
+            }
         }
     ]
 }
