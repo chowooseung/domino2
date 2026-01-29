@@ -115,6 +115,7 @@ class Rig(component.Rig):
             color=12,
             npo_matrix_index=0,
         )
+        cmds.setAttr(f"{ctl}.mirror_type", 2)
         cmds.setAttr(f"{ctl}.sx", lock=False, keyable=True)
         cmds.setAttr(f"{ctl}.sy", lock=False, keyable=True)
         cmds.setAttr(f"{ctl}.sz", lock=False, keyable=True)
@@ -147,6 +148,10 @@ class Rig(component.Rig):
             color=12,
             npo_matrix_index=1,
         )
+        cmds.setAttr(f"{aim_ctl}.mirror_type", 0)
+        cmds.setAttr(f"{aim_ctl}.rx", lock=True, keyable=False)
+        cmds.setAttr(f"{aim_ctl}.ry", lock=True, keyable=False)
+        cmds.setAttr(f"{aim_ctl}.rz", lock=True, keyable=False)
         cmds.connectAttr(f"{condition}.outColorR", f"{aim_npo}.sy")
         aim_space = cmds.createNode(
             "transform",
@@ -183,6 +188,10 @@ class Rig(component.Rig):
             color=12,
             npo_matrix_index=2,
         )
+        cmds.setAttr(f"{ball_ctl}.mirror_type", 2)
+        cmds.setAttr(f"{ball_ctl}.sx", lock=False, keyable=True)
+        cmds.setAttr(f"{ball_ctl}.sy", lock=False, keyable=True)
+        cmds.setAttr(f"{ball_ctl}.sz", lock=False, keyable=True)
         cmds.connectAttr(f"{ctl}.eye_ball_visibility", f"{ball_npo}.visibility")
         ball_loc = cmds.createNode(
             "transform",
