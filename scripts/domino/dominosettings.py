@@ -23,6 +23,7 @@ from domino.component.eye01ui import Eye01
 from domino.component.psd01ui import Psd01
 from domino.component.chain01ui import Chain01
 from domino.component.foot01ui import Foot01
+from domino.component.sc01ui import Sc01
 
 
 UITABLE = {
@@ -41,6 +42,7 @@ UITABLE = {
     "foot01": Foot01,
     "psd01": Psd01,
     "chain01": Chain01,
+    "sc01": Sc01,
 }
 
 

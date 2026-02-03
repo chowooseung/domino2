@@ -59,6 +59,7 @@ COMPONENTLIST = [
     "foot01",
     "psd01",
     "chain01",
+    "sc01",
 ]
 GUIDE = "guide"
 RIG = "rig"

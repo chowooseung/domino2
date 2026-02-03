@@ -12,6 +12,20 @@ from domino.core import FCurve
 
 
 def connect_blended_joint(source, destination, weight=0.5):
+    """
+    ex.
+    - chest
+        - arm (source)
+        - blending component (destination)
+    위 같은 component 구조로 사용.
+
+    connect_blended_joint('arm_L0_grp', 'blendedArm_L0_npo', weight=0.7)
+
+    Args:
+        source : blending 할 source transform
+        destination : blending 될 destination transform
+        weight : blending weight.
+    """
     parent = cmds.listRelatives(source, parent=True)
     if parent:
         parent = parent[0]
@@ -48,10 +62,6 @@ def connect_blended_joint(source, destination, weight=0.5):
 
 
 # region IK
-def ik_sc():
-    pass
-
-
 def ik_2jnt(
     parent,
     name,
