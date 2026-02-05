@@ -106,9 +106,9 @@ class Rig(component.Rig):
             color=12,
             npo_matrix_index=0,
         )
-        cmds.setAttr(f"{base_npo}.rx", lock=True, keyable=False)
-        cmds.setAttr(f"{base_npo}.ry", lock=True, keyable=False)
-        cmds.setAttr(f"{base_npo}.rz", lock=True, keyable=False)
+        cmds.setAttr(f"{base_ctl}.rx", lock=True, keyable=False)
+        cmds.setAttr(f"{base_ctl}.ry", lock=True, keyable=False)
+        cmds.setAttr(f"{base_ctl}.rz", lock=True, keyable=False)
         cmds.setAttr(f"{base_ctl}.mirror_type", 1)
         tip_npo, tip_ctl = self["controller"][1].create(
             parent=self.rig_root,
