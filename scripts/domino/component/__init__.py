@@ -1034,6 +1034,11 @@ class Rig(dict):
             for attr in attrs:
                 cmds.setAttr(f"{RIG}{attr}", lock=True, keyable=False)
 
+            cmds.addAttr(
+                RIG,
+                longName="rig_sets",
+                attributeType="message",
+            )
             model_sets = cmds.sets(name=MODEL_SETS, empty=True)
             skel_sets = cmds.sets(name=SKEL_SETS, empty=True)
             geo_sets = cmds.sets(name=GEOMETRY_SETS, empty=True)
@@ -1055,6 +1060,7 @@ class Rig(dict):
                 ],
                 name=RIG_SETS,
             )
+            cmds.connectAttr(f"{RIG_SETS}.message", f"{RIG}.rig_sets")
         if not cmds.objExists(SKEL):
             ins = Transform(parent=RIG, name="", side="", index="", extension=SKEL)
             ins.create()

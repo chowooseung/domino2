@@ -2000,36 +2000,79 @@ def export_blendshape(directory, bs):
     directory_path = Path(directory)
     if not directory_path.exists():
         return logger.warning(f"{directory} 가 존재하지 않습니다.")
-    mesh = cmds.deformer(bs, geometry=True, query=True)[0]
+    geo = cmds.deformer(bs, geometry=True, query=True)[0]
 
-    plug = cmds.listConnections(f"{bs}.originalGeometry[0]", plugs=True)[0]
-    shape = plug.split(".")[0]
-    new_transform = cmds.duplicate(shape)
-    shape = cmds.listRelatives(new_transform, shapes=True, noIntermediate=True)
-    if shape:
-        cmds.delete(shape)
-    orig_shape = cmds.ls(new_transform, dagObjects=True, intermediateObjects=True)[0]
-    cmds.setAttr(f"{orig_shape}.intermediateObject", 0)
+    if cmds.nodeType(geo) == "mesh":
+        plug = cmds.listConnections(f"{bs}.originalGeometry[0]", plugs=True)[0]
+        shape = plug.split(".")[0]
+        new_transform = cmds.duplicate(shape)
+        shape = cmds.listRelatives(new_transform, shapes=True, noIntermediate=True)
+        if shape:
+            cmds.delete(shape)
+        orig_shape = cmds.ls(new_transform, dagObjects=True, intermediateObjects=True)[
+            0
+        ]
+        cmds.setAttr(f"{orig_shape}.intermediateObject", 0)
 
-    new_transform = cmds.rename(new_transform, f"{bs}_orig")
-    new_shape = cmds.listRelatives(new_transform, shapes=True)[0]
-    new_shape = cmds.rename(new_shape, f"{new_transform}Shape")
+        new_transform = cmds.rename(new_transform, f"{bs}_orig")
+        new_shape = cmds.listRelatives(new_transform, shapes=True)[0]
+        new_shape = cmds.rename(new_shape, f"{new_transform}Shape")
 
-    original_obj_path = directory_path / f"{mesh}__{bs}.obj"
-    cmds.select(new_transform)
-    cmds.file(
-        original_obj_path,
-        typ="OBJexport",
-        preserveReferences=True,
-        exportSelected=True,
-        options="groups=0;ptgroups=0;materials=0;smoothing=0;normals=0",
-    )
-    logger.info(f"Exported original mesh to `{original_obj_path}`")
-    cmds.delete(new_transform)
+        original_obj_path = directory_path / f"{geo}__{bs}.obj"
+        cmds.select(new_transform)
+        cmds.file(
+            original_obj_path,
+            typ="OBJexport",
+            preserveReferences=True,
+            exportSelected=True,
+            options="groups=0;ptgroups=0;materials=0;smoothing=0;normals=0",
+        )
+        logger.info(f"Exported original mesh to `{original_obj_path}`")
+        cmds.delete(new_transform)
 
-    shp_path = directory_path / f"{bs}.shp"
-    cmds.blendShape(bs, edit=True, export=shp_path)
-    logger.info(f"Exported blendShape(.shp) to `{shp_path}`")
+        shp_path = directory_path / f"{bs}.shp"
+        cmds.blendShape(bs, edit=True, export=shp_path)
+        logger.info(f"Exported blendShape(.shp) to `{shp_path}`")
+    elif cmds.nodeType(geo) == "nurbsSurface":
+        data = {"name": geo, "targets": []}
+        cvs = cmds.ls(f"{geo}.cv[*][*]", flatten=True)
+        targets = cmds.aliasAttr(bs, query=True)[::2]
+
+        envelope = cmds.getAttr(f"{bs}.envelope")
+        cmds.setAttr(f"{bs}.envelope", 1)
+        connected_plugs = []
+        for target in targets:
+            plugs = cmds.listConnections(
+                f"{bs}.{target}", source=True, destination=False, plugs=True
+            )
+            if plugs:
+                cmds.disconnectAttr(plugs[0], f"{bs}.{target}")
+                connected_plugs.append(plugs[0])
+            else:
+                connected_plugs.append(cmds.getAttr(f"{bs}.{target}"))
+            cmds.setAttr(f"{bs}.{target}", 0)
+
+        for target in targets:
+            cmds.setAttr(f"{bs}.{target}", 1)
+            positions = []
+            for cv in cvs:
+                p = cmds.xform(cv, query=True, translation=True, worldSpace=True)
+                positions.append(p)
+            data["targets"].append((target, positions))
+            cmds.setAttr(f"{bs}.{target}", 0)
+
+        for target, plug in zip(targets, connected_plugs):
+            if type(plug) == str:
+                cmds.connectAttr(plug, f"{bs}.{target}")
+            else:
+                cmds.setAttr(f"{bs}.{target}", plug)
+
+        cmds.setAttr(f"{bs}.envelope", envelope)
+
+        json_path = directory_path / f"{geo}__{bs}.json"
+        with open(json_path, "w") as f:
+            json.dump(data, f, indent=2)
+        logger.info(f"Exported blendShape(.json) to `{json_path}`")
 
 
 def import_blendshape(directory):
@@ -2040,14 +2083,44 @@ def import_blendshape(directory):
     obj_files = directory_path.glob("*__*.obj")
     for obj in obj_files:
         name, _ = obj.name.split(".")
-        mesh, bs = name.split("__")
+        geo, bs = name.split("__")
         for p in directory_path.glob(f"{bs}.shp"):
-            if not cmds.objExists(mesh):
-                logger.warning(f"{mesh} 가 존재하지 않습니다.")
+            if not cmds.objExists(geo):
+                logger.warning(f"{geo} 가 존재하지 않습니다.")
                 continue
             if not cmds.objExists(bs):
-                cmds.blendShape(mesh, name=bs)
+                cmds.blendShape(geo, name=bs)
             cmds.blendShape(bs, edit=True, ip=p)
+            logger.info(f"Imported blendShape(.shp) to `{bs}`")
+
+    json_files = directory_path.glob("*__*.json")
+    for j in json_files:
+        name, _ = j.name.split(".")
+        geo, bs = name.split("__")
+        if not cmds.objExists(geo):
+            logger.warning(f"{geo} 가 존재하지 않습니다.")
+            continue
+        if not cmds.objExists(bs):
+            cmds.blendShape(geo, name=bs)
+        with open(j, "r") as f:
+            data = json.load(f)
+        cvs = [x.split(".")[-1] for x in cmds.ls(f"{geo}.cv[*][*]", flatten=True)]
+        temp = cmds.aliasAttr(bs, query=True) or []
+        weights = temp[::2]
+        next_index = len(weights)
+        for target, positions in data["targets"]:
+            temp_geo = cmds.duplicate(geo, name=target)[0]
+            for cv, p in zip(cvs, positions):
+                cmds.xform(f"{temp_geo}.{cv}", translation=p, worldSpace=True)
+            cmds.blendShape(
+                bs,
+                edit=True,
+                target=(geo, next_index, temp_geo, 1),
+                weight=(next_index, 0),
+            )
+            cmds.delete(temp_geo)
+            next_index += 1
+        logger.info(f"Imported blendShape(.json) to `{bs}`")
 
 
 # endregion
