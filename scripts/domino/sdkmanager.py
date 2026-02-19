@@ -131,6 +131,11 @@ def remove_sdk_control(controls):
     set_data(data)
     if selected:
         cmds.select([s for s in selected if cmds.objExists(s)])
+    if not cmds.objExists(SDK_SETS):
+        cmds.sets(name=SDK_SETS, empty=True)
+        plugs = cmds.listConnections("rig.rig_sets", source=True, destination=False)
+        if plugs:
+            cmds.sets(SDK_SETS, edit=True, addElement=plugs[0])
 
 
 def add_sdk_driver(drivers=None):
@@ -209,9 +214,10 @@ def remove_sdk_driver(drivers):
             if not driven:
                 logger.warning(f"{anim_curve} 연결이 끊긴 fcurve 노드가 있습니다.")
                 continue
+
+            driven = cmds.listAttr(driven, nodeName=True)[0]
             node, attr = driven.split(".")
-            short_name = cmds.attributeQuery(attr, node=node, shortName=True)
-            if f"{node}.{short_name}" in data["sdk"][driver]["driven"]:
+            if f"{node}.{attr}" in data["sdk"][driver]["driven"]:
                 remove_list.append(anim_curve)
     if remove_list:
         cmds.delete(remove_list)
@@ -277,9 +283,9 @@ def mirror_sdk_driver(drivers):
 
             # driven 이 sdk 에 등록되어 있지 않으면 제외
             mirror_driven = driven.replace(side, mirror_side)
+            mirror_driven = cmds.listAttr(mirror_driven, nodeName=True)[0]
             node, attr = mirror_driven.split(".")
-            short_name = cmds.attributeQuery(attr, node=node, shortName=True)
-            if f"{node}.{short_name}" not in data["sdk"][mirror_driver]["driven"]:
+            if f"{node}.{attr}" not in data["sdk"][mirror_driver]["driven"]:
                 continue
 
             # driven mirror
@@ -288,8 +294,8 @@ def mirror_sdk_driver(drivers):
                 driven_mirror_type = cmds.getAttr(f"{node}.mirror_type")
 
             value_multiple = 1
-            if short_name in trs_attrs and driven_mirror_type is not None:
-                index = trs_attrs.index(short_name)
+            if driver_attr in trs_attrs and driven_mirror_type is not None:
+                index = trs_attrs.index(driver_attr)
                 if driven_mirror_type == 0:  # orientation
                     multiple_list = orientation_multiple
                 elif driven_mirror_type == 1:  # behavior
@@ -300,16 +306,14 @@ def mirror_sdk_driver(drivers):
 
             # driver mirror
             driver_mirror_type = None
+            driver = cmds.listAttr(driver, nodeName=True)[0]
             driver_node, driver_attr = driver.split(".")
-            short_name = cmds.attributeQuery(
-                driver_attr, node=driver_node, shortName=True
-            )
             if cmds.objExists(f"{driver_node}.mirror_type"):
                 driver_mirror_type = cmds.getAttr(f"{driver_node}.mirror_type")
 
             float_multiple = 1
-            if short_name in trs_attrs and driver_mirror_type is not None:
-                index = trs_attrs.index(short_name)
+            if driver_attr in trs_attrs and driver_mirror_type is not None:
+                index = trs_attrs.index(driver_attr)
                 if driver_mirror_type == 0:  # orientation
                     multiple_list = orientation_multiple
                 elif driver_mirror_type == 1:  # behavior
@@ -344,7 +348,12 @@ def add_sdk_driven(driver, drivens=None):
             or []
         )
         for main_object in main_objects:
-            drivens.extend([f"{main_object}.{attr}" for attr in attributes])
+            drivens.extend(
+                [
+                    cmds.listAttr(f"{main_object}.{attr}", nodeName=True)[0]
+                    for attr in attributes
+                ]
+            )
         shape_objects = (
             cmds.channelBox("mainChannelBox", query=True, shapeObjectList=True) or []
         )
@@ -353,7 +362,12 @@ def add_sdk_driven(driver, drivens=None):
             or []
         )
         for shape_object in shape_objects:
-            drivens.extend([f"{shape_object}.{attr}" for attr in attributes])
+            drivens.extend(
+                [
+                    cmds.listAttr(f"{shape_object}.{attr}", nodeName=True)[0]
+                    for attr in attributes
+                ]
+            )
         history_objects = (
             cmds.channelBox("mainChannelBox", query=True, historyObjectList=True) or []
         )
@@ -364,7 +378,12 @@ def add_sdk_driven(driver, drivens=None):
             or []
         )
         for history_object in history_objects:
-            drivens.extend([f"{history_object}.{attr}" for attr in attributes])
+            drivens.extend(
+                [
+                    cmds.listAttr(f"{history_object}.{attr}", nodeName=True)[0]
+                    for attr in attributes
+                ]
+            )
         drivens = [d for d in drivens if cmds.objExists(d)]
 
     if not drivens:
@@ -402,9 +421,9 @@ def remove_sdk_driven(driver, drivens):
         if not driven:
             logger.warning(f"{anim_curve} 연결이 끊긴 fcurve 노드가 있습니다.")
             continue
+        driven = cmds.listAttr(driven, nodeName=True)[0]
         node, attr = driven.split(".")
-        short_name = cmds.attributeQuery(attr, node=node, shortName=True)
-        if f"{node}.{short_name}" in drivens:
+        if f"{node}.{attr}" in drivens:
             remove_list.append(anim_curve)
     if remove_list:
         cmds.delete(remove_list)
@@ -495,9 +514,9 @@ def export_sdk(file_path):
                 continue
 
             # driven 이 sdk 에 등록되어 있지 않으면 제외
+            driven = cmds.listAttr(driven, nodeName=True)[0]
             node, attr = driven.split(".")
-            short_name = cmds.attributeQuery(attr, node=node, shortName=True)
-            if f"{node}.{short_name}" not in data["sdk"][driver]["driven"]:
+            if f"{node}.{attr}" not in data["sdk"][driver]["driven"]:
                 continue
 
             data["sdk"][driver]["fcurve"].append(anim.serialize_fcurve(anim_curve))

@@ -55,8 +55,9 @@ if main_objects and attributes:
         for attr in attributes:
             try:
                 value = cmds.getAttr(obj + "." + attr)
+                long_attr = cmds.attributeQuery(attr, node=obj, longName=True)
                 result_str += "\\n" + set_attr_format.format(
-                    node=obj, attr=attr, value=value
+                    node=obj, attr=long_attr, value=value
                 )
             except Exception as e:
                 pass
@@ -67,8 +68,9 @@ if shape_objects and attributes:
         for attr in attributes:
             try:
                 value = cmds.getAttr(obj + "." + attr)
+                long_attr = cmds.attributeQuery(attr, node=obj, longName=True)
                 result_str += "\\n" + set_attr_format.format(
-                    node=obj, attr=attr, value=value
+                    node=obj, attr=long_attr, value=value
                 )
             except Exception as e:
                 pass    
@@ -81,8 +83,9 @@ if history_objects and attributes:
         for attr in attributes:
             try:
                 value = cmds.getAttr(obj + "." + attr)
+                long_attr = cmds.attributeQuery(attr, node=obj, longName=True)
                 result_str += "\\n" + set_attr_format.format(
-                    node=obj, attr=attr, value=value
+                    node=obj, attr=long_attr, value=value
                 )
             except Exception as e:
                 pass

@@ -410,6 +410,10 @@ QTreeView::branch:open:has-children  {{
         ][0]
         if template_dir:
             for template in Path(template_dir).iterdir():
+                if not template.is_file():
+                    continue
+                if template.suffix != ".domino":
+                    continue
                 action = QtGui.QAction(template.name.split(".")[0])
                 action.triggered.connect(
                     partial(self.load_template, template.as_posix(), True)
