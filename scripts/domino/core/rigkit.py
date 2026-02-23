@@ -1855,26 +1855,41 @@ def transfer_blendshape(source, destination, bs, smooth=0, delta_mush=False):
         return
 
     # interface mesh
-    interface_mesh = cmds.duplicate(destination, name="interface_mesh")[0]
-    intermediate = cmds.ls(interface_mesh, dagObjects=True, intermediateObjects=True)
+    interface_geo = cmds.duplicate(destination, name="interface_geo")[0]
+    shape = cmds.listRelatives(interface_geo, shapes=True)[0]
+    if cmds.nodeType(shape) == "nurbsSurface":
+        cmds.rebuildSurface(
+            shape,
+            constructionHistory=0,
+            replaceOriginal=1,
+            rebuildType=0,
+            endKnots=1,
+            keepRange=0,
+            keepControlPoints=1,
+            keepCorners=0,
+            spansU=4,
+            degreeU=1,
+            degreeV=1,
+            tolerance=0.01,
+            fitRebuild=0,
+            direction=2,
+        )
+    intermediate = cmds.ls(interface_geo, dagObjects=True, intermediateObjects=True)
     if intermediate:
         cmds.delete(intermediate)
 
     # wrap
-    p_wrap = cmds.proximityWrap(interface_mesh)[0]
+    p_wrap = cmds.proximityWrap(interface_geo)[0]
     cmds.proximityWrap(p_wrap, edit=True, addDrivers=source)
     cmds.setAttr(f"{p_wrap}.wrapMode", 0)
     cmds.setAttr(f"{p_wrap}.smoothInfluences", smooth)
     if delta_mush:
-        delta_mush = cmds.deformer(interface_mesh, tool="deltaMush")[0]
+        delta_mush = cmds.deformer(interface_geo, tool="deltaMush")[0]
         cmds.setAttr(f"{delta_mush}.displacement", 1)
         cmds.setAttr(f"{delta_mush}.pinBorderVertices", 0)
 
-    # rename
-    final_bs = cmds.blendShape(destination)[0]
-    cmds.rename(bs, "TEMPBLENDSHAPE")
-    final_bs = cmds.rename(final_bs, bs)
-    bs = cmds.rename("TEMPBLENDSHAPE", f"{bs}_transferred")
+    # transferred bs
+    final_bs = cmds.blendShape(destination, name=f"{bs}_transferred")[0]
 
     # inbetween attributes
     attrs = [
@@ -1915,18 +1930,18 @@ def transfer_blendshape(source, destination, bs, smooth=0, delta_mush=False):
     for attr in weight_attrs:
         cmds.setAttr(f"{bs}.{attr}", 0)
 
-    cmds.select(interface_mesh)
+    cmds.select(interface_geo)
     for i, attr in enumerate(weight_attrs):
         cmds.setAttr(f"{bs}.{attr}", 1)
         cmds.blendShape(
             final_bs,
             edit=True,
-            target=(destination, i, interface_mesh, 1),
+            target=(destination, i, interface_geo, 1),
             weight=(i, 0),
         )
         cmds.aliasAttr(attr, f"{final_bs}.w[{i}]")
         connections = cmds.listConnections(
-            f"{interface_mesh}Shape.worldMesh[0]", connections=True, plugs=True
+            f"{interface_geo}Shape.worldMesh[0]", connections=True, plugs=True
         )
         cmds.disconnectAttr(connections[0], connections[1])
         for inbetween_attr in inbetween_attrs[i]:
@@ -1937,10 +1952,10 @@ def transfer_blendshape(source, destination, bs, smooth=0, delta_mush=False):
                 edit=True,
                 inBetween=True,
                 inBetweenType="absolute",
-                target=(destination, i, interface_mesh, value),
+                target=(destination, i, interface_geo, value),
             )
             connections = cmds.listConnections(
-                f"{interface_mesh}Shape.worldMesh[0]", connections=True, plugs=True
+                f"{interface_geo}Shape.worldMesh[0]", connections=True, plugs=True
             )
             cmds.disconnectAttr(connections[0], connections[1])
         cmds.setAttr(f"{bs}.{attr}", 0)
@@ -1993,7 +2008,8 @@ def transfer_blendshape(source, destination, bs, smooth=0, delta_mush=False):
 
     # remove
     cmds.proximityWrap(p_wrap, edit=True, removeDrivers=source)
-    cmds.delete(interface_mesh)
+    cmds.delete(interface_geo, p_wrap)
+    return final_bs
 
 
 def export_blendshape(directory, bs):
