@@ -3,7 +3,7 @@ from domino.core.utils import logger
 from domino.dominoui import DynamicWidget, UIGenerator
 
 # Qt
-from PySide6 import QtCore, QtGui, QtWidgets
+from domino.vendor.Qt import QtCore, QtGui, QtWidgets
 
 # maya
 from maya import cmds

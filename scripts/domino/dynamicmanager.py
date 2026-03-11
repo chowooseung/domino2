@@ -1,13 +1,12 @@
 # maya
-from maya import cmds
-from maya import mel
+from maya import cmds, mel
 from maya.app.general.mayaMixin import MayaQWidgetDockableMixin
 
 # built-ins
 import json
 
 # gui
-from PySide6 import QtWidgets, QtCore, QtGui
+from domino.vendor.Qt import QtWidgets, QtCore, QtGui
 
 # domino
 from domino.core.utils import logger

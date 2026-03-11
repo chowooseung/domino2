@@ -1,9 +1,8 @@
 # Qt
-from PySide6 import QtWidgets, QtCore, QtGui
+from domino.vendor.Qt import QtWidgets, QtCore, QtGui
 
 # maya
-from maya import cmds
-from maya import mel
+from maya import cmds, mel
 from maya.api import OpenMaya as om
 from maya.app.general.mayaMixin import MayaQWidgetDockableMixin
 

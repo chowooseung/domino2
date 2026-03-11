@@ -3,7 +3,7 @@ from maya import cmds
 from maya.app.general.mayaMixin import MayaQWidgetDockableMixin
 
 # Qt
-from PySide6 import QtWidgets, QtCore, QtGui
+from domino.vendor.Qt import QtWidgets, QtCore, QtGui
 
 # built-ins
 from functools import partial

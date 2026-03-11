@@ -10,7 +10,7 @@ from domino.component import ORIGINMATRIX, SKEL, Name
 from domino.core.utils import logger
 
 # gui
-from PySide6 import QtWidgets
+from domino.vendor.Qt import QtWidgets
 
 # maya
 from maya import cmds

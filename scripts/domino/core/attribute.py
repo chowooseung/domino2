@@ -55,7 +55,7 @@ class Integer(dict):
                 kwargs["minValue"] if "minValue" in kwargs else self.default_min_value
             ),
             "maxValue": (
-                kwargs["minValue"] if "minValue" in kwargs else self.default_min_value
+                kwargs["maxValue"] if "maxValue" in kwargs else self.default_max_value
             ),
             "keyable": (
                 kwargs["keyable"] if "keyable" in kwargs else self.default_keyable
@@ -113,7 +113,7 @@ class Integer(dict):
             cmds.addAttr(
                 self.attribute,
                 edit=True,
-                minValue=data["maxValue"],
+                maxValue=data["maxValue"],
             )
         if data["multi"]:
             for i, v in enumerate(data["value"]):

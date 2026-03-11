@@ -7,7 +7,7 @@ import json
 from pathlib import Path
 
 # Qt
-from PySide6 import QtWidgets, QtCore, QtGui
+from domino.vendor.Qt import QtWidgets, QtCore, QtGui
 
 # domino
 from domino.core import anim, left, right, nurbscurve, Name

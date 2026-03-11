@@ -1,6 +1,6 @@
 # gui
-from shiboken6 import wrapInstance
-from PySide6 import QtCore, QtWidgets
+from domino.vendor.Qt import _wrapinstance as wrapInstance
+from domino.vendor.Qt import QtCore, QtWidgets
 
 # domino
 from domino.component import SKEL

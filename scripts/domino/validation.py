@@ -6,7 +6,7 @@ from functools import partial
 from pathlib import Path
 
 # gui
-from PySide6 import QtWidgets, QtCore, QtGui
+from domino.vendor.Qt import QtWidgets, QtCore, QtGui
 
 icon_dir = Path(__file__).parent.parent.parent / "icons"
 
