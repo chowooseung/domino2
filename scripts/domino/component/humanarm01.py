@@ -12,7 +12,7 @@ from maya import cmds
 import logging
 
 # gui
-from PySide6 import QtWidgets
+from domino.vendor.Qt import QtWidgets
 
 
 # region Initialize Settings

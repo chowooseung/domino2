@@ -1,6 +1,6 @@
 # domino
 from domino import component
-from domino.core import Transform, attribute, Name, Joint
+from domino.core import attribute, Name, Joint
 from domino.core.utils import build_log
 
 # maya
