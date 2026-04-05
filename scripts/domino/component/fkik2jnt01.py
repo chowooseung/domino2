@@ -10,7 +10,6 @@ from maya import cmds
 # built-ins
 import logging
 
-
 # region Initialize Settings
 ORIGINMATRIX = om.MMatrix()
 matrices = []
@@ -924,7 +923,7 @@ class Rig(component.Rig):
         cmds.vnnNode(
             graph,
             "/output",
-            createInputPort=("pole_vector_matrix", "Math::float4x4"),
+            createInputPort=("pole_vector_matrix", "Math::double4x4"),
         )
         cmds.vnnConnect(
             graph,

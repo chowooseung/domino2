@@ -91,14 +91,14 @@
                                             ]
                                         },
                                         {
-                                            "metaName": "zValue",
-                                            "metaType": "string",
-                                            "metaValue": "38.000000"
-                                        },
-                                        {
                                             "metaName": "LayoutPos",
                                             "metaType": "string",
                                             "metaValue": "1782.59 64.9659"
+                                        },
+                                        {
+                                            "metaName": "zValue",
+                                            "metaType": "string",
+                                            "metaValue": "35.000000"
                                         }
                                     ]
                                 }
@@ -155,9 +155,7 @@
                             "metaValue": "#28c85252"
                         },
                         {
-                            "metaName": "title",
-                            "metaType": "string",
-                            "metaValue": ""
+                            "metaName": "title"
                         }
                     ]
                 },
@@ -175,11 +173,6 @@
                             "metaValue": "#ffe2cc5c"
                         },
                         {
-                            "metaName": "zValue",
-                            "metaType": "string",
-                            "metaValue": "40.000000"
-                        },
-                        {
                             "metaName": "coords",
                             "metaType": "string",
                             "metaValue": "983.306 -333.805 384 59"
@@ -188,13 +181,18 @@
                             "metaName": "text",
                             "metaType": "string",
                             "metaValue": "solve chain matrix "
+                        },
+                        {
+                            "metaName": "zValue",
+                            "metaType": "string",
+                            "metaValue": "38.000000"
                         }
                     ]
                 },
                 {
                     "metaName": "ViewportRect",
                     "metaType": "string",
-                    "metaValue": "40.1769 -597.875 2271.51 1456.68"
+                    "metaValue": "-58.5363 -695.349 2130.7 1735.88"
                 },
                 {
                     "metaName": "DisplayMode",
@@ -204,12 +202,12 @@
                 {
                     "metaName": "LayoutPos",
                     "metaType": "string",
-                    "metaValue": "-80 -61"
+                    "metaValue": "-79 -61"
                 },
                 {
                     "metaName": "zValue",
                     "metaType": "string",
-                    "metaValue": "36.000000"
+                    "metaValue": "34.000000"
                 }
             ],
             "ports": [
@@ -228,13 +226,13 @@
                 {
                     "portName": "guide_matrix",
                     "portDirection": "input",
-                    "portType": "array<Math::float4x4>",
+                    "portType": "array<Math::double4x4>",
                     "portDefault": []
                 },
                 {
                     "portName": "npo_matrix",
                     "portDirection": "output",
-                    "portType": "array<Math::float4x4>"
+                    "portType": "array<Math::double4x4>"
                 },
                 {
                     "portName": "initialize_output_matrix",
@@ -268,16 +266,6 @@
                     "name": "for_each",
                     "uriImported": "file:///fk01_guide.json",
                     "metadata": [
-                        {
-                            "metaName": "icon",
-                            "metaType": "string",
-                            "metaValue": "<NATIVE>../icons/LoopForEach.svg"
-                        },
-                        {
-                            "metaName": "icon",
-                            "metaType": "string",
-                            "metaValue": "<NATIVE>../icons/LoopForEach.svg"
-                        },
                         {
                             "metaName": "icon",
                             "metaType": "string",
@@ -842,16 +830,6 @@
                             "metaValue": "<NATIVE>../icons/LoopForEach.svg"
                         },
                         {
-                            "metaName": "icon",
-                            "metaType": "string",
-                            "metaValue": "<NATIVE>../icons/LoopForEach.svg"
-                        },
-                        {
-                            "metaName": "icon",
-                            "metaType": "string",
-                            "metaValue": "<NATIVE>../icons/LoopForEach.svg"
-                        },
-                        {
                             "metaName": "io_nodes",
                             "metadata": [
                                 {
@@ -970,9 +948,7 @@
                                     "metaValue": "-342.363 -376.834 1212.83 879.464"
                                 },
                                 {
-                                    "metaName": "title",
-                                    "metaType": "string",
-                                    "metaValue": ""
+                                    "metaName": "title"
                                 }
                             ]
                         },
@@ -1094,11 +1070,6 @@
                             "name": "for_each",
                             "uriImported": "file:///fk01_guide.json",
                             "metadata": [
-                                {
-                                    "metaName": "icon",
-                                    "metaType": "string",
-                                    "metaValue": "<NATIVE>../icons/LoopForEach.svg"
-                                },
                                 {
                                     "metaName": "icon",
                                     "metaType": "string",
@@ -1951,14 +1922,14 @@
                             "metaValue": "2"
                         },
                         {
-                            "metaName": "zValue",
-                            "metaType": "string",
-                            "metaValue": "39.000000"
-                        },
-                        {
                             "metaName": "LayoutPos",
                             "metaType": "string",
                             "metaValue": "1206.4 200.353"
+                        },
+                        {
+                            "metaName": "zValue",
+                            "metaType": "string",
+                            "metaValue": "36.000000"
                         }
                     ]
                 },
@@ -1979,7 +1950,7 @@
                         {
                             "metaName": "zValue",
                             "metaType": "string",
-                            "metaValue": "42.000000"
+                            "metaValue": "38.000000"
                         }
                     ]
                 },
@@ -1993,30 +1964,22 @@
                             "metaValue": "2"
                         },
                         {
-                            "metaName": "zValue",
-                            "metaType": "string",
-                            "metaValue": "35.000000"
-                        },
-                        {
                             "metaName": "LayoutPos",
                             "metaType": "string",
                             "metaValue": "1383.99 -201.482"
+                        },
+                        {
+                            "metaName": "zValue",
+                            "metaType": "string",
+                            "metaValue": "34.000000"
                         }
                     ]
                 }
             ],
             "connections": [
                 {
-                    "source": ".guide_matrix",
-                    "target": "array_size.array"
-                },
-                {
                     "source": "array_size.size",
                     "target": "for_each.max_iterations"
-                },
-                {
-                    "source": ".guide_matrix",
-                    "target": "for_each.guide_matrix"
                 },
                 {
                     "source": ".offset_output_rotate_x",
@@ -2057,6 +2020,14 @@
                 {
                     "source": "for_each1.matrix",
                     "target": "flatten_nested_array.nested_array"
+                },
+                {
+                    "source": ".guide_matrix",
+                    "target": "array_size.array"
+                },
+                {
+                    "source": ".guide_matrix",
+                    "target": "for_each.guide_matrix"
                 },
                 {
                     "source": "flatten_nested_array.flattened_array",

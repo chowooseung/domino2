@@ -9,7 +9,7 @@ from domino.core import center, left, right
 
 # maya
 from maya import cmds
-from maya import OpenMayaUI as omui  # type: ignore
+from maya import OpenMayaUI as omui
 
 # built-ins
 from functools import partial

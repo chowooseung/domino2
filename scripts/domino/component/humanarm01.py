@@ -14,7 +14,6 @@ import logging
 # gui
 from domino.vendor.Qt import QtWidgets
 
-
 # region Initialize Settings
 ORIGINMATRIX = om.MMatrix()
 matrices = []
@@ -657,7 +656,6 @@ class Rig(component.Rig):
             f"{clavicle_sc_space}.offsetParentMatrix",
         )
         cmds.setAttr(f"{clavicle_sc_space}.t", 0, 0, 0)
-        cmds.setAttr(f"{clavicle_sc_space}.s", 1, 1, 1)
         cmds.connectAttr(f"{clavicle_sc0_joint}.r", f"{clavicle_sc_space}.r")
         clavicle_bone_npo, clavicle_bone_ctl = self["controller"][2].create(
             parent=clavicle_sc_space,
@@ -1273,15 +1271,15 @@ class Rig(component.Rig):
             description="alignWristInverse",
             extension=Name.loc_extension,
         )
-        align_wrist_Inverse_loc = ins.create()
-        cmds.setAttr(f"{align_wrist_Inverse_loc}.t", 0, 0, 0)
+        align_wrist_inverse_loc = ins.create()
+        cmds.setAttr(f"{align_wrist_inverse_loc}.t", 0, 0, 0)
         com_m = cmds.createNode("composeMatrix")
         cmds.connectAttr(plug, f"{com_m}.inputRotate")
         inverse_m = cmds.createNode("inverseMatrix")
         cmds.connectAttr(f"{com_m}.outputMatrix", f"{inverse_m}.inputMatrix")
         decom_m = cmds.createNode("decomposeMatrix")
         cmds.connectAttr(f"{inverse_m}.outputMatrix", f"{decom_m}.inputMatrix")
-        cmds.connectAttr(f"{decom_m}.outputRotate", f"{align_wrist_Inverse_loc}.r")
+        cmds.connectAttr(f"{decom_m}.outputRotate", f"{align_wrist_inverse_loc}.r")
 
         pair_b = cmds.createNode("pairBlend")
         cmds.setAttr(f"{pair_b}.rotInterpolation", 1)
@@ -1684,7 +1682,7 @@ class Rig(component.Rig):
         cmds.orientConstraint(pin_ctl, lower_non_twist_ikh, maintainOffset=False)
         cmds.pointConstraint(blend2_jnt, lower_twist_ikh, maintainOffset=False)
         cmds.orientConstraint(
-            align_wrist_Inverse_loc, lower_twist_ikh, maintainOffset=False
+            align_wrist_inverse_loc, lower_twist_ikh, maintainOffset=False
         )
         cmds.connectAttr(f"{host_ctl}.sub_ctls_visibility", f"{upper_bend_npo}.v")
         cmds.connectAttr(f"{host_ctl}.sub_ctls_visibility", f"{pin_npo}.v")
@@ -1980,7 +1978,7 @@ class Rig(component.Rig):
         scapular_negate_inverse = ins.create()
         cmds.setAttr(f"{scapular_negate_inverse}.t", 0, 0, 0)
         cmds.setAttr(f"{scapular_negate_inverse}.r", 0, 0, 0)
-        cmds.setAttr(f"{scapular_negate_inverse}.s", 1, 1, 1)
+        cmds.setAttr(f"{scapular_negate_inverse}.s", lock=False)
         cmds.connectAttr(
             f"{negate_condition}.outColorR", f"{scapular_negate_inverse}.sz"
         )
@@ -2518,7 +2516,7 @@ class Rig(component.Rig):
         cmds.vnnNode(
             graph,
             "/output",
-            createInputPort=("pole_vector_matrix", "Math::float4x4"),
+            createInputPort=("pole_vector_matrix", "Math::double4x4"),
         )
         cmds.vnnNode(
             graph,
@@ -2528,17 +2526,17 @@ class Rig(component.Rig):
         cmds.vnnNode(
             graph,
             "/output",
-            createInputPort=("clavicle_bone_distance", "float"),
+            createInputPort=("clavicle_bone_distance", "double"),
         )
         cmds.vnnNode(
             graph,
             "/output",
-            createInputPort=("scapular_aim_matrix", "Math::float4x4"),
+            createInputPort=("scapular_aim_matrix", "Math::double4x4"),
         )
         cmds.vnnNode(
             graph,
             "/output",
-            createInputPort=("scapular_up_matrix", "Math::float4x4"),
+            createInputPort=("scapular_up_matrix", "Math::double4x4"),
         )
         cmds.vnnConnect(
             graph,

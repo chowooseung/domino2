@@ -42,7 +42,6 @@ import importlib
 import logging
 import sys
 
-
 COMPONENTLIST = [
     "assembly",
     "pivot01",
@@ -475,7 +474,6 @@ class Rig(dict):
             npo, ctl = ins.create()
             cmds.setAttr(f"{npo}.t", 0, 0, 0)
             cmds.setAttr(f"{npo}.r", 0, 0, 0)
-            cmds.setAttr(f"{npo}.s", 1, 1, 1)
             if npo_matrix_index is not None:
                 # multi index 초과하는 범위를 초기화 없이 연결 할 경우
                 # getAttr 로 npo_matrix[npo_matrix_index]를 query 시
@@ -768,7 +766,7 @@ class Rig(dict):
         cmds.vnnNode(
             graph,
             "/input",
-            createOutputPort=("guide_matrix", "array<Math::float4x4>"),
+            createOutputPort=("guide_matrix", "array<Math::double4x4>"),
         )
 
         guide_compound = cmds.vnnCompound(
@@ -782,7 +780,7 @@ class Rig(dict):
         cmds.vnnNode(
             graph,
             "/output",
-            createInputPort=("npo_matrix", "array<Math::float4x4>"),
+            createInputPort=("npo_matrix", "array<Math::double4x4>"),
         )
         cmds.vnnConnect(
             graph,

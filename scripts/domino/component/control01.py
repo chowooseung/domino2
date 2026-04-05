@@ -10,7 +10,6 @@ from maya import cmds
 # built-ins
 import logging
 
-
 # region Initialize Settings
 ORIGINMATRIX = om.MMatrix()
 matrices = [list(ORIGINMATRIX)]
@@ -129,6 +128,7 @@ class Rig(component.Rig):
             cmds.setAttr(f"{condition}.operation", 4)
             cmds.setAttr(f"{condition}.colorIfTrueR", -1)
             cmds.connectAttr(f"{decom_m}.outputScaleZ", f"{condition}.firstTerm")
+            cmds.setAttr(f"{loc}.s", lock=False)
             cmds.connectAttr(f"{condition}.outColorR", f"{loc}.sz")
 
             # output

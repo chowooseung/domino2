@@ -10,7 +10,6 @@ from maya import cmds
 # built-ins
 import logging
 
-
 # region Initialize Settings
 ORIGINMATRIX = om.MMatrix()
 matrices = [list(ORIGINMATRIX)]
@@ -151,6 +150,7 @@ class Rig(component.Rig):
         )
         cmds.setAttr(f"{origin_ctl}.joint_visibility", channelBox=True)
         cmds.connectAttr(f"{origin_ctl}.joint_visibility", f"{component.SKEL}.v")
+        cmds.setAttr(f"{origin_ctl}.s", lock=False)
         cmds.setAttr(f"{origin_ctl}.sx", lock=False)
         cmds.setAttr(f"{origin_ctl}.sy", lock=False)
         cmds.setAttr(f"{origin_ctl}.sz", lock=False)

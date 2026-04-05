@@ -14,7 +14,6 @@ import logging
 # gui
 from domino.vendor.Qt import QtWidgets
 
-
 # region Initialize Settings
 ORIGINMATRIX = om.MMatrix()
 matrices = []
@@ -1810,7 +1809,7 @@ class Rig(component.Rig):
         cmds.vnnNode(
             graph,
             "/output",
-            createInputPort=("pole_vector_matrix", "Math::float4x4"),
+            createInputPort=("pole_vector_matrix", "Math::double4x4"),
         )
         cmds.vnnNode(
             graph,

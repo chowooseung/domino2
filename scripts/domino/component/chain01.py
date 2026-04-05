@@ -14,15 +14,13 @@ from domino.core.utils import build_log
 
 # maya
 from maya.api import OpenMaya as om
-from maya import cmds
-from maya import mel
+from maya import cmds, mel
 
 # built-ins
 import logging
 
 # gui
 from domino.vendor.Qt import QtWidgets
-
 
 # region Initialize Settings
 ORIGINMATRIX = om.MMatrix()

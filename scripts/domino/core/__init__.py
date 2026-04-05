@@ -5,7 +5,6 @@ from maya.api import OpenMaya as om
 # domino
 from domino.core import nurbscurve, matrix
 
-## matrix
 ORIGINMATRIX = om.MMatrix()
 
 # region CONST
@@ -214,15 +213,18 @@ class Transform:
             str: node
         """
         if not cmds.objExists(self._node):
-            self._node = cmds.createNode(
-                "transform", parent=self._parent, name=self._node
-            )
+            self._node = cmds.createNode("transform", name=self._node)
             cmds.addAttr(self._node, longName="description", dataType="string")
             cmds.setAttr(f"{self._node}.description", self._description, type="string")
             cmds.addAttr(self._node, longName="extension", dataType="string")
             cmds.setAttr(f"{self._node}.extension", self._extension, type="string")
             cmds.setAttr(f"{self._node}.rotateAxis", lock=True)
+            cmds.setAttr(f"{self._node}.s", lock=True)
+            cmds.setAttr(f"{self._node}.shear", lock=True)
         self.set_matrix(self._m)
+        p = cmds.listRelatives(self._node, parent=True) or []
+        if self._parent and cmds.objExists(self._parent) and (p != [self._parent]):
+            self._node = cmds.parent(self._node, self._parent)[0]
         return self._node
 
     def get_parent(self):
@@ -591,10 +593,10 @@ class Controller(Transform):
         return self._npo
 
     def create(self):
-        """create npo, ctl, loc
+        """create npo, ctl
 
         Returns:
-            tuple: npo node, ctl node, loc node
+            tuple: npo node, ctl node
         """
         if not cmds.objExists(self._npo):
             ins = Transform(
@@ -607,7 +609,6 @@ class Controller(Transform):
                 m=ORIGINMATRIX,
             )
             self._npo = ins.create()
-            cmds.setAttr(f"{self._npo}.rotateAxis", lock=True)
         if not cmds.objExists(self._node):
             ins = Transform(
                 parent=self._npo,
@@ -619,7 +620,6 @@ class Controller(Transform):
                 m=ORIGINMATRIX,
             )
             self._node = ins.create()
-            cmds.setAttr(f"{self._node}.rotateAxis", lock=True)
             cmds.setAttr(f"{self._node}.v", keyable=False)
             self.replace_shape(shape=self._shape, color=self._color)
             cmds.addAttr(
@@ -650,7 +650,6 @@ class Controller(Transform):
             cmds.setAttr(f"{self._node}.rotateOrder", channelBox=True)
             cmds.setAttr(f"{self._node}.t", 0, 0, 0)
             cmds.setAttr(f"{self._node}.r", 0, 0, 0)
-            cmds.setAttr(f"{self._node}.s", 1, 1, 1)
 
         self.set_matrix(self._m)
 

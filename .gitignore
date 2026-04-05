@@ -2,4 +2,5 @@
 .vscode/
 .pyc
 __pycache__/
-scripts/domino/vendor/Qt-stubs
+scripts/domino/vendor/Qt
+pyproject.toml

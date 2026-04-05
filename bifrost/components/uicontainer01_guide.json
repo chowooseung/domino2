@@ -191,27 +191,27 @@
                     "metaValue": "2"
                 },
                 {
-                    "metaName": "LayoutPos",
-                    "metaType": "string",
-                    "metaValue": "-131 -157"
-                },
-                {
                     "metaName": "zValue",
                     "metaType": "string",
-                    "metaValue": "39.000000"
+                    "metaValue": "33.000000"
+                },
+                {
+                    "metaName": "LayoutPos",
+                    "metaType": "string",
+                    "metaValue": "-79 -61"
                 }
             ],
             "ports": [
                 {
                     "portName": "guide_matrix",
                     "portDirection": "input",
-                    "portType": "array<Math::float4x4>",
+                    "portType": "array<Math::double4x4>",
                     "portDefault": []
                 },
                 {
                     "portName": "npo_matrix",
                     "portDirection": "output",
-                    "portType": "array<Math::float4x4>"
+                    "portType": "array<Math::double4x4>"
                 },
                 {
                     "portName": "initialize_output_matrix",
@@ -243,7 +243,13 @@
             "compounds": [
                 {
                     "name": "for_each1",
+                    "uriImported": "file:///uicontainer01_guide.json",
                     "metadata": [
+                        {
+                            "metaName": "icon",
+                            "metaType": "string",
+                            "metaValue": "<NATIVE>../icons/LoopForEach.svg"
+                        },
                         {
                             "metaName": "icon",
                             "metaType": "string",
@@ -776,14 +782,6 @@
             ],
             "connections": [
                 {
-                    "source": ".guide_matrix",
-                    "target": "get_from_array.array"
-                },
-                {
-                    "source": ".guide_matrix",
-                    "target": "get_from_array1.array"
-                },
-                {
                     "source": "get_from_array.value",
                     "target": "build_array.first.value"
                 },
@@ -796,10 +794,6 @@
                     "target": "build_array.first.matrix"
                 },
                 {
-                    "source": ".guide_matrix",
-                    "target": "slice_array.array"
-                },
-                {
                     "source": "slice_array.slice",
                     "target": "for_each1.slice"
                 },
@@ -810,10 +804,6 @@
                 {
                     "source": "array_size1.size",
                     "target": "for_each1.max_iterations"
-                },
-                {
-                    "source": ".guide_matrix",
-                    "target": "array_size2.array"
                 },
                 {
                     "source": "array_size2.size",
@@ -834,10 +824,6 @@
                 {
                     "source": "build_array1.array",
                     "target": "flatten_nested_array.nested_array"
-                },
-                {
-                    "source": "flatten_nested_array.flattened_array",
-                    "target": ".npo_matrix"
                 },
                 {
                     "source": "inverse_matrix1.inverted",
@@ -862,6 +848,26 @@
                 {
                     "source": "build_array3.array",
                     "target": ".initialize_output_inverse_matrix"
+                },
+                {
+                    "source": ".guide_matrix",
+                    "target": "get_from_array.array"
+                },
+                {
+                    "source": ".guide_matrix",
+                    "target": "get_from_array1.array"
+                },
+                {
+                    "source": ".guide_matrix",
+                    "target": "slice_array.array"
+                },
+                {
+                    "source": ".guide_matrix",
+                    "target": "array_size2.array"
+                },
+                {
+                    "source": "flatten_nested_array.flattened_array",
+                    "target": ".npo_matrix"
                 }
             ],
             "values": [

@@ -20,7 +20,6 @@ import logging
 # gui
 from domino.vendor.Qt import QtWidgets
 
-
 ORIGINMATRIX = om.MMatrix()
 matrices = []
 m = om.MMatrix()
@@ -682,6 +681,7 @@ class Rig(component.Rig):
         decom_m = cmds.createNode("decomposeMatrix")
         cmds.connectAttr(f"{self.rig_root}.head_matrix", f"{decom_m}.inputMatrix")
         cmds.connectAttr(f"{decom_m}.outputRotate", f"{head_npo}.r")
+        cmds.setAttr(f"{head_npo}.s", lock=False)
         cmds.connectAttr(f"{decom_m}.outputScale", f"{head_npo}.s")
 
         output_sources = ribbon_outputs[:-1] + [head_loc]
@@ -734,12 +734,12 @@ class Rig(component.Rig):
         cmds.vnnNode(
             graph,
             "/input",
-            createOutputPort=("main_transforms", "array<Math::float4x4>"),
+            createOutputPort=("main_transforms", "array<Math::double4x4>"),
         )
         cmds.vnnNode(
             graph,
             "/input",
-            createOutputPort=("up_transforms", "array<Math::float4x4>"),
+            createOutputPort=("up_transforms", "array<Math::double4x4>"),
         )
         cmds.vnnNode(
             graph,
@@ -749,12 +749,12 @@ class Rig(component.Rig):
         cmds.vnnNode(
             graph,
             "/output",
-            createInputPort=("driver_matrix", "array<Math::float4x4>"),
+            createInputPort=("driver_matrix", "array<Math::double4x4>"),
         )
         cmds.vnnNode(
             graph,
             "/output",
-            createInputPort=("driver_inverse_matrix", "array<Math::float4x4>"),
+            createInputPort=("driver_inverse_matrix", "array<Math::double4x4>"),
         )
         cmds.vnnConnect(
             graph,

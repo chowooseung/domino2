@@ -12,6 +12,7 @@
     "compounds": [
         {
             "name": "Domino::Components::foot01_guide",
+            "uriImported": "file:///foot01_guide.json",
             "metadata": [
                 {
                     "metaName": "io_nodes",
@@ -227,7 +228,7 @@
                 {
                     "metaName": "ViewportRect",
                     "metaType": "string",
-                    "metaValue": "474.636 869.91 3286.15 2523.57"
+                    "metaValue": "2222.6 1570.84 2107.56 1763.31"
                 },
                 {
                     "metaName": "DisplayMode",
@@ -237,7 +238,7 @@
                 {
                     "metaName": "LayoutPos",
                     "metaType": "string",
-                    "metaValue": "315 10"
+                    "metaValue": "-131 -168"
                 },
                 {
                     "metaName": "zValue",
@@ -249,13 +250,13 @@
                 {
                     "portName": "guide_matrix",
                     "portDirection": "input",
-                    "portType": "array<Math::float4x4>",
+                    "portType": "array<Math::double4x4>",
                     "portDefault": []
                 },
                 {
                     "portName": "npo_matrix",
                     "portDirection": "output",
-                    "portType": "array<Math::float4x4>"
+                    "portType": "array<Math::double4x4>"
                 },
                 {
                     "portName": "initialize_output_matrix",
@@ -287,7 +288,28 @@
             "compounds": [
                 {
                     "name": "for_each1",
+                    "uriImported": "file:///foot01_guide.json",
                     "metadata": [
+                        {
+                            "metaName": "icon",
+                            "metaType": "string",
+                            "metaValue": "<NATIVE>../icons/LoopForEach.svg"
+                        },
+                        {
+                            "metaName": "icon",
+                            "metaType": "string",
+                            "metaValue": "<NATIVE>../icons/LoopForEach.svg"
+                        },
+                        {
+                            "metaName": "icon",
+                            "metaType": "string",
+                            "metaValue": "<NATIVE>../icons/LoopForEach.svg"
+                        },
+                        {
+                            "metaName": "icon",
+                            "metaType": "string",
+                            "metaValue": "<NATIVE>../icons/LoopForEach.svg"
+                        },
                         {
                             "metaName": "icon",
                             "metaType": "string",
@@ -652,14 +674,32 @@
                     ],
                     "forEachCompound": {
                         "ports": []
-                    },
-                    "libraryDependencies": {
-                        "Amino": "2.15.0.11"
                     }
                 },
                 {
                     "name": "for_each4",
+                    "uriImported": "file:///foot01_guide.json",
                     "metadata": [
+                        {
+                            "metaName": "icon",
+                            "metaType": "string",
+                            "metaValue": "<NATIVE>../icons/LoopForEach.svg"
+                        },
+                        {
+                            "metaName": "icon",
+                            "metaType": "string",
+                            "metaValue": "<NATIVE>../icons/LoopForEach.svg"
+                        },
+                        {
+                            "metaName": "icon",
+                            "metaType": "string",
+                            "metaValue": "<NATIVE>../icons/LoopForEach.svg"
+                        },
+                        {
+                            "metaName": "icon",
+                            "metaType": "string",
+                            "metaValue": "<NATIVE>../icons/LoopForEach.svg"
+                        },
                         {
                             "metaName": "icon",
                             "metaType": "string",
@@ -1024,14 +1064,32 @@
                     ],
                     "forEachCompound": {
                         "ports": []
-                    },
-                    "libraryDependencies": {
-                        "Amino": "2.15.0.11"
                     }
                 },
                 {
                     "name": "for_each5",
+                    "uriImported": "file:///foot01_guide.json",
                     "metadata": [
+                        {
+                            "metaName": "icon",
+                            "metaType": "string",
+                            "metaValue": "<NATIVE>../icons/LoopForEach.svg"
+                        },
+                        {
+                            "metaName": "icon",
+                            "metaType": "string",
+                            "metaValue": "<NATIVE>../icons/LoopForEach.svg"
+                        },
+                        {
+                            "metaName": "icon",
+                            "metaType": "string",
+                            "metaValue": "<NATIVE>../icons/LoopForEach.svg"
+                        },
+                        {
+                            "metaName": "icon",
+                            "metaType": "string",
+                            "metaValue": "<NATIVE>../icons/LoopForEach.svg"
+                        },
                         {
                             "metaName": "icon",
                             "metaType": "string",
@@ -1396,9 +1454,6 @@
                     ],
                     "forEachCompound": {
                         "ports": []
-                    },
-                    "libraryDependencies": {
-                        "Amino": "2.15.0.11"
                     }
                 }
             ],
@@ -2100,34 +2155,6 @@
             ],
             "connections": [
                 {
-                    "source": ".guide_matrix",
-                    "target": "get_from_array.array"
-                },
-                {
-                    "source": ".guide_matrix",
-                    "target": "get_from_array1.array"
-                },
-                {
-                    "source": ".guide_matrix",
-                    "target": "get_from_array2.array"
-                },
-                {
-                    "source": ".guide_matrix",
-                    "target": "get_from_array3.array"
-                },
-                {
-                    "source": ".guide_matrix",
-                    "target": "get_from_array4.array"
-                },
-                {
-                    "source": ".guide_matrix",
-                    "target": "slice_array.array"
-                },
-                {
-                    "source": ".guide_matrix",
-                    "target": "array_size1.array"
-                },
-                {
                     "source": "get_from_array4.value",
                     "target": "matrix_to_SRT.transform"
                 },
@@ -2142,10 +2169,6 @@
                 {
                     "source": "matrix_to_SRT.shear",
                     "target": "SRT_to_matrix.shear"
-                },
-                {
-                    "source": "build_array.array",
-                    "target": ".npo_matrix"
                 },
                 {
                     "source": "matrix_to_SRT1.translation",
@@ -2314,6 +2337,38 @@
                 {
                     "source": "for_each5.output",
                     "target": "build_array.first.output"
+                },
+                {
+                    "source": ".guide_matrix",
+                    "target": "get_from_array.array"
+                },
+                {
+                    "source": ".guide_matrix",
+                    "target": "get_from_array1.array"
+                },
+                {
+                    "source": ".guide_matrix",
+                    "target": "get_from_array2.array"
+                },
+                {
+                    "source": ".guide_matrix",
+                    "target": "get_from_array3.array"
+                },
+                {
+                    "source": ".guide_matrix",
+                    "target": "get_from_array4.array"
+                },
+                {
+                    "source": ".guide_matrix",
+                    "target": "slice_array.array"
+                },
+                {
+                    "source": ".guide_matrix",
+                    "target": "array_size1.array"
+                },
+                {
+                    "source": "build_array.array",
+                    "target": ".npo_matrix"
                 }
             ],
             "values": [
@@ -2346,6 +2401,15 @@
                     "valueName": "value.value",
                     "valueType": "long",
                     "value": "6"
+                },
+                {
+                    "valueName": "SRT_to_matrix.scale",
+                    "valueType": "Math::double3",
+                    "value": {
+                        "x": "1",
+                        "y": "1",
+                        "z": "1"
+                    }
                 },
                 {
                     "valueName": "scalar_to_vector3.x",
@@ -2383,6 +2447,24 @@
                     "value": "10"
                 },
                 {
+                    "valueName": "SRT_to_matrix2.scale",
+                    "valueType": "Math::double3",
+                    "value": {
+                        "x": "1",
+                        "y": "1",
+                        "z": "1"
+                    }
+                },
+                {
+                    "valueName": "SRT_to_matrix3.scale",
+                    "valueType": "Math::double3",
+                    "value": {
+                        "x": "1",
+                        "y": "1",
+                        "z": "1"
+                    }
+                },
+                {
                     "valueName": "for_each4.max_iterations",
                     "valueType": "long",
                     "value": "10"
@@ -2400,10 +2482,7 @@
                 {
                     "name": "output"
                 }
-            ],
-            "libraryDependencies": {
-                "Amino": "2.15.0.11"
-            }
+            ]
         }
     ]
 }
