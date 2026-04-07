@@ -2319,6 +2319,8 @@ def export_weights_to_directory(directory, deformers):
         objs = cmds.deformer(deformer, geometry=True, query=True) or []
         for obj in objs:
             file_name = f"{obj}__{deformer}__{deformer_type}.json"
+            if ":" in file_name:
+                file_name = file_name.replace(":", "_")
             export_weight((Path(directory) / file_name).as_posix(), deformer)
 
 
@@ -2348,7 +2350,21 @@ def import_weight(file_path):
     try:
         if deformer_type == "skinCluster" and not cmds.objExists(deformer_name):
             joints = [d["source"] for d in data["deformerWeight"]["weights"]]
+
+            if ":" in deformer_name:
+                namespaces = deformer_name.split(":")[:-1]
+                deformer_name = deformer_name.split(":")[-1]
+                current_ns = ""
+                for ns in namespaces:
+                    # 이미 존재하는 네임스페이스인지 확인 후 없으면 생성
+                    if not cmds.namespace(exists=ns):
+                        cmds.namespace(add=ns)
+
+                    # 다음 중첩 네임스페이스 생성을 위해 안으로 이동
+                    cmds.namespace(setNamespace=ns)
+                    current_ns += f"{ns}:"
             deformer_name = bind_skincluster(shape_name, joints, deformer_name)
+            cmds.namespace(setNamespace=":")
             logger.info(f"Create {deformer_name}")
     except Exception as e:
         return logger.warning(

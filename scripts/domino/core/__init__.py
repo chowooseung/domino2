@@ -1150,9 +1150,23 @@ class Mesh:
         )
         fn_mesh.setUVs(data["u_array"], data["v_array"])
         fn_mesh.assignUVs(data["uv_counts"], data["uv_ids"])
-
         transform = om.MFnDagNode(fn_mesh.parent(0)).name()
-        transform = cmds.rename(transform, self._data["mesh_name"])
+        if ":" in self._data["mesh_name"]:
+            namespaces = self._data["mesh_name"].split(":")[:-1]
+            mesh_name = self._data["mesh_name"].split(":")[-1]
+            current_ns = ""
+            for ns in namespaces:
+                # 이미 존재하는 네임스페이스인지 확인 후 없으면 생성
+                if not cmds.namespace(exists=ns):
+                    cmds.namespace(add=ns)
+
+                # 다음 중첩 네임스페이스 생성을 위해 안으로 이동
+                cmds.namespace(setNamespace=ns)
+                current_ns += f"{ns}:"
+        else:
+            mesh_name = self._data["mesh_name"]
+        transform = cmds.rename(transform, mesh_name)
+        cmds.namespace(setNamespace=":")
         cmds.setAttr(f"{transform}.v", self._data["visibility"])
         cmds.xform(transform, matrix=[float(x) for x in self._data["mesh_matrix"]])
         if self._data["parent_name"] and cmds.objExists(self._data["parent_name"]):
