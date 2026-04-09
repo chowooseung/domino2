@@ -456,10 +456,10 @@ class Rig(component.Rig):
             keyable=True,
             defaultValue=0,
         )
-        multiply0 = cmds.createNode("multiply")
-        cmds.connectAttr(f"{thigh_ctl}.length", f"{multiply0}.input[0]")
-        cmds.connectAttr(f"{negate_condition}.outColorR", f"{multiply0}.input[1]")
-        cmds.connectAttr(f"{multiply0}.output", f"{thigh_length_grp}.tx")
+        multiply0 = cmds.createNode("multiplyDivide")
+        cmds.connectAttr(f"{thigh_ctl}.length", f"{multiply0}.input1X")
+        cmds.connectAttr(f"{negate_condition}.outColorR", f"{multiply0}.input2X")
+        cmds.connectAttr(f"{multiply0}.outputX", f"{thigh_length_grp}.tx")
 
         knee_npo, knee_ctl = self["controller"][2].create(
             parent=thigh_length_grp,
@@ -516,10 +516,10 @@ class Rig(component.Rig):
             keyable=True,
             defaultValue=0,
         )
-        multiply0 = cmds.createNode("multiply")
-        cmds.connectAttr(f"{knee_ctl}.length", f"{multiply0}.input[0]")
-        cmds.connectAttr(f"{negate_condition}.outColorR", f"{multiply0}.input[1]")
-        cmds.connectAttr(f"{multiply0}.output", f"{knee_length_grp}.tx")
+        multiply0 = cmds.createNode("multiplyDivide")
+        cmds.connectAttr(f"{knee_ctl}.length", f"{multiply0}.input1X")
+        cmds.connectAttr(f"{negate_condition}.outColorR", f"{multiply0}.input2X")
+        cmds.connectAttr(f"{multiply0}.outputX", f"{knee_length_grp}.tx")
 
         ankle_npo, ankle_ctl = self["controller"][3].create(
             parent=knee_length_grp,
@@ -532,6 +532,7 @@ class Rig(component.Rig):
             npo_matrix_index=2,
         )
         cmds.setAttr(f"{ankle_ctl}.mirror_type", 1)
+        cmds.setAttr(f"{ankle_ctl}.s", lock=False)
         if self["unlock_last_scale"]["value"]:
             cmds.setAttr(f"{ankle_ctl}.sx", lock=False, keyable=True)
             cmds.setAttr(f"{ankle_ctl}.sy", lock=False, keyable=True)
@@ -720,6 +721,7 @@ class Rig(component.Rig):
             npo_matrix_index=4,
         )
         cmds.setAttr(f"{ik_ctl}.mirror_type", 0)
+        cmds.setAttr(f"{ik_ctl}.s", lock=False)
         if self["unlock_last_scale"]["value"]:
             cmds.setAttr(f"{ik_ctl}.sx", lock=False, keyable=True)
             cmds.setAttr(f"{ik_ctl}.sy", lock=False, keyable=True)
@@ -785,6 +787,7 @@ class Rig(component.Rig):
             npo_matrix_index=5,
         )
         cmds.setAttr(f"{ik_local_ctl}.mirror_type", 1)
+        cmds.setAttr(f"{ik_local_ctl}.s", lock=False)
         if self["unlock_last_scale"]["value"]:
             cmds.setAttr(f"{ik_local_ctl}.sx", lock=False, keyable=True)
             cmds.setAttr(f"{ik_local_ctl}.sy", lock=False, keyable=True)
@@ -1654,8 +1657,10 @@ class Rig(component.Rig):
             extension=Name.loc_extension,
         )
         ankle_loc = ins.create()
+        cmds.setAttr(f"{ankle_loc}.s", lock=False)
         cmds.setAttr(f"{ankle_loc}.t", 0, 0, 0)
         cmds.orientConstraint(blend2_jnt, ankle_loc, maintainOffset=False)
+        cmds.scaleConstraint(blend2_jnt, ankle_loc, maintainOffset=False)
 
         # output
         c = 0
@@ -2101,14 +2106,14 @@ class Rig(component.Rig):
             keyable=True,
             defaultValue=self["pole_vector_multiple"]["value"],
         )
-        multiply = cmds.createNode("multiply")
-        cmds.connectAttr(f"{guide1}.pole_vector_multiple", f"{multiply}.input[0]")
+        multiply = cmds.createNode("multiplyDivide")
+        cmds.connectAttr(f"{guide1}.pole_vector_multiple", f"{multiply}.input1X")
 
         decom_m = cmds.createNode("decomposeMatrix")
         cmds.connectAttr(f"{self.guide_root}.worldMatrix[0]", f"{decom_m}.inputMatrix")
-        cmds.connectAttr(f"{decom_m}.outputScaleX", f"{multiply}.input[1]")
+        cmds.connectAttr(f"{decom_m}.outputScaleX", f"{multiply}.input2X")
         cmds.connectAttr(
-            f"{multiply}.output", f"{self.guide_root}.pole_vector_multiple"
+            f"{multiply}.outputX", f"{self.guide_root}.pole_vector_multiple"
         )
         cmds.connectAttr(
             f"{self.guide_root}.pole_vector_multiple",

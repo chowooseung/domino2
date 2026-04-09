@@ -666,6 +666,10 @@ class Rig(component.Rig):
             ),
             color=12,
         )
+        cmds.setAttr(f"{clavicle_bone_ctl}.s", lock=False)
+        cmds.setAttr(f"{clavicle_bone_ctl}.sx", lock=False, keyable=True)
+        cmds.setAttr(f"{clavicle_bone_ctl}.sy", lock=False, keyable=True)
+        cmds.setAttr(f"{clavicle_bone_ctl}.sz", lock=False, keyable=True)
         mult_m = cmds.createNode("multMatrix")
         cmds.connectAttr(f"{self.rig_root}.npo_matrix[1]", f"{mult_m}.matrixIn[0]")
 
@@ -682,10 +686,10 @@ class Rig(component.Rig):
             f"{pick_m}.outputMatrix", f"{clavicle_bone_npo}.offsetParentMatrix"
         )
 
-        multiply = cmds.createNode("multiply")
-        cmds.connectAttr(f"{clavicle_ctl}.roll", f"{multiply}.input[0]")
-        cmds.setAttr(f"{multiply}.input[1]", -1)
-        cmds.connectAttr(f"{multiply}.output", f"{clavicle_bone_npo}.rx")
+        multiply = cmds.createNode("multiplyDivide")
+        cmds.connectAttr(f"{clavicle_ctl}.roll", f"{multiply}.input1X")
+        cmds.setAttr(f"{multiply}.input2X", -1)
+        cmds.connectAttr(f"{multiply}.outputX", f"{clavicle_bone_npo}.rx")
         for shape in cmds.listRelatives(clavicle_bone_ctl, shapes=True) or []:
             cmds.connectAttr(
                 f"{clavicle_ctl}.clavicle_bone_ctl_visibility", f"{shape}.v"
@@ -739,10 +743,10 @@ class Rig(component.Rig):
             keyable=True,
             defaultValue=0,
         )
-        multiply0 = cmds.createNode("multiply")
-        cmds.connectAttr(f"{shoulder_ctl}.length", f"{multiply0}.input[0]")
-        cmds.connectAttr(f"{negate_condition}.outColorR", f"{multiply0}.input[1]")
-        cmds.connectAttr(f"{multiply0}.output", f"{shoulder_length_grp}.tx")
+        multiply0 = cmds.createNode("multiplyDivide")
+        cmds.connectAttr(f"{shoulder_ctl}.length", f"{multiply0}.input1X")
+        cmds.connectAttr(f"{negate_condition}.outColorR", f"{multiply0}.input2X")
+        cmds.connectAttr(f"{multiply0}.outputX", f"{shoulder_length_grp}.tx")
 
         elbow_npo, elbow_ctl = self["controller"][4].create(
             parent=shoulder_length_grp,
@@ -802,10 +806,10 @@ class Rig(component.Rig):
             keyable=True,
             defaultValue=0,
         )
-        multiply0 = cmds.createNode("multiply")
-        cmds.connectAttr(f"{elbow_ctl}.length", f"{multiply0}.input[0]")
-        cmds.connectAttr(f"{negate_condition}.outColorR", f"{multiply0}.input[1]")
-        cmds.connectAttr(f"{multiply0}.output", f"{elbow_length_grp}.tx")
+        multiply0 = cmds.createNode("multiplyDivide")
+        cmds.connectAttr(f"{elbow_ctl}.length", f"{multiply0}.input1X")
+        cmds.connectAttr(f"{negate_condition}.outColorR", f"{multiply0}.input2X")
+        cmds.connectAttr(f"{multiply0}.outputX", f"{elbow_length_grp}.tx")
 
         wrist_npo, wrist_ctl = self["controller"][5].create(
             parent=elbow_length_grp,
@@ -818,6 +822,7 @@ class Rig(component.Rig):
             npo_matrix_index=4,
         )
         cmds.setAttr(f"{wrist_ctl}.mirror_type", 1)
+        cmds.setAttr(f"{wrist_ctl}.s", lock=False)
         if self["unlock_last_scale"]["value"]:
             cmds.setAttr(f"{wrist_ctl}.sx", lock=False, keyable=True)
             cmds.setAttr(f"{wrist_ctl}.sy", lock=False, keyable=True)
@@ -1009,6 +1014,7 @@ class Rig(component.Rig):
             npo_matrix_index=6,
         )
         cmds.setAttr(f"{ik_ctl}.mirror_type", 0)
+        cmds.setAttr(f"{ik_ctl}.s", lock=False)
         if self["unlock_last_scale"]["value"]:
             cmds.setAttr(f"{ik_ctl}.sx", lock=False, keyable=True)
             cmds.setAttr(f"{ik_ctl}.sy", lock=False, keyable=True)
@@ -1073,6 +1079,7 @@ class Rig(component.Rig):
             color=12,
             npo_matrix_index=7,
         )
+        cmds.setAttr(f"{ik_local_ctl}.s", lock=False)
         cmds.setAttr(f"{ik_local_ctl}.mirror_type", 1)
         if self["unlock_last_scale"]["value"]:
             cmds.setAttr(f"{ik_local_ctl}.sx", lock=False, keyable=True)
@@ -1952,8 +1959,10 @@ class Rig(component.Rig):
             extension=Name.loc_extension,
         )
         wrist_loc = ins.create()
+        cmds.setAttr(f"{wrist_loc}.s", lock=False)
         cmds.setAttr(f"{wrist_loc}.t", 0, 0, 0)
         cmds.orientConstraint(blend2_jnt, wrist_loc, maintainOffset=False)
+        cmds.scaleConstraint(blend2_jnt, wrist_loc, maintainOffset=False)
 
         # scapular
         scapular_npo, scapular_ctl = self["controller"][13].create(
@@ -2192,10 +2201,11 @@ class Rig(component.Rig):
         cmds.connectAttr(f"{scapular_ctl}.lower_winging", f"{md}.input1Z")
         cmds.connectAttr(f"{md}.outputX", f"{scapular_aim_rotation_winging}.ty")
         cmds.connectAttr(f"{md}.outputY", f"{scapular_aim_rotation_winging}.tz")
-        subtract = cmds.createNode("subtract")
-        cmds.connectAttr(f"{md}.outputY", f"{subtract}.input2")
-        cmds.connectAttr(f"{md}.outputZ", f"{subtract}.input1")
-        cmds.connectAttr(f"{subtract}.output", f"{scapular_up_rotation_winging}.tz")
+        subtract = cmds.createNode("plusMinusAverage")
+        cmds.setAttr(f"{subtract}.operation", 2)
+        cmds.connectAttr(f"{md}.outputY", f"{subtract}.input1D[1]")
+        cmds.connectAttr(f"{md}.outputZ", f"{subtract}.input1D[0]")
+        cmds.connectAttr(f"{subtract}.output1D", f"{scapular_up_rotation_winging}.tz")
 
         # output
         c = 0
@@ -2376,14 +2386,15 @@ class Rig(component.Rig):
         clavicle_bone_aim_loc = ins.create()
         cmds.setAttr(f"{clavicle_bone_aim_loc}.t", 0, 0, 0)
         cmds.setAttr(f"{clavicle_bone_aim_loc}.r", 0, 0, 0)
-        divide = cmds.createNode("divide")
+        divide = cmds.createNode("multiplyDivide")
+        cmds.setAttr(f"{divide}.operation", 2)
         cmds.connectAttr(
-            f"{self.guide_root}.clavicle_bone_distance", f"{divide}.input1"
+            f"{self.guide_root}.clavicle_bone_distance", f"{divide}.input1X"
         )
         decom_m = cmds.createNode("decomposeMatrix")
         cmds.connectAttr(f"{clavicle_guide}.worldMatrix[0]", f"{decom_m}.inputMatrix")
-        cmds.connectAttr(f"{decom_m}.outputScaleX", f"{divide}.input2")
-        cmds.connectAttr(f"{divide}.output", f"{clavicle_bone_aim_loc}.tx")
+        cmds.connectAttr(f"{decom_m}.outputScaleX", f"{divide}.input2X")
+        cmds.connectAttr(f"{divide}.outputX", f"{clavicle_bone_aim_loc}.tx")
         ins = Joint(
             parent=self.guide_root,
             name=name,
@@ -2849,14 +2860,14 @@ class Rig(component.Rig):
             keyable=True,
             defaultValue=self["pole_vector_multiple"]["value"],
         )
-        multiply = cmds.createNode("multiply")
-        cmds.connectAttr(f"{elbow_guide}.pole_vector_multiple", f"{multiply}.input[0]")
+        multiply = cmds.createNode("multiplyDivide")
+        cmds.connectAttr(f"{elbow_guide}.pole_vector_multiple", f"{multiply}.input1X")
 
         decom_m = cmds.createNode("decomposeMatrix")
         cmds.connectAttr(f"{self.guide_root}.worldMatrix[0]", f"{decom_m}.inputMatrix")
-        cmds.connectAttr(f"{decom_m}.outputScaleX", f"{multiply}.input[1]")
+        cmds.connectAttr(f"{decom_m}.outputScaleX", f"{multiply}.input2X")
         cmds.connectAttr(
-            f"{multiply}.output", f"{self.guide_root}.pole_vector_multiple"
+            f"{multiply}.outputX", f"{self.guide_root}.pole_vector_multiple"
         )
         cmds.connectAttr(
             f"{self.guide_root}.pole_vector_multiple",

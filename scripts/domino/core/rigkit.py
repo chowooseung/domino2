@@ -99,13 +99,13 @@ def ik_2jnt(
     cmds.connectAttr(scale_attr, f"{md2}.input2Y")
     cmds.connectAttr(scale_attr, f"{md2}.input2Z")
 
-    length1 = cmds.createNode("length")
-    cmds.connectAttr(f"{md1}.output", f"{length1}.input")
-    scaled_init_distance1_plug = f"{length1}.output"
+    length1 = cmds.createNode("distanceBetween")
+    cmds.connectAttr(f"{md1}.output", f"{length1}.point2")
+    scaled_init_distance1_plug = f"{length1}.distance"
 
-    length2 = cmds.createNode("length")
-    cmds.connectAttr(f"{md2}.output", f"{length2}.input")
-    scaled_init_distance2_plug = f"{length2}.output"
+    length2 = cmds.createNode("distanceBetween")
+    cmds.connectAttr(f"{md2}.output", f"{length2}.point2")
+    scaled_init_distance2_plug = f"{length2}.distance"
 
     pma = cmds.createNode("plusMinusAverage")
     cmds.connectAttr(scaled_init_distance1_plug, f"{pma}.input1D[0]")
@@ -163,13 +163,13 @@ def ik_2jnt(
     cmds.connectAttr(f"{bm2}.outputMatrix", f"{slide_decom_m2}.inputMatrix")
     slided_translate2_plug = f"{slide_decom_m2}.outputTranslate"
 
-    length3 = cmds.createNode("length")
-    cmds.connectAttr(slided_translate1_plug, f"{length3}.input")
-    length4 = cmds.createNode("length")
-    cmds.connectAttr(slided_translate2_plug, f"{length4}.input")
+    length3 = cmds.createNode("distanceBetween")
+    cmds.connectAttr(slided_translate1_plug, f"{length3}.point2")
+    length4 = cmds.createNode("distanceBetween")
+    cmds.connectAttr(slided_translate2_plug, f"{length4}.point2")
 
-    slided_init_distance1_plug = f"{length3}.output"
-    slided_init_distance2_plug = f"{length4}.output"
+    slided_init_distance1_plug = f"{length3}.distance"
+    slided_init_distance2_plug = f"{length4}.distance"
 
     pma1 = cmds.createNode("plusMinusAverage")
     cmds.connectAttr(slided_init_distance1_plug, f"{pma1}.input1D[0]")
@@ -201,35 +201,37 @@ def ik_2jnt(
     )
     cmds.connectAttr(f"{ik_driver}.worldMatrix[0]", f"{ik_driver_distance}.inMatrix2")
 
-    divide = cmds.createNode("divide")
-    cmds.connectAttr(init_ik_length, f"{divide}.input1")
-    cmds.connectAttr(scaled_ik_length, f"{divide}.input2")
+    divide = cmds.createNode("multiplyDivide")
+    cmds.setAttr(f"{divide}.operation", 2)
+    cmds.connectAttr(init_ik_length, f"{divide}.input1X")
+    cmds.connectAttr(scaled_ik_length, f"{divide}.input2X")
 
-    multiply = cmds.createNode("multiply")
-    cmds.connectAttr(f"{divide}.output", f"{multiply}.input[0]")
-    cmds.connectAttr(f"{ik_driver_distance}.distance", f"{multiply}.input[1]")
+    multiply = cmds.createNode("multiplyDivide")
+    cmds.connectAttr(f"{divide}.outputX", f"{multiply}.input1X")
+    cmds.connectAttr(f"{ik_driver_distance}.distance", f"{multiply}.input2X")
 
-    scaled_ik_driver_distance = f"{multiply}.output"
+    scaled_ik_driver_distance = f"{multiply}.outputX"
 
     cmds.connectAttr(scaled_ik_driver_distance, f"{parent}.tx")
     clamp0 = cmds.createNode("clamp")
     cmds.connectAttr(scaled_ik_driver_distance, f"{clamp0}.inputR")
     cmds.connectAttr(slided_total_distance_plug, f"{clamp0}.maxR")
 
-    divide0 = cmds.createNode("divide")
-    cmds.connectAttr(f"{clamp0}.outputR", f"{divide0}.input1")
-    cmds.connectAttr(slided_total_distance_plug, f"{divide0}.input2")
+    divide0 = cmds.createNode("multiplyDivide")
+    cmds.setAttr(f"{divide0}.operation", 2)
+    cmds.connectAttr(f"{clamp0}.outputR", f"{divide0}.input1X")
+    cmds.connectAttr(slided_total_distance_plug, f"{divide0}.input2X")
 
-    multiply0 = cmds.createNode("multiply")
-    cmds.connectAttr(slided_total_distance_plug, f"{multiply0}.input[0]")
+    multiply0 = cmds.createNode("multiplyDivide")
+    cmds.connectAttr(slided_total_distance_plug, f"{multiply0}.input1X")
 
     fcurve = FCurve()
     fcurve.data = [
         {
             "name": f"{name}_softIK",
-            "driven": f"{multiply0}.input[1]",
+            "driven": f"{multiply0}.input2X",
             "type": "animCurveUU",
-            "driver": f"{divide0}.output",
+            "driver": f"{divide0}.outputX",
             "float_change": [0.0, 0.8, 1.0],
             "value_change": [0.0, 0.92, 1.0],
             "in_angle": [0.0, 2.743324488263113, 0.0],
@@ -244,20 +246,21 @@ def ik_2jnt(
     ]
     fcurve.create_from_data()
 
-    subtract0 = cmds.createNode("subtract")
-    cmds.connectAttr(f"{multiply0}.output", f"{subtract0}.input1")
-    cmds.connectAttr(f"{clamp0}.outputR", f"{subtract0}.input2")
+    subtract0 = cmds.createNode("plusMinusAverage")
+    cmds.setAttr(f"{subtract0}.operation", 2)
+    cmds.connectAttr(f"{multiply0}.outputX", f"{subtract0}.input1D[0]")
+    cmds.connectAttr(f"{clamp0}.outputR", f"{subtract0}.input1D[1]")
 
     bta = cmds.createNode("blendTwoAttr")
     cmds.setAttr(f"{bta}.input[0]", 0)
-    cmds.connectAttr(f"{subtract0}.output", f"{bta}.input[1]")
+    cmds.connectAttr(f"{subtract0}.output1D", f"{bta}.input[1]")
     cmds.connectAttr(soft_ik_attr, f"{bta}.attributesBlender")
 
     # max stretch
-    multiply1 = cmds.createNode("multiply")
-    cmds.connectAttr(max_stretch_attr, f"{multiply1}.input[0]")
-    cmds.connectAttr(slided_total_distance_plug, f"{multiply1}.input[1]")
-    max_stretch_distance_plug = f"{multiply1}.output"
+    multiply1 = cmds.createNode("multiplyDivide")
+    cmds.connectAttr(max_stretch_attr, f"{multiply1}.input1X")
+    cmds.connectAttr(slided_total_distance_plug, f"{multiply1}.input2X")
+    max_stretch_distance_plug = f"{multiply1}.outputX"
 
     clamp1 = cmds.createNode("clamp")
     cmds.connectAttr(scaled_ik_driver_distance, f"{clamp1}.inputR")
@@ -266,11 +269,12 @@ def ik_2jnt(
 
     stretched_total_distance_plug = f"{clamp1}.outputR"
 
-    divide3 = cmds.createNode("divide")
-    cmds.connectAttr(stretched_total_distance_plug, f"{divide3}.input1")
-    cmds.connectAttr(slided_total_distance_plug, f"{divide3}.input2")
+    divide3 = cmds.createNode("multiplyDivide")
+    cmds.setAttr(f"{divide3}.operation", 2)
+    cmds.connectAttr(stretched_total_distance_plug, f"{divide3}.input1X")
+    cmds.connectAttr(slided_total_distance_plug, f"{divide3}.input2X")
 
-    stretch_ratio = f"{divide3}.output"
+    stretch_ratio = f"{divide3}.outputX"
 
     md3 = cmds.createNode("multiplyDivide")
     cmds.connectAttr(slided_translate1_plug, f"{md3}.input1")
@@ -299,38 +303,40 @@ def ik_2jnt(
     cmds.connectAttr(f"{pole_vector_decom_m}.outputTranslate", f"{pma2}.input3D[0]")
     cmds.connectAttr(f"{ik_pos_decom_m}.outputTranslate", f"{pma2}.input3D[1]")
 
-    length5 = cmds.createNode("length")
-    cmds.connectAttr(f"{pma2}.output3D", f"{length5}.input")
-    attach_pv_distance1_plug = f"{length5}.output"
+    length5 = cmds.createNode("distanceBetween")
+    cmds.connectAttr(f"{pma2}.output3D", f"{length5}.point2")
+    attach_pv_distance1_plug = f"{length5}.distance"
 
     pma3 = cmds.createNode("plusMinusAverage")
     cmds.setAttr(f"{pma3}.operation", 2)
     cmds.connectAttr(f"{ik_driver_decom_m}.outputTranslate", f"{pma3}.input3D[0]")
     cmds.connectAttr(f"{pole_vector_decom_m}.outputTranslate", f"{pma3}.input3D[1]")
 
-    length6 = cmds.createNode("length")
-    cmds.connectAttr(f"{pma3}.output3D", f"{length6}.input")
-    attach_pv_distance2_plug = f"{length6}.output"
+    length6 = cmds.createNode("distanceBetween")
+    cmds.connectAttr(f"{pma3}.output3D", f"{length6}.point2")
+    attach_pv_distance2_plug = f"{length6}.distance"
 
-    length7 = cmds.createNode("length")
-    cmds.connectAttr(f"{md3}.output", f"{length7}.input")
-    stretched_distance1_plug = f"{length7}.output"
+    length7 = cmds.createNode("distanceBetween")
+    cmds.connectAttr(f"{md3}.output", f"{length7}.point2")
+    stretched_distance1_plug = f"{length7}.distance"
 
-    length8 = cmds.createNode("length")
-    cmds.connectAttr(f"{md4}.output", f"{length8}.input")
-    stretched_distance2_plug = f"{length8}.output"
+    length8 = cmds.createNode("distanceBetween")
+    cmds.connectAttr(f"{md4}.output", f"{length8}.point2")
+    stretched_distance2_plug = f"{length8}.distance"
 
-    divide4 = cmds.createNode("divide")
-    cmds.connectAttr(attach_pv_distance1_plug, f"{divide4}.input1")
-    cmds.connectAttr(stretched_distance1_plug, f"{divide4}.input2")
+    divide4 = cmds.createNode("multiplyDivide")
+    cmds.setAttr(f"{divide4}.operation", 2)
+    cmds.connectAttr(attach_pv_distance1_plug, f"{divide4}.input1X")
+    cmds.connectAttr(stretched_distance1_plug, f"{divide4}.input2X")
 
-    distance1_multiple = f"{divide4}.output"
+    distance1_multiple = f"{divide4}.outputX"
 
-    divide5 = cmds.createNode("divide")
-    cmds.connectAttr(attach_pv_distance2_plug, f"{divide5}.input1")
-    cmds.connectAttr(stretched_distance2_plug, f"{divide5}.input2")
+    divide5 = cmds.createNode("multiplyDivide")
+    cmds.setAttr(f"{divide5}.operation", 2)
+    cmds.connectAttr(attach_pv_distance2_plug, f"{divide5}.input1X")
+    cmds.connectAttr(stretched_distance2_plug, f"{divide5}.input2X")
 
-    distance2_multiple = f"{divide5}.output"
+    distance2_multiple = f"{divide5}.outputX"
 
     md5 = cmds.createNode("multiplyDivide")
     cmds.connectAttr(f"{md3}.output", f"{md5}.input1")
@@ -809,14 +815,15 @@ def ribbon_spline_ik(
     cmds.connectAttr(f"{main_uniform_crv}.local", f"{curve_info}.inputCurve")
     deformed_length_attr = f"{curve_info}.arcLength"
 
-    divide = cmds.createNode("divide")
-    cmds.connectAttr(original_length_attr, f"{divide}.input1")
-    cmds.connectAttr(deformed_length_attr, f"{divide}.input2")
+    divide = cmds.createNode("multiplyDivide")
+    cmds.setAttr(f"{divide}.operation", 2)
+    cmds.connectAttr(original_length_attr, f"{divide}.input1X")
+    cmds.connectAttr(deformed_length_attr, f"{divide}.input2X")
 
     pma = cmds.createNode("plusMinusAverage")
     cmds.setAttr(f"{pma}.operation", 2)
     cmds.setAttr(f"{pma}.input1D[0]", 1)
-    cmds.connectAttr(f"{divide}.output", f"{pma}.input1D[1]")
+    cmds.connectAttr(f"{divide}.outputX", f"{pma}.input1D[1]")
     volume_ratio_attr = f"{pma}.output1D"
 
     auto_volume_pma = []
@@ -825,16 +832,20 @@ def ribbon_spline_ik(
             output, longName="volume_multiple", attributeType="float", keyable=True
         )
         cmds.setAttr(f"{output}.volume_multiple", multiple)
-        multiply = cmds.createNode("multiply")
-        cmds.connectAttr(f"{output}.volume_multiple", f"{multiply}.input[0]")
-        cmds.connectAttr(volume_ratio_attr, f"{multiply}.input[1]")
-        cmds.connectAttr(auto_volume_attr, f"{multiply}.input[2]")
-        cmds.connectAttr(stretch_squash_attr, f"{multiply}.input[3]")
+        multiply = cmds.createNode("multiplyDivide")
+        cmds.connectAttr(f"{output}.volume_multiple", f"{multiply}.input1X")
+        cmds.connectAttr(volume_ratio_attr, f"{multiply}.input2X")
+        multiply1 = cmds.createNode("multiplyDivide")
+        cmds.connectAttr(f"{multiply}.outputX", f"{multiply1}.input1X")
+        cmds.connectAttr(auto_volume_attr, f"{multiply1}.input2X")
+        multiply2 = cmds.createNode("multiplyDivide")
+        cmds.connectAttr(f"{multiply1}.outputX", f"{multiply2}.input1X")
+        cmds.connectAttr(stretch_squash_attr, f"{multiply2}.input2X")
 
         pma = cmds.createNode("plusMinusAverage")
         cmds.setAttr(f"{pma}.operation", 2)
         cmds.setAttr(f"{pma}.input1D[0]", 1)
-        cmds.connectAttr(f"{multiply}.output", f"{pma}.input1D[1]")
+        cmds.connectAttr(f"{multiply2}.outputX", f"{pma}.input1D[1]")
         auto_volume_pma.append(pma)
 
     # volume
@@ -1000,22 +1011,23 @@ def ribbon_uv(
     curve_info = cmds.createNode("curveInfo")
     cmds.connectAttr(f"{rebuild_curve}.outputCurve", f"{curve_info}.inputCurve")
     main_length_plug = f"{curve_info}.arcLength"
-    divide = cmds.createNode("divide")
-    cmds.connectAttr(main_orig_length_plug, f"{divide}.input1")
-    cmds.connectAttr(main_length_plug, f"{divide}.input2")
+    divide = cmds.createNode("multiplyDivide")
+    cmds.setAttr(f"{divide}.operation", 2)
+    cmds.connectAttr(main_orig_length_plug, f"{divide}.input1X")
+    cmds.connectAttr(main_length_plug, f"{divide}.input2X")
     clamp = cmds.createNode("clamp")
     cmds.setAttr(f"{clamp}.maxR", 1)
-    cmds.connectAttr(f"{divide}.output", f"{clamp}.inputR")
+    cmds.connectAttr(f"{divide}.outputX", f"{clamp}.inputR")
     blend_color = cmds.createNode("blendColors")
     cmds.connectAttr(f"{clamp}.outputR", f"{blend_color}.color2R")
     cmds.setAttr(f"{blend_color}.color1R", 1)
     cmds.connectAttr(stretch_attr, f"{blend_color}.blender")
-    multiply = cmds.createNode("multiply")
-    cmds.connectAttr(f"{blend_color}.outputR", f"{multiply}.input[0]")
-    cmds.connectAttr(squash_attr, f"{multiply}.input[1]")
+    multiply = cmds.createNode("multiplyDivide")
+    cmds.connectAttr(f"{blend_color}.outputR", f"{multiply}.input1X")
+    cmds.connectAttr(squash_attr, f"{multiply}.input2X")
     detach_curve = cmds.createNode("detachCurve")
     cmds.connectAttr(f"{rebuild_curve}.outputCurve", f"{detach_curve}.inputCurve")
-    cmds.connectAttr(f"{multiply}.output", f"{detach_curve}.parameter[0]")
+    cmds.connectAttr(f"{multiply}.outputX", f"{detach_curve}.parameter[0]")
     cmds.connectAttr(f"{detach_curve}.outputCurve[0]", plug, force=1)
     uniform_up_crv, uniform_up_crv_iso = cmds.duplicateCurve(
         f"{surface}.v[0]",
@@ -1039,22 +1051,23 @@ def ribbon_uv(
     curve_info = cmds.createNode("curveInfo")
     cmds.connectAttr(f"{rebuild_curve}.outputCurve", f"{curve_info}.inputCurve")
     up_length_plug = f"{curve_info}.arcLength"
-    divide = cmds.createNode("divide")
-    cmds.connectAttr(up_orig_length_plug, f"{divide}.input1")
-    cmds.connectAttr(up_length_plug, f"{divide}.input2")
+    divide = cmds.createNode("multiplyDivide")
+    cmds.setAttr(f"{divide}.operation", 2)
+    cmds.connectAttr(up_orig_length_plug, f"{divide}.input1X")
+    cmds.connectAttr(up_length_plug, f"{divide}.input2X")
     clamp = cmds.createNode("clamp")
     cmds.setAttr(f"{clamp}.maxR", 1)
-    cmds.connectAttr(f"{divide}.output", f"{clamp}.inputR")
+    cmds.connectAttr(f"{divide}.outputX", f"{clamp}.inputR")
     blend_color = cmds.createNode("blendColors")
     cmds.connectAttr(f"{clamp}.outputR", f"{blend_color}.color2R")
     cmds.setAttr(f"{blend_color}.color1R", 1)
     cmds.connectAttr(stretch_attr, f"{blend_color}.blender")
-    multiply = cmds.createNode("multiply")
-    cmds.connectAttr(f"{blend_color}.outputR", f"{multiply}.input[0]")
-    cmds.connectAttr(squash_attr, f"{multiply}.input[1]")
+    multiply = cmds.createNode("multiplyDivide")
+    cmds.connectAttr(f"{blend_color}.outputR", f"{multiply}.input1X")
+    cmds.connectAttr(squash_attr, f"{multiply}.input2X")
     detach_curve = cmds.createNode("detachCurve")
     cmds.connectAttr(f"{rebuild_curve}.outputCurve", f"{detach_curve}.inputCurve")
-    cmds.connectAttr(f"{multiply}.output", f"{detach_curve}.parameter[0]")
+    cmds.connectAttr(f"{multiply}.outputX", f"{detach_curve}.parameter[0]")
     cmds.connectAttr(f"{detach_curve}.outputCurve[0]", plug, force=1)
 
     uniform_main_output_plugs = []
@@ -1255,14 +1268,15 @@ def ribbon_uv(
     cmds.connectAttr(f"{uniform_main_crv}.local", f"{curve_info}.inputCurve")
     deformed_length_attr = f"{curve_info}.arcLength"
 
-    divide = cmds.createNode("divide")
-    cmds.connectAttr(original_length_attr, f"{divide}.input1")
-    cmds.connectAttr(deformed_length_attr, f"{divide}.input2")
+    divide = cmds.createNode("multiplyDivide")
+    cmds.setAttr(f"{divide}.operation", 2)
+    cmds.connectAttr(original_length_attr, f"{divide}.input1X")
+    cmds.connectAttr(deformed_length_attr, f"{divide}.input2X")
 
     pma = cmds.createNode("plusMinusAverage")
     cmds.setAttr(f"{pma}.operation", 2)
     cmds.setAttr(f"{pma}.input1D[0]", 1)
-    cmds.connectAttr(f"{divide}.output", f"{pma}.input1D[1]")
+    cmds.connectAttr(f"{divide}.outputX", f"{pma}.input1D[1]")
     volume_ratio_attr = f"{pma}.output1D"
 
     auto_volume_pma = []
@@ -1271,15 +1285,17 @@ def ribbon_uv(
             output, longName="volume_multiple", attributeType="float", keyable=True
         )
         cmds.setAttr(f"{output}.volume_multiple", multiple)
-        multiply = cmds.createNode("multiply")
-        cmds.connectAttr(f"{output}.volume_multiple", f"{multiply}.input[0]")
-        cmds.connectAttr(volume_ratio_attr, f"{multiply}.input[1]")
-        cmds.connectAttr(auto_volume_attr, f"{multiply}.input[2]")
+        multiply = cmds.createNode("multiplyDivide")
+        cmds.connectAttr(f"{output}.volume_multiple", f"{multiply}.input1X")
+        cmds.connectAttr(volume_ratio_attr, f"{multiply}.input2X")
+        multiply1 = cmds.createNode("multiplyDivide")
+        cmds.connectAttr(f"{multiply}.outputX", f"{multiply1}.input1X")
+        cmds.connectAttr(auto_volume_attr, f"{multiply1}.input2X")
 
         pma = cmds.createNode("plusMinusAverage")
         cmds.setAttr(f"{pma}.operation", 2)
         cmds.setAttr(f"{pma}.input1D[0]", 1)
-        cmds.connectAttr(f"{multiply}.output", f"{pma}.input1D[1]")
+        cmds.connectAttr(f"{multiply1}.outputX", f"{pma}.input1D[1]")
         auto_volume_pma.append(pma)
 
     # volume
@@ -1465,38 +1481,39 @@ def ribbon_chain_spline_ik(
     cmds.connectAttr(f"{main_orig_crv}.local", f"{curve_info}.inputCurve")
     main_orig_curve_length = f"{curve_info}.arcLength"
 
-    divide = cmds.createNode("divide")
-    cmds.connectAttr(main_curve_length, f"{divide}.input1")
-    cmds.connectAttr(main_orig_curve_length, f"{divide}.input2")
-    ratio = f"{divide}.output"
+    divide = cmds.createNode("multiplyDivide")
+    cmds.setAttr(f"{divide}.operation", 2)
+    cmds.connectAttr(main_curve_length, f"{divide}.input1X")
+    cmds.connectAttr(main_orig_curve_length, f"{divide}.input2X")
+    ratio = f"{divide}.outputX"
 
-    multiply = cmds.createNode("multiply")
-    cmds.connectAttr(initial_chain_distance_attr, f"{multiply}.input[0]")
-    cmds.connectAttr(ratio, f"{multiply}.input[1]")
+    multiply = cmds.createNode("multiplyDivide")
+    cmds.connectAttr(initial_chain_distance_attr, f"{multiply}.input1X")
+    cmds.connectAttr(ratio, f"{multiply}.input2X")
 
     rvs = []
     choices = []
     multiplies = []
-    multiply = cmds.createNode("multiply")
-    cmds.setAttr(f"{multiply}.input[0]", 0.00000001)
-    cmds.connectAttr(negate_plug, f"{multiply}.input[1]")
-    negate_min_translate_plug = f"{multiply}.output"
+    multiply1 = cmds.createNode("multiplyDivide")
+    cmds.setAttr(f"{multiply1}.input1X", 0.00000001)
+    cmds.connectAttr(negate_plug, f"{multiply1}.input2X")
+    negate_min_translate_plug = f"{multiply1}.outputX"
     is_negate = True if cmds.getAttr(negate_plug) < 0 else False
     for i in range(len(main_ik_joints[1:])):
         choice = cmds.createNode("choice")
         cmds.connectAttr(squash_pin_method_attr, f"{choice}.selector")
         # uniform squash
-        cmds.connectAttr(f"{multiply}.output", f"{choice}.input[0]")
+        cmds.connectAttr(f"{multiply}.outputX", f"{choice}.input[0]")
 
         rv = cmds.createNode("remapValue")
         cmds.connectAttr(main_curve_length, f"{rv}.inputValue")
         cmds.connectAttr(initial_chain_distance_attr, f"{rv}.outputMin")
         cmds.setAttr(f"{rv}.outputMax", 0)
 
-        m = cmds.createNode("multiply")
-        cmds.setAttr(f"{m}.input[0]", i + 1)
-        cmds.connectAttr(initial_chain_distance_attr, f"{m}.input[1]")
-        cmds.connectAttr(f"{m}.output", f"{rv}.inputMin")
+        m = cmds.createNode("multiplyDivide")
+        cmds.setAttr(f"{m}.input1X", i + 1)
+        cmds.connectAttr(initial_chain_distance_attr, f"{m}.input2X")
+        cmds.connectAttr(f"{m}.outputX", f"{rv}.inputMin")
         try:
             previous_m = multiplies[i - 1]
             cmds.connectAttr(f"{previous_m}.output", f"{rv}.inputMax")
@@ -1557,7 +1574,7 @@ def ribbon_chain_spline_ik(
         stretch_bta = cmds.createNode("blendTwoAttr")
         cmds.connectAttr(stretch_attr, f"{stretch_bta}.attributesBlender")
         cmds.connectAttr(initial_chain_distance_attr, f"{stretch_bta}.input[0]")
-        cmds.connectAttr(f"{multiply}.output", f"{stretch_bta}.input[1]")
+        cmds.connectAttr(f"{multiply}.outputX", f"{stretch_bta}.input[1]")
 
         condition = cmds.createNode("condition")
         cmds.connectAttr(ratio, f"{condition}.firstTerm")
@@ -1604,15 +1621,15 @@ def ribbon_chain_spline_ik(
         cmds.setAttr(f"{pma}.input1D[0]", 1)
         cmds.connectAttr(f"{rv}.outValue", f"{pma}.input1D[1]")
 
-        multiply = cmds.createNode("multiply")
-        cmds.connectAttr(result, f"{multiply}.input[0]")
-        cmds.connectAttr(f"{pma}.output1D", f"{multiply}.input[1]")
+        multiply = cmds.createNode("multiplyDivide")
+        cmds.connectAttr(result, f"{multiply}.input1X")
+        cmds.connectAttr(f"{pma}.output1D", f"{multiply}.input2X")
 
-        negate_multiply = cmds.createNode("multiply")
-        cmds.connectAttr(f"{multiply}.output", f"{negate_multiply}.input[0]")
-        cmds.connectAttr(negate_plug, f"{negate_multiply}.input[1]")
-        cmds.connectAttr(f"{negate_multiply}.output", f"{main_ik_joints[i + 1]}.tx")
-        cmds.connectAttr(f"{negate_multiply}.output", f"{up_ik_joints[i + 1]}.tx")
+        negate_multiply = cmds.createNode("multiplyDivide")
+        cmds.connectAttr(f"{multiply}.outputX", f"{negate_multiply}.input1X")
+        cmds.connectAttr(negate_plug, f"{negate_multiply}.input2X")
+        cmds.connectAttr(f"{negate_multiply}.outputX", f"{main_ik_joints[i + 1]}.tx")
+        cmds.connectAttr(f"{negate_multiply}.outputX", f"{up_ik_joints[i + 1]}.tx")
 
     for i in range(len(main_ik_joints)):
         cmds.connectAttr(f"{main_ik_joints[i]}.tx", f"{dyn_ik_joints[i]}.tx")
@@ -1687,16 +1704,24 @@ def ribbon_chain_spline_ik(
         cmds.parentConstraint(spline_ik_outs[i], output)
 
         # scale
-        divide = cmds.createNode("divide")
-        cmds.connectAttr(f"{main_ik_joints[i + 1]}.tx", f"{divide}.input1")
-        cmds.connectAttr(initial_chain_distance_attr, f"{divide}.input2")
+        divide = cmds.createNode("multiplyDivide")
+        cmds.setAttr(f"{divide}.operation", 2)
+        cmds.connectAttr(f"{main_ik_joints[i + 1]}.tx", f"{divide}.input1X")
+        cmds.connectAttr(initial_chain_distance_attr, f"{divide}.input2X")
 
-        absolute = cmds.createNode("absolute")
-        cmds.connectAttr(f"{divide}.output", f"{absolute}.input")
+        md = cmds.createNode("multiplyDivide")
+        cmds.setAttr(f"{md}.operation", 3)
+        cmds.connectAttr(f"{divide}.outputX", f"{md}.input1X")
+        cmds.setAttr(f"{md}.input2X", 2)
+
+        md1 = cmds.createNode("multiplyDivide")
+        cmds.setAttr(f"{md1}.operation", 3)
+        cmds.connectAttr(f"{md}.outputX", f"{md1}.input1X")
+        cmds.setAttr(f"{md1}.input2X", 0.5)
 
         bta = cmds.createNode("blendTwoAttr")
         cmds.setAttr(f"{bta}.input[0]", 1)
-        cmds.connectAttr(f"{absolute}.output", f"{bta}.input[1]")
+        cmds.connectAttr(f"{md1}.outputX", f"{bta}.input[1]")
         cmds.connectAttr(scale_attr, f"{bta}.attributesBlender")
         cmds.connectAttr(f"{bta}.output", f"{output}.sx")
         cmds.connectAttr(f"{bta}.output", f"{output}.sy")

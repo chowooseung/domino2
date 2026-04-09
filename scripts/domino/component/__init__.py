@@ -331,9 +331,11 @@ class Rig(dict):
             index=index,
             description=description,
             extension="guide",
-            m=m,
+            m=ORIGINMATRIX,
         )
         guide = ins.create()
+        cmds.setAttr(f"{guide}.s", lock=False)
+        cmds.xform(guide, matrix=m, worldSpace=True)
         crv = nurbscurve.create("axis", 0)
         for shape in cmds.listRelatives(crv, shapes=True):
             shape = cmds.parent(shape, guide, relative=True, shape=True)
