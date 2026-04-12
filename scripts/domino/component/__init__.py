@@ -1937,6 +1937,8 @@ def serialize():
         if not script:
             continue
         content = ""
+        if script.startswith("*"):
+            script = script[1:]
         with open(script, "r") as f:
             content += f.read()
         rig["pre_custom_scripts_str"]["value"].append(content)
@@ -1946,6 +1948,8 @@ def serialize():
         if not script:
             continue
         content = ""
+        if script.startswith("*"):
+            script = script[1:]
         with open(script, "r") as f:
             content += f.read()
         rig["post_custom_scripts_str"]["value"].append(content)

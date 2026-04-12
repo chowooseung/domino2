@@ -13,7 +13,6 @@ import logging
 # gui
 from domino.vendor.Qt import QtWidgets
 
-
 # region Initialize Settings
 ORIGINMATRIX = om.MMatrix()
 matrices = [list(ORIGINMATRIX)]
@@ -769,10 +768,10 @@ class Rig(component.Rig):
             cmds.setAttr(f"{md}.input1", *a)
             cmds.setAttr(f"{md}.input2", 1, 1, 1)
             axis_md.append(md)
-        roll_axis_choide = cmds.createNode("choice")
+        roll_axis_choice = cmds.createNode("choice")
         for i, md in enumerate(axis_md):
-            cmds.connectAttr(f"{md}.output", f"{roll_axis_choide}.input[{i}]")
-        cmds.connectAttr(f"{self.rig_root}.roll_axis", f"{roll_axis_choide}.selector")
+            cmds.connectAttr(f"{md}.output", f"{roll_axis_choice}.input[{i}]")
+        cmds.connectAttr(f"{self.rig_root}.roll_axis", f"{roll_axis_choice}.selector")
 
         enable_rev = cmds.createNode("reverse")
         cmds.connectAttr(f"{host_ctl}.legacy", f"{enable_rev}.inputX")
@@ -799,7 +798,7 @@ class Rig(component.Rig):
             cmds.connectAttr(f"{rv}.outValue", f"{md}.input1X")
             cmds.connectAttr(f"{rv}.outValue", f"{md}.input1Y")
             cmds.connectAttr(f"{rv}.outValue", f"{md}.input1Z")
-            cmds.connectAttr(f"{roll_axis_choide}.output", f"{md}.input2")
+            cmds.connectAttr(f"{roll_axis_choice}.output", f"{md}.input2")
             enable_md = cmds.createNode("multiplyDivide")
             cmds.connectAttr(f"{enable_rev}.outputX", f"{enable_md}.input1X")
             cmds.connectAttr(f"{enable_rev}.outputX", f"{enable_md}.input1Y")
@@ -1284,6 +1283,47 @@ def connect_humanleg01(
             f"{ik_local_ctl}.child_controllers",
             f"{host}.parent_controllers[{len(sources) + 1}]",
         )
+
+    rig_root = Name.create(
+        Name.controller_name_convention,
+        name=foot_name,
+        side=foot_side,
+        index=foot_index,
+        extension="rigRoot",
+    )
+    count = len(cmds.listAttr(f"{rig_root}.initialize_output_matrix", multi=True))
+    for c in range(count):
+        md = cmds.createNode("multiplyDivide")
+        inv_npo = Name.create(
+            Name.controller_name_convention,
+            name=foot_name,
+            side=foot_side,
+            index=foot_index,
+            description=f"inv{c}",
+            extension=Name.npo_extension,
+        )
+        inv_ctl = Name.create(
+            Name.controller_name_convention,
+            name=foot_name,
+            side=foot_side,
+            index=foot_index,
+            description=f"inv{c}",
+            extension=Name.controller_extension,
+        )
+        pma = cmds.createNode("plusMinusAverage")
+        cmds.connectAttr(f"{inv_npo}.r", f"{pma}.input3D[0]")
+        cmds.connectAttr(f"{inv_ctl}.r", f"{pma}.input3D[1]")
+        fix_source = Name.create(
+            Name.controller_name_convention,
+            name=foot_name,
+            side=foot_side,
+            index=foot_index,
+            description=f"fix{c}",
+            extension="source",
+        )
+        cmds.connectAttr(f"{pma}.output3D", f"{md}.input1")
+        cmds.setAttr(f"{md}.input2", -1, -1, -1)
+        cmds.connectAttr(f"{md}.output", f"{fix_source}.r")
 
 
 def connect_humanarm01(

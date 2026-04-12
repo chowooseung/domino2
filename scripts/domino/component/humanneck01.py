@@ -451,25 +451,8 @@ class Rig(component.Rig):
         tip_rot = cmds.createNode(
             "transform", name=tip_npo.replace("npo", "rot"), parent=tip_ctl
         )
-        cmds.addAttr(
-            tip_ctl,
-            longName="head_rot_fix",
-            attributeType="float",
-            minValue=0,
-            maxValue=1,
-            defaultValue=1,
-            keyable=True,
-        )
         cmds.connectAttr(
             f"{self.rig_root}.tip_rot_matrix", f"{tip_rot}.offsetParentMatrix"
-        )
-        cmds.addAttr(
-            tip_ctl,
-            longName="head_ctl_visibility",
-            attributeType="enum",
-            enumName="off:on",
-            defaultValue=0,
-            keyable=True,
         )
 
         ins = Transform(
@@ -627,20 +610,8 @@ class Rig(component.Rig):
             sc, f"{ribbon_surface}.cv[3:4][*]", transformValue=[ribbon2_jnt, 1]
         )
 
-        head_rot_fix = cmds.createNode(
-            "transform",
-            name=Name.create(
-                Name.controller_name_convention,
-                name=name,
-                side=side,
-                index=index,
-                description="head",
-                extension="rotFix",
-            ),
-            parent=self.rig_root,
-        )
         head_npo, head_ctl = self["controller"][5].create(
-            parent=head_rot_fix,
+            parent=tip_rot,
             shape=(
                 self["controller"][5]["shape"]
                 if "shape" in self["controller"][5]
@@ -648,6 +619,10 @@ class Rig(component.Rig):
             ),
             color=12,
         )
+        cmds.setAttr(f"{head_ctl}.s", lock=False)
+        cmds.setAttr(f"{head_ctl}.sx", lock=False, keyable=True)
+        cmds.setAttr(f"{head_ctl}.sy", lock=False, keyable=True)
+        cmds.setAttr(f"{head_ctl}.sz", lock=False, keyable=True)
         head_loc = cmds.createNode(
             "transform",
             name=Name.create(
@@ -670,14 +645,6 @@ class Rig(component.Rig):
         cmds.connectAttr(f"{condition}.outColorR", f"{head_loc}.sz")
         cmds.connectAttr(f"{condition}.outColorG", f"{head_loc}.ry")
 
-        cmds.connectAttr(f"{tip_ctl}.head_ctl_visibility", f"{head_npo}.v")
-        cmds.pointConstraint(ribbon_outputs[-1], head_rot_fix)
-        cons = cmds.orientConstraint(tip_rot, ribbon_outputs[-1], head_rot_fix)[0]
-        attrs = cmds.orientConstraint(cons, query=True, weightAliasList=True)
-        cmds.connectAttr(f"{tip_ctl}.head_rot_fix", f"{cons}.{attrs[0]}")
-        rev = cmds.createNode("reverse")
-        cmds.connectAttr(f"{tip_ctl}.head_rot_fix", f"{rev}.inputX")
-        cmds.connectAttr(f"{rev}.outputX", f"{cons}.{attrs[1]}")
         decom_m = cmds.createNode("decomposeMatrix")
         cmds.connectAttr(f"{self.rig_root}.head_matrix", f"{decom_m}.inputMatrix")
         cmds.connectAttr(f"{decom_m}.outputRotate", f"{head_npo}.r")

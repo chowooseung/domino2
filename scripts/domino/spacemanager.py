@@ -139,9 +139,22 @@ def generate():
                         )
                         cmds.deleteAttr(host, attribute=src)
 
+            source_temp_objs = []
+            for s in sources:
+                s_loc = cmds.createNode(
+                    "transform", name=f"{destination}_{s}_spaceSource", parent=s
+                )
+                cmds.xform(
+                    s_loc,
+                    matrix=cmds.xform(
+                        destination, query=True, matrix=True, worldSpace=True
+                    ),
+                    worldSpace=True,
+                )
+                source_temp_objs.append(s_loc)
             func = CONS_FUNC[int(cons_type)]
 
-            cons = func(sources, destination, maintainOffset=True)[0]
+            cons = func(source_temp_objs, destination, maintainOffset=True)[0]
             alias_list = func(cons, query=True, weightAliasList=True)
 
             if attribute_type == 0:  # enum
