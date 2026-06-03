@@ -311,8 +311,7 @@ cmds.evalDeferred(command)"""
             QtWidgets.QTreeView.EditTrigger.NoEditTriggers
         )
         self.rig_tree_model = RigModel()
-        self.rig_tree_view.setStyleSheet(
-            f"""
+        self.rig_tree_view.setStyleSheet(f"""
 QTreeView::branch:has-children:!has-siblings:closed,
 QTreeView::branch:closed:has-children {{
     image: url("{icon_dir.as_posix()}/chevron-down.svg");
@@ -321,8 +320,7 @@ QTreeView::branch:open:has-children:!has-siblings,
 QTreeView::branch:open:has-children  {{
     image: url("{icon_dir.as_posix()}/chevron-right.svg");
 }}
-        """
-        )
+        """)
         self.rig_tree_model.populate_model()
         layout.addWidget(self.rig_tree_view)
         self.rig_tree_view.setModel(self.rig_tree_model)
@@ -415,7 +413,7 @@ QTreeView::branch:open:has-children  {{
                     continue
                 action = QtGui.QAction(template.name.split(".")[0])
                 action.triggered.connect(
-                    partial(self.load_template, template.as_posix(), True)
+                    partial(self.load_template, template.as_posix())
                 )
                 menu.addAction(action)
                 self.actions.append(action)
@@ -428,10 +426,10 @@ QTreeView::branch:open:has-children  {{
             fileMode=1,
         )
         if file_path:
-            cmds.setAttr(f"{RIG}.modeling_path", file_path[0], type="string")
+            cmds.setAttr(f"{RIG}.modeling_path", file_path[0], typ="string")
             self.modeling_path_line_edit.setText(file_path[0])
         else:
-            cmds.setAttr(f"{RIG}.modeling_path", "", type="string")
+            cmds.setAttr(f"{RIG}.modeling_path", "", typ="string")
             self.modeling_path_line_edit.setText("")
 
     def expand_items(self):
@@ -695,7 +693,7 @@ QTreeView::branch:open:has-children  {{
         file_path = self.domino_path_line_edit.text()
         modifiers = QtWidgets.QApplication.keyboardModifiers()
 
-        pattern = r"v\d+"
+        pattern = r"(?<=_|^)v\d{2,}"
         if file_path and modifiers == QtCore.Qt.KeyboardModifier.ControlModifier:
             match = re.search(pattern, file_path)
             if not match:
@@ -713,21 +711,20 @@ QTreeView::branch:open:has-children  {{
             if not file_path:
                 return
             file_path = file_path[0]
-            match = re.search(pattern, file_path)
+            match = re.search(pattern, os.path.basename(file_path))
             if not match:
                 file_path = ensure_version_in_file_path(file_path)
         # endregion
 
         save(file_path, data)
         if cmds.objExists(data.guide_root):
-            cmds.setAttr(f"{data.guide_root}.domino_path", file_path, type="string")
+            cmds.setAttr(f"{data.guide_root}.domino_path", file_path, typ="string")
         self.set_domino_work_path(file_path)
         ui = Settings.get_instance()
         ui.refresh()
 
     def load(self):
-        mel.eval(
-            """
+        mel.eval("""
 global proc DominoLoadOptionsUISetup(string $parent)
 {
     setParent $parent;
@@ -761,8 +758,7 @@ global proc DominoLoadOptionsUICommit(string $parent)
     // 선택된 버튼 이름도 optionVar 로 저장
     optionVar -sv "dominoBreakPoint" $sel;
 }
-"""
-        )
+""")
 
         file_path = cmds.fileDialog2(
             caption="Load Domino Rig",
@@ -802,7 +798,7 @@ global proc DominoLoadOptionsUICommit(string $parent)
                 cmds.delete(GUIDE)
             if cmds.objExists(RIG_SETS):
                 cmds.delete((cmds.sets(RIG_SETS, query=True) or []) + [RIG_SETS])
-            tags = cmds.ls(type="controller")
+            tags = cmds.ls(typ="controller")
             if tags:
                 cmds.delete(tags)
 
@@ -810,19 +806,43 @@ global proc DominoLoadOptionsUICommit(string $parent)
             self.refresh()
             self.set_domino_work_path(file_path[0])
 
-    def load_template(self, file_path, create):
-        """file_line_edit 에 path 를 기록하지 않고 load 합니다."""
+    def load_template(self, file_path):
+        """template 을 load 하면서 init save 도 같이 수행."""
+        save_file_path = cmds.fileDialog2(
+            caption="Init Domino Rig",
+            startingDirectory=cmds.workspace(query=True, rootDirectory=True),
+            fileFilter="Domino Rig (*.domino)",
+            fileMode=0,
+        )
+        if not save_file_path:
+            return
+
         if cmds.objExists(RIG):
             cmds.delete(GUIDE)
         if cmds.objExists(GUIDE):
             cmds.delete(GUIDE)
         if cmds.objExists(RIG_SETS):
             cmds.delete((cmds.sets(RIG_SETS, query=True) or []) + [RIG_SETS])
-        tags = cmds.ls(type="controller")
+        tags = cmds.ls(typ="controller")
         if tags:
             cmds.delete(tags)
-        load(file_path, create)
+
+        load(file_path, True)
+
+        self.rig_tree_model.serialize()
+        data = self.rig_tree_model.rig
+        if not data:
+            return
+        save_file_path = save_file_path[0].replace(".domino", "_v001.domino")
+
+        save(save_file_path, data)
+        if cmds.objExists(data.guide_root):
+            cmds.setAttr(f"{data.guide_root}.domino_path", file_path, typ="string")
+
+        self.set_domino_work_path(save_file_path)
         self.refresh()
+        ui = Settings.get_instance()
+        ui.refresh()
 
     # endregion
     def build(self, new_scene=False):

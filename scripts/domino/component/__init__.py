@@ -1651,6 +1651,8 @@ def build(context, component, attach_guide=False):
         for script_path in component["pre_custom_scripts"]["value"]:
             if not script_path:
                 continue
+            if script_path.startswith("*"):
+                continue
             name = Path(script_path).name.split(".")[0]
             spec = importlib.util.spec_from_file_location(name, script_path)
             module = importlib.util.module_from_spec(spec)
@@ -1779,6 +1781,8 @@ def build(context, component, attach_guide=False):
         # post custom scripts
         for script_path in component["post_custom_scripts"]["value"]:
             if not script_path:
+                continue
+            if script_path.startswith("*"):
                 continue
             name = Path(script_path).name.split(".")[0]
             spec = importlib.util.spec_from_file_location(name, script_path)

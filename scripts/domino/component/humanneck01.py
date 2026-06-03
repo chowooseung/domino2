@@ -656,7 +656,7 @@ class Rig(component.Rig):
             output_npo, output_ctl = self["controller"][6 + i].create(
                 parent=self.rig_root,
                 shape=(
-                    self["controller"][5 + i]["shape"]
+                    self["controller"][6 + i]["shape"]
                     if "shape" in self["controller"][6 + i]
                     else "sphere"
                 ),

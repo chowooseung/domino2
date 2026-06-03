@@ -170,8 +170,8 @@ class Assembly(DynamicWidget):
 
             _text = _select_items[0].text()
             _name, _parent = _text.split(" ")
-            if _text.startswith("*"):
-                _name = _name[:1]
+            if _name.startswith("*"):
+                _name = _name[1:]
             _path = Path(_parent) / _name
 
             if sys.platform.startswith("darwin"):
