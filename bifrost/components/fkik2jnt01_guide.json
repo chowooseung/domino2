@@ -12,7 +12,6 @@
     "compounds": [
         {
             "name": "Domino::Components::fkik2jnt01_guide",
-            "uriImported": "file:///fkik2jnt01_guide.json",
             "metadata": [
                 {
                     "metaName": "io_nodes",
@@ -154,34 +153,9 @@
                     ]
                 },
                 {
-                    "metaName": "_recentNode_",
-                    "metaType": "string",
-                    "metaValue": "BifrostGraph,Core::Type_Conversion,to_double"
-                },
-                {
-                    "metaName": "_recentNode_",
-                    "metaType": "string",
-                    "metaValue": "BifrostGraph,Core::Math,inverse_matrix"
-                },
-                {
-                    "metaName": "_recentNode_",
-                    "metaType": "string",
-                    "metaValue": "BifrostGraph,Core::Type_Conversion,to_float"
-                },
-                {
-                    "metaName": "_recentNode_",
-                    "metaType": "string",
-                    "metaValue": "BifrostGraph,Core::Math,matrix_multiply"
-                },
-                {
-                    "metaName": "_recentNode_",
-                    "metaType": "string",
-                    "metaValue": "BifrostGraph,Core::Array,get_from_array"
-                },
-                {
                     "metaName": "ViewportRect",
                     "metaType": "string",
-                    "metaValue": "-28.3309 -270.941 1589.77 1330.1"
+                    "metaValue": "987.545 -685.608 2835.03 2080.2"
                 },
                 {
                     "metaName": "DisplayMode",
@@ -191,12 +165,12 @@
                 {
                     "metaName": "LayoutPos",
                     "metaType": "string",
-                    "metaValue": "-111 -149"
+                    "metaValue": "315 10"
                 },
                 {
                     "metaName": "zValue",
                     "metaType": "string",
-                    "metaValue": "35.000000"
+                    "metaValue": "34.000000"
                 }
             ],
             "ports": [
@@ -277,7 +251,6 @@
             "compounds": [
                 {
                     "name": "fk_npo_matrix",
-                    "uriImported": "file:///fkik2jnt01_guide.json",
                     "metadata": [
                         {
                             "metaName": "io_nodes",
@@ -400,31 +373,6 @@
                                     ]
                                 }
                             ]
-                        },
-                        {
-                            "metaName": "_recentNode_",
-                            "metaType": "string",
-                            "metaValue": "BifrostGraph,Core::Conversion,scalar_to_vector3"
-                        },
-                        {
-                            "metaName": "_recentNode_",
-                            "metaType": "string",
-                            "metaValue": "BifrostGraph,Core::Conversion,scalar_to_vector4"
-                        },
-                        {
-                            "metaName": "_recentNode_",
-                            "metaType": "string",
-                            "metaValue": "BifrostGraph,Domino::Compounds,offset_matrix"
-                        },
-                        {
-                            "metaName": "_recentNode_",
-                            "metaType": "string",
-                            "metaValue": "BifrostGraph,Core::Array,build_array"
-                        },
-                        {
-                            "metaName": "_recentNode_",
-                            "metaType": "string",
-                            "metaValue": "BifrostGraph,Rigging::Solver,pick_matrix"
                         },
                         {
                             "metaName": "ViewportRect",
@@ -2406,11 +2354,15 @@
                         {
                             "name": "output"
                         }
-                    ]
+                    ],
+                    "libraryDependencies": {
+                        "Amino": "2.15.0.11",
+                        "Domino": "1.0.0",
+                        "rigging": "2.15.0.11"
+                    }
                 },
                 {
                     "name": "place_guide_pole_vector",
-                    "uriImported": "file:///fkik2jnt01_guide.json",
                     "metadata": [
                         {
                             "metaName": "io_nodes",
@@ -2499,34 +2451,9 @@
                             ]
                         },
                         {
-                            "metaName": "_recentNode_",
-                            "metaType": "string",
-                            "metaValue": "BifrostGraph,Core::Constants,float"
-                        },
-                        {
-                            "metaName": "_recentNode_",
-                            "metaType": "string",
-                            "metaValue": "BifrostGraph,Core::Math,inverse_matrix"
-                        },
-                        {
-                            "metaName": "_recentNode_",
-                            "metaType": "string",
-                            "metaValue": "BifrostGraph,Core::Math,matrix_multiply"
-                        },
-                        {
-                            "metaName": "_recentNode_",
-                            "metaType": "string",
-                            "metaValue": "BifrostGraph,Core::Type_Conversion,to_float"
-                        },
-                        {
-                            "metaName": "_recentNode_",
-                            "metaType": "string",
-                            "metaValue": "BifrostGraph,Core::Array,get_from_array"
-                        },
-                        {
                             "metaName": "ViewportRect",
                             "metaType": "string",
-                            "metaValue": "3983.95 -1189.32 1213.43 988.587"
+                            "metaValue": "3502.98 -1106.18 1347.87 989"
                         }
                     ],
                     "ports": [
@@ -2577,7 +2504,7 @@
                                 {
                                     "metaName": "zValue",
                                     "metaType": "string",
-                                    "metaValue": "38.000000"
+                                    "metaValue": "42.000000"
                                 }
                             ]
                         },
@@ -2846,7 +2773,17 @@
                             "target": "subtract2.first.translation"
                         }
                     ],
-                    "values": [],
+                    "values": [
+                        {
+                            "valueName": "SRT_to_matrix.scale",
+                            "valueType": "Math::double3",
+                            "value": {
+                                "x": "1",
+                                "y": "1",
+                                "z": "1"
+                            }
+                        }
+                    ],
                     "reservedNodeNames": [
                         {
                             "name": "input"
@@ -2854,7 +2791,10 @@
                         {
                             "name": "output"
                         }
-                    ]
+                    ],
+                    "libraryDependencies": {
+                        "Amino": "2.15.0.11"
+                    }
                 }
             ],
             "compoundNodes": [
@@ -3161,7 +3101,7 @@
                         {
                             "metaName": "zValue",
                             "metaType": "string",
-                            "metaValue": "56.000000"
+                            "metaValue": "58.000000"
                         }
                     ]
                 },
@@ -3874,7 +3814,12 @@
                 {
                     "name": "output"
                 }
-            ]
+            ],
+            "libraryDependencies": {
+                "Amino": "2.15.0.11",
+                "Domino": "1.0.0",
+                "rigging": "2.15.0.11"
+            }
         }
     ]
 }

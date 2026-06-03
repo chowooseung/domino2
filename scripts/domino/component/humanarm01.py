@@ -179,6 +179,15 @@ DATA = [
         longName="scapular_up_matrix",
         value=list(ORIGINMATRIX),
     ),
+    attribute.DoubleAngle(
+        longName="single_chain_rotate_x", minValue=-360, maxValue=360
+    ),
+    attribute.DoubleAngle(
+        longName="single_chain_rotate_y", minValue=-360, maxValue=360
+    ),
+    attribute.DoubleAngle(
+        longName="single_chain_rotate_z", minValue=-360, maxValue=360
+    ),
     attribute.NurbsSurface(
         longName="upper_ribbon_surface",
         value={
@@ -1044,15 +1053,6 @@ class Rig(component.Rig):
         )
         cmds.addAttr(
             ik_ctl,
-            longName="soft_ik",
-            attributeType="float",
-            minValue=0,
-            maxValue=1,
-            defaultValue=0,
-            keyable=True,
-        )
-        cmds.addAttr(
-            ik_ctl,
             longName="max_stretch",
             attributeType="float",
             minValue=1,
@@ -1114,31 +1114,58 @@ class Rig(component.Rig):
         cmds.connectAttr(f"{host_ctl}.fkik", f"{rev}.inputX")
         cmds.connectAttr(f"{rev}.outputX", f"{shoulder_npo}.v")
 
-        ins = Transform(
+        single_ik0_jnt = cmds.createNode(
+            "joint",
+            name=Name.create(
+                Name.controller_name_convention,
+                name=name,
+                side=side,
+                index=index,
+                description="SC0",
+                extension=Name.joint_extension,
+            ),
             parent=ik_pos_ctl,
-            name=name,
-            side=side,
-            index=index,
-            description="ikAim",
-            extension="grp",
-            m=ORIGINMATRIX,
         )
-        ik_aim_grp = ins.create()
-        cmds.aimConstraint(
-            ik_local_loc, ik_aim_grp, maintainOffset=False, aimVector=(1, 0, 0)
+        single_ik1_jnt = cmds.createNode(
+            "joint",
+            name=Name.create(
+                Name.controller_name_convention,
+                name=name,
+                side=side,
+                index=index,
+                description="SC1",
+                extension=Name.joint_extension,
+            ),
+            parent=single_ik0_jnt,
         )
-        cmds.setAttr(f"{ik_aim_grp}.t", 0, 0, 0)
-
-        ins = Transform(
-            parent=ik_aim_grp,
-            name=name,
-            side=side,
-            index=index,
-            description="ik",
-            extension="target",
-            m=cmds.xform(ik_aim_grp, query=True, matrix=True, worldSpace=True),
+        cmds.setAttr(f"{single_ik0_jnt}.t", 0, 0, 0)
+        cmds.setAttr(f"{single_ik1_jnt}.tx", 1)
+        cmds.connectAttr(
+            f"{self.rig_root}.single_chain_rotate_x", f"{single_ik0_jnt}.jointOrientX"
         )
-        ik_target = ins.create()
+        cmds.connectAttr(
+            f"{self.rig_root}.single_chain_rotate_y", f"{single_ik0_jnt}.jointOrientY"
+        )
+        cmds.connectAttr(
+            f"{self.rig_root}.single_chain_rotate_z", f"{single_ik0_jnt}.jointOrientZ"
+        )
+        cmds.hide(single_ik0_jnt)
+        ikh = cmds.ikHandle(
+            startJoint=single_ik0_jnt,
+            endEffector=single_ik1_jnt,
+            solver="ikSCsolver",
+            name=Name.create(
+                Name.controller_name_convention,
+                name=name,
+                side=side,
+                index=index,
+                description="SC",
+                extension=Name.ikh_extension,
+            ),
+        )[0]
+        ikh = cmds.parent(ikh, self.rig_root)[0]
+        cmds.hide(ikh)
+        cmds.parentConstraint(ik_local_loc, ikh)
 
         original_distance_curve = cmds.curve(point=((0, 0, 0), (0, 0, 0)), degree=1)
         original_distance_curve = cmds.rename(
@@ -1178,8 +1205,14 @@ class Rig(component.Rig):
             f"{decom_m}.outputTranslate", f"{original_distance_curve}.cv[1]"
         )
 
+        condition = cmds.createNode("condition")
+        cmds.connectAttr(f"{self.rig_root}.side", f"{condition}.firstTerm")
+        cmds.setAttr(f"{condition}.secondTerm", 2)
+        cmds.setAttr(f"{condition}.colorIfTrueR", -1)
+        cmds.setAttr(f"{condition}.colorIfFalseR", 1)
+
         rigkit.ik_2jnt(
-            parent=ik_target,
+            parent=single_ik1_jnt,
             name=Name.create(
                 convention=Name.controller_name_convention,
                 name=name,
@@ -1201,8 +1234,8 @@ class Rig(component.Rig):
             attach_pole_vector_attr=f"{ik_ctl}.attach_to_PV",
             scale_attr=f"{ik_ctl}.ik_scale",
             slide_attr=f"{ik_ctl}.slide",
-            soft_ik_attr=f"{ik_ctl}.soft_ik",
             max_stretch_attr=f"{ik_ctl}.max_stretch",
+            negate_plug=f"{condition}.outColorR",
         )
         mult_m = cmds.createNode("multMatrix")
         cmds.connectAttr(f"{self.rig_root}.npo_matrix[2]", f"{mult_m}.matrixIn[0]")
@@ -2876,6 +2909,75 @@ class Rig(component.Rig):
         cmds.connectAttr(
             f"{self.guide_graph}.pole_vector_matrix",
             f"{self.guide_root}.pole_vector_matrix",
+        )
+
+        wrist_orient_obj = cmds.createNode(
+            "transform",
+            name=Name.create(
+                Name.controller_name_convention,
+                name=name,
+                side=side,
+                index=index,
+                description="wristOrient",
+                extension="guide",
+            ),
+            parent=self.guide_root,
+        )
+        cmds.connectAttr(
+            f"{self.guide_root}.npo_matrix[7]", f"{wrist_orient_obj}.offsetParentMatrix"
+        )
+        single_ik0_guide = cmds.createNode(
+            "joint",
+            name=Name.create(
+                Name.controller_name_convention,
+                name=name,
+                side=side,
+                index=index,
+                description="ik0",
+                extension="guide",
+            ),
+            parent=self.guide_root,
+        )
+        single_ik1_guide = cmds.createNode(
+            "joint",
+            name=Name.create(
+                Name.controller_name_convention,
+                name=name,
+                side=side,
+                index=index,
+                description="ik1",
+                extension="guide",
+            ),
+            parent=single_ik0_guide,
+        )
+        cmds.setAttr(f"{single_ik1_guide}.tx", 1)
+        cmds.hide(single_ik0_guide)
+        ikh = cmds.ikHandle(
+            startJoint=single_ik0_guide,
+            endEffector=single_ik1_guide,
+            solver="ikSCsolver",
+            name=Name.create(
+                Name.controller_name_convention,
+                name=name,
+                side=side,
+                index=index,
+                description="ikh",
+                extension="guide",
+            ),
+        )[0]
+        ikh = cmds.parent(ikh, self.guide_root)[0]
+        cmds.pointConstraint(shoulder_guide, single_ik0_guide)
+        cmds.pointConstraint(wrist_guide, ikh)
+        cmds.orientConstraint(wrist_orient_obj, ikh)
+        cmds.setAttr(f"{ikh}.v", 0)
+        cmds.connectAttr(
+            f"{single_ik0_guide}.rx", f"{self.guide_root}.single_chain_rotate_x"
+        )
+        cmds.connectAttr(
+            f"{single_ik0_guide}.ry", f"{self.guide_root}.single_chain_rotate_y"
+        )
+        cmds.connectAttr(
+            f"{single_ik0_guide}.rz", f"{self.guide_root}.single_chain_rotate_z"
         )
 
     # endregion

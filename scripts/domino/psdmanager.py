@@ -277,7 +277,7 @@ def add_driven(intp_name, driven):
 
     data = get_data()
 
-    grp = f"{driven}_psd"
+    grp = f"{driven}_grp"
     blend_m = f"{driven}_bm"
 
     if driven in data[intp_name]["driven"]:

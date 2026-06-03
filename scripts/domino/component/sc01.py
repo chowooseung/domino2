@@ -10,7 +10,6 @@ from maya import cmds
 # built-ins
 import logging
 
-
 # region Initialize Settings
 ORIGINMATRIX = om.MMatrix()
 matrices = [list(ORIGINMATRIX)]
@@ -56,10 +55,10 @@ DATA = [
     attribute.Float(longName="length", value=1),
 ]
 
-description = """## COG01
+description = """## sc01 
 ---
 
-COG 컨트롤러 입니다."""
+ik single chain component 입니다."""
 
 # endregion
 

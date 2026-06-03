@@ -8,7 +8,6 @@ import time
 
 # domino
 from domino.core.utils import logger
-from domino.core import FCurve
 
 
 def connect_blended_joint(source, destination, weight=0.5):
@@ -73,9 +72,9 @@ def ik_2jnt(
     pole_vector,
     scale_attr,
     slide_attr,
-    soft_ik_attr,
     max_stretch_attr,
     attach_pole_vector_attr,
+    negate_plug,
 ):
     decom_m1 = cmds.createNode("decomposeMatrix")
     decom_m2 = cmds.createNode("decomposeMatrix")
@@ -85,6 +84,34 @@ def ik_2jnt(
 
     init_translate1_plug = f"{decom_m1}.outputTranslate"
     init_translate2_plug = f"{decom_m2}.outputTranslate"
+
+    # component scale, controller distance
+    controller_distance = cmds.createNode("distanceBetween")
+    cmds.connectAttr(
+        f"{ik_pos_driver}.worldMatrix[0]", f"{controller_distance}.inMatrix1"
+    )
+    cmds.connectAttr(f"{ik_driver}.worldMatrix[0]", f"{controller_distance}.inMatrix2")
+    controller_distance_plug = f"{controller_distance}.distance"
+
+    curve_info = cmds.createNode("curveInfo")
+    cmds.connectAttr(f"{initial_ik_curve}.local", f"{curve_info}.inputCurve")
+    init_ik_length = f"{curve_info}.arcLength"
+
+    curve_info = cmds.createNode("curveInfo")
+    cmds.connectAttr(f"{initial_ik_curve}.worldSpace[0]", f"{curve_info}.inputCurve")
+    scaled_ik_length = f"{curve_info}.arcLength"
+
+    md0 = cmds.createNode("multiplyDivide")
+    cmds.setAttr(f"{md0}.operation", 2)
+    cmds.connectAttr(scaled_ik_length, f"{md0}.input1X")
+    cmds.connectAttr(init_ik_length, f"{md0}.input2X")
+    component_scale_plug = f"{md0}.outputX"
+
+    md5 = cmds.createNode("multiplyDivide")
+    cmds.setAttr(f"{md5}.operation", 2)
+    cmds.connectAttr(controller_distance_plug, f"{md5}.input1X")
+    cmds.connectAttr(component_scale_plug, f"{md5}.input2X")
+    scaled_controller_distance_plug = f"{md5}.outputX"
 
     # ik scale
     md1 = cmds.createNode("multiplyDivide")
@@ -110,7 +137,7 @@ def ik_2jnt(
     pma = cmds.createNode("plusMinusAverage")
     cmds.connectAttr(scaled_init_distance1_plug, f"{pma}.input1D[0]")
     cmds.connectAttr(scaled_init_distance2_plug, f"{pma}.input1D[1]")
-    slided_total_distance_plug = f"{pma}.output1D"
+    scaled_total_distance_plug = f"{pma}.output1D"
 
     # slide
     normalize_md = cmds.createNode("multiplyDivide")
@@ -122,9 +149,9 @@ def ik_2jnt(
 
     slide_max_md = cmds.createNode("multiplyDivide")
     cmds.connectAttr(f"{normalize_md}.output", f"{slide_max_md}.input1")
-    cmds.connectAttr(slided_total_distance_plug, f"{slide_max_md}.input2X")
-    cmds.connectAttr(slided_total_distance_plug, f"{slide_max_md}.input2Y")
-    cmds.connectAttr(slided_total_distance_plug, f"{slide_max_md}.input2Z")
+    cmds.connectAttr(scaled_total_distance_plug, f"{slide_max_md}.input2X")
+    cmds.connectAttr(scaled_total_distance_plug, f"{slide_max_md}.input2Y")
+    cmds.connectAttr(scaled_total_distance_plug, f"{slide_max_md}.input2Z")
 
     minus_remap_value = cmds.createNode("remapValue")
     cmds.connectAttr(slide_attr, f"{minus_remap_value}.inputValue")
@@ -176,85 +203,26 @@ def ik_2jnt(
     cmds.connectAttr(slided_init_distance2_plug, f"{pma1}.input1D[1]")
     slided_total_distance_plug = f"{pma1}.output1D"
 
-    # softik
-    soft_ik_grp = cmds.createNode("transform", name=f"{name}_grp", parent=parent)
-    ikh = cmds.ikHandle(
-        startJoint=joints[0], endEffector=joints[2], solver="ikRPsolver", name=name
-    )[0]
-    cmds.parent(ikh, soft_ik_grp)
-    cmds.poleVectorConstraint(pole_vector, ikh)
-    cmds.setAttr(f"{ikh}.t", 0, 0, 0)
-    cmds.setAttr(f"{ikh}.r", 0, 0, 0)
-    cmds.setAttr(f"{ikh}.v", 0)
+    md4 = cmds.createNode("multiplyDivide")
+    cmds.connectAttr(component_scale_plug, f"{md4}.input1X")
+    cmds.connectAttr(slided_total_distance_plug, f"{md4}.input2X")
+    scaled_slided_total_distance_plug = f"{md4}.outputX"
 
-    curve_info = cmds.createNode("curveInfo")
-    cmds.connectAttr(f"{initial_ik_curve}.local", f"{curve_info}.inputCurve")
-    init_ik_length = f"{curve_info}.arcLength"
-
-    curve_info = cmds.createNode("curveInfo")
-    cmds.connectAttr(f"{initial_ik_curve}.worldSpace[0]", f"{curve_info}.inputCurve")
-    scaled_ik_length = f"{curve_info}.arcLength"
-
-    ik_driver_distance = cmds.createNode("distanceBetween")
+    # ik target
+    ik_target_condition = cmds.createNode("condition")
+    cmds.setAttr(f"{ik_target_condition}.operation", 4)
+    cmds.connectAttr(controller_distance_plug, f"{ik_target_condition}.firstTerm")
     cmds.connectAttr(
-        f"{ik_pos_driver}.worldMatrix[0]", f"{ik_driver_distance}.inMatrix1"
+        scaled_slided_total_distance_plug, f"{ik_target_condition}.secondTerm"
     )
-    cmds.connectAttr(f"{ik_driver}.worldMatrix[0]", f"{ik_driver_distance}.inMatrix2")
 
-    divide = cmds.createNode("multiplyDivide")
-    cmds.setAttr(f"{divide}.operation", 2)
-    cmds.connectAttr(init_ik_length, f"{divide}.input1X")
-    cmds.connectAttr(scaled_ik_length, f"{divide}.input2X")
-
-    multiply = cmds.createNode("multiplyDivide")
-    cmds.connectAttr(f"{divide}.outputX", f"{multiply}.input1X")
-    cmds.connectAttr(f"{ik_driver_distance}.distance", f"{multiply}.input2X")
-
-    scaled_ik_driver_distance = f"{multiply}.outputX"
-
-    cmds.connectAttr(scaled_ik_driver_distance, f"{parent}.tx")
-    clamp0 = cmds.createNode("clamp")
-    cmds.connectAttr(scaled_ik_driver_distance, f"{clamp0}.inputR")
-    cmds.connectAttr(slided_total_distance_plug, f"{clamp0}.maxR")
-
-    divide0 = cmds.createNode("multiplyDivide")
-    cmds.setAttr(f"{divide0}.operation", 2)
-    cmds.connectAttr(f"{clamp0}.outputR", f"{divide0}.input1X")
-    cmds.connectAttr(slided_total_distance_plug, f"{divide0}.input2X")
-
-    multiply0 = cmds.createNode("multiplyDivide")
-    cmds.connectAttr(slided_total_distance_plug, f"{multiply0}.input1X")
-
-    fcurve = FCurve()
-    fcurve.data = [
-        {
-            "name": f"{name}_softIK",
-            "driven": f"{multiply0}.input2X",
-            "type": "animCurveUU",
-            "driver": f"{divide0}.outputX",
-            "float_change": [0.0, 0.8, 1.0],
-            "value_change": [0.0, 0.92, 1.0],
-            "in_angle": [0.0, 2.743324488263113, 0.0],
-            "out_angle": [2.743324488263113, 2.6984899950637997, 0.0],
-            "in_weight": [8.0, 6.4073430097384705, 1.0918245871698775],
-            "out_weight": [6.4073430097384705, 1.3704363225806342, 1.0918245871698775],
-            "in_tangent_type": ["linear", "linear", "fixed"],
-            "out_tangent_type": ["linear", "fixed", "fixed"],
-            "weighted_tangents": [True],
-            "lock": [True, False, True],
-        }
-    ]
-    fcurve.create_from_data()
-
-    subtract0 = cmds.createNode("plusMinusAverage")
-    cmds.setAttr(f"{subtract0}.operation", 2)
-    cmds.connectAttr(f"{multiply0}.outputX", f"{subtract0}.input1D[0]")
-    cmds.connectAttr(f"{clamp0}.outputR", f"{subtract0}.input1D[1]")
-
-    bta = cmds.createNode("blendTwoAttr")
-    cmds.setAttr(f"{bta}.input[0]", 0)
-    cmds.connectAttr(f"{subtract0}.output1D", f"{bta}.input[1]")
-    cmds.connectAttr(soft_ik_attr, f"{bta}.attributesBlender")
+    cmds.connectAttr(
+        scaled_controller_distance_plug, f"{ik_target_condition}.colorIfTrueR"
+    )
+    md = cmds.createNode("multiplyDivide")
+    cmds.connectAttr(negate_plug, f"{md}.input1X")
+    cmds.connectAttr(f"{ik_target_condition}.outColorR", f"{md}.input2X")
+    cmds.connectAttr(f"{md}.outputX", f"{parent}.tx")
 
     # max stretch
     multiply1 = cmds.createNode("multiplyDivide")
@@ -263,11 +231,14 @@ def ik_2jnt(
     max_stretch_distance_plug = f"{multiply1}.outputX"
 
     clamp1 = cmds.createNode("clamp")
-    cmds.connectAttr(scaled_ik_driver_distance, f"{clamp1}.inputR")
+    cmds.connectAttr(scaled_controller_distance_plug, f"{clamp1}.inputR")
     cmds.connectAttr(slided_total_distance_plug, f"{clamp1}.minR")
     cmds.connectAttr(max_stretch_distance_plug, f"{clamp1}.maxR")
 
     stretched_total_distance_plug = f"{clamp1}.outputR"
+    cmds.connectAttr(
+        stretched_total_distance_plug, f"{ik_target_condition}.colorIfFalseR"
+    )
 
     divide3 = cmds.createNode("multiplyDivide")
     cmds.setAttr(f"{divide3}.operation", 2)
@@ -281,12 +252,14 @@ def ik_2jnt(
     cmds.connectAttr(stretch_ratio, f"{md3}.input2X")
     cmds.connectAttr(stretch_ratio, f"{md3}.input2Y")
     cmds.connectAttr(stretch_ratio, f"{md3}.input2Z")
+    stretch_translate1_plug = f"{md3}.output"
 
     md4 = cmds.createNode("multiplyDivide")
     cmds.connectAttr(slided_translate2_plug, f"{md4}.input1")
     cmds.connectAttr(stretch_ratio, f"{md4}.input2X")
     cmds.connectAttr(stretch_ratio, f"{md4}.input2Y")
     cmds.connectAttr(stretch_ratio, f"{md4}.input2Z")
+    stretch_translate2_plug = f"{md4}.output"
 
     # attach pole vector
     ik_pos_decom_m = cmds.createNode("decomposeMatrix")
@@ -295,8 +268,8 @@ def ik_2jnt(
     cmds.connectAttr(
         f"{pole_vector}.worldMatrix[0]", f"{pole_vector_decom_m}.inputMatrix"
     )
-    ik_driver_decom_m = cmds.createNode("decomposeMatrix")
-    cmds.connectAttr(f"{ik_driver}.worldMatrix[0]", f"{ik_driver_decom_m}.inputMatrix")
+    ik_target_decom_m = cmds.createNode("decomposeMatrix")
+    cmds.connectAttr(f"{parent}.worldMatrix[0]", f"{ik_target_decom_m}.inputMatrix")
 
     pma2 = cmds.createNode("plusMinusAverage")
     cmds.setAttr(f"{pma2}.operation", 2)
@@ -307,33 +280,45 @@ def ik_2jnt(
     cmds.connectAttr(f"{pma2}.output3D", f"{length5}.point2")
     attach_pv_distance1_plug = f"{length5}.distance"
 
+    md7 = cmds.createNode("multiplyDivide")
+    cmds.setAttr(f"{md7}.operation", 2)
+    cmds.connectAttr(attach_pv_distance1_plug, f"{md7}.input1X")
+    cmds.connectAttr(component_scale_plug, f"{md7}.input2X")
+    scaled_attach_pv_distance1_plug = f"{md7}.outputX"
+
     pma3 = cmds.createNode("plusMinusAverage")
     cmds.setAttr(f"{pma3}.operation", 2)
-    cmds.connectAttr(f"{ik_driver_decom_m}.outputTranslate", f"{pma3}.input3D[0]")
+    cmds.connectAttr(f"{ik_target_decom_m}.outputTranslate", f"{pma3}.input3D[0]")
     cmds.connectAttr(f"{pole_vector_decom_m}.outputTranslate", f"{pma3}.input3D[1]")
 
     length6 = cmds.createNode("distanceBetween")
     cmds.connectAttr(f"{pma3}.output3D", f"{length6}.point2")
     attach_pv_distance2_plug = f"{length6}.distance"
 
+    md8 = cmds.createNode("multiplyDivide")
+    cmds.setAttr(f"{md8}.operation", 2)
+    cmds.connectAttr(attach_pv_distance2_plug, f"{md8}.input1X")
+    cmds.connectAttr(component_scale_plug, f"{md8}.input2X")
+    scaled_attach_pv_distance2_plug = f"{md8}.outputX"
+
     length7 = cmds.createNode("distanceBetween")
-    cmds.connectAttr(f"{md3}.output", f"{length7}.point2")
+    cmds.connectAttr(stretch_translate1_plug, f"{length7}.point2")
     stretched_distance1_plug = f"{length7}.distance"
 
     length8 = cmds.createNode("distanceBetween")
-    cmds.connectAttr(f"{md4}.output", f"{length8}.point2")
+    cmds.connectAttr(stretch_translate2_plug, f"{length8}.point2")
     stretched_distance2_plug = f"{length8}.distance"
 
     divide4 = cmds.createNode("multiplyDivide")
     cmds.setAttr(f"{divide4}.operation", 2)
-    cmds.connectAttr(attach_pv_distance1_plug, f"{divide4}.input1X")
+    cmds.connectAttr(scaled_attach_pv_distance1_plug, f"{divide4}.input1X")
     cmds.connectAttr(stretched_distance1_plug, f"{divide4}.input2X")
 
     distance1_multiple = f"{divide4}.outputX"
 
     divide5 = cmds.createNode("multiplyDivide")
     cmds.setAttr(f"{divide5}.operation", 2)
-    cmds.connectAttr(attach_pv_distance2_plug, f"{divide5}.input1X")
+    cmds.connectAttr(scaled_attach_pv_distance2_plug, f"{divide5}.input1X")
     cmds.connectAttr(stretched_distance2_plug, f"{divide5}.input2X")
 
     distance2_multiple = f"{divide5}.outputX"
@@ -363,13 +348,13 @@ def ik_2jnt(
     cmds.connectAttr(f"{pb1}.outTranslate", f"{joints[1]}.t")
     cmds.connectAttr(f"{pb2}.outTranslate", f"{joints[2]}.t")
 
-    # attach pv on -> soft ik off
-    bta1 = cmds.createNode("blendTwoAttr")
-    cmds.connectAttr(f"{bta}.output", f"{bta1}.input[0]")
-    cmds.setAttr(f"{bta1}.input[1]", 0)
-    cmds.connectAttr(attach_pole_vector_attr, f"{bta1}.attributesBlender")
-
-    cmds.connectAttr(f"{bta1}.output", f"{soft_ik_grp}.tx")
+    ikh = cmds.ikHandle(
+        startJoint=joints[0], endEffector=joints[2], solver="ikRPsolver", name=name
+    )[0]
+    cmds.parent(ikh, parent)
+    cmds.poleVectorConstraint(pole_vector, ikh)
+    cmds.setAttr(f"{ikh}.t", 0, 0, 0)
+    cmds.setAttr(f"{ikh}.v", 0)
 
 
 def ik_3jnt(
@@ -379,7 +364,6 @@ def ik_3jnt(
     pole_vector,
     scale_attr,
     slide_attr,
-    soft_ik_attr,
     max_stretch_attr,
 ):
     pass

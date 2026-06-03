@@ -490,7 +490,7 @@ class Rig(dict):
                     cmds.setAttr(
                         f"{self.instance.rig_root}.npo_matrix[{npo_matrix_index}]",
                         ORIGINMATRIX,
-                        type="matrix",
+                        typ="matrix",
                     )
                 cmds.connectAttr(
                     f"{self.instance.rig_root}.npo_matrix[{npo_matrix_index}]",
@@ -506,7 +506,7 @@ class Rig(dict):
             )
             cmds.addAttr(ctl, longName="component", dataType="string")
             cmds.setAttr(
-                f"{ctl}.component", self.instance["component"]["value"], type="string"
+                f"{ctl}.component", self.instance["component"]["value"], typ="string"
             )
             cmds.setAttr(f"{ctl}.component", lock=True)
             cmds.connectAttr(
@@ -522,7 +522,7 @@ class Rig(dict):
                 if fkik_match_command:
                     cmds.addAttr(ctl, longName="fkik_match_command", dataType="string")
                     cmds.setAttr(
-                        f"{ctl}.fkik_match_command", fkik_match_command, type="string"
+                        f"{ctl}.fkik_match_command", fkik_match_command, typ="string"
                     )
                     cmds.addAttr(
                         ctl,
@@ -1004,7 +1004,7 @@ class Rig(dict):
 
         self.add_guide_root()
         cmds.addAttr(self.guide_root, longName="notes", dataType="string")
-        cmds.setAttr(f"{self.guide_root}.notes", description, type="string")
+        cmds.setAttr(f"{self.guide_root}.notes", description, typ="string")
         cmds.setAttr(f"{self.guide_root}.notes", lock=True)
 
     def rig(self, description=""):
@@ -1081,10 +1081,10 @@ class Rig(dict):
 
         self.add_rig_root()
         cmds.addAttr(self.rig_root, longName="notes", dataType="string")
-        cmds.setAttr(f"{self.rig_root}.notes", description, type="string")
+        cmds.setAttr(f"{self.rig_root}.notes", description, typ="string")
         cmds.setAttr(f"{self.rig_root}.notes", lock=True)
         for i, m in enumerate(self["guide_matrix"]["value"]):
-            cmds.setAttr(f"{self.rig_root}.guide_matrix[{i}]", m, type="matrix")
+            cmds.setAttr(f"{self.rig_root}.guide_matrix[{i}]", m, typ="matrix")
 
     # endregion
 
@@ -1146,7 +1146,7 @@ class Rig(dict):
             )
             or []
         ):
-            children = cmds.listRelatives(output, children=True, type="transform") or []
+            children = cmds.listRelatives(output, children=True, typ="transform") or []
             for child in children:
                 child_cons = cmds.parentConstraint(child, query=True)
                 if child_cons:
@@ -1216,7 +1216,7 @@ class Rig(dict):
 
         # rename
         # geometryFilter 는 전체 deformer
-        for node in cmds.ls(type="transform") + cmds.ls(type="geometryFilter"):
+        for node in cmds.ls(typ="transform") + cmds.ls(typ="geometryFilter"):
             name_list = node.split("_")
             if len(name_list) < 2:
                 continue
@@ -1254,11 +1254,11 @@ class Rig(dict):
                 )
 
         if cmds.objExists(self.guide_root):
-            cmds.setAttr(f"{self.guide_root}.name", new_name, type="string")
+            cmds.setAttr(f"{self.guide_root}.name", new_name, typ="string")
             cmds.setAttr(f"{self.guide_root}.side", new_side)
             cmds.setAttr(f"{self.guide_root}.index", new_index)
         elif cmds.objExists(self.rig_root):
-            cmds.setAttr(f"{self.rig_root}.name", new_name, type="string")
+            cmds.setAttr(f"{self.rig_root}.name", new_name, typ="string")
             cmds.setAttr(f"{self.rig_root}.side", new_side)
             cmds.setAttr(f"{self.rig_root}.index", new_index)
 
@@ -1417,7 +1417,7 @@ class Rig(dict):
         while stack:
             component = stack.pop(0)
             name, side, index = component.identifier
-            for node in cmds.ls(type="transform"):
+            for node in cmds.ls(typ="transform"):
                 node_parts = node.split("_")
                 if (
                     name in node_parts[name_index]
@@ -1431,7 +1431,7 @@ class Rig(dict):
         if cmds.objExists(self.guide_root):
             nodes += [self.guide_root]
         if nodes:
-            curve_infos = cmds.ls(type="curveInfo")
+            curve_infos = cmds.ls(typ="curveInfo")
             for ci in curve_infos:
                 cmds.setAttr(f"{ci}.nodeState", 2)
             cmds.delete(nodes)
@@ -1809,7 +1809,7 @@ def build(context, component, attach_guide=False):
             info += f"\n\t{identifier:<30}{component_value}"
         info += f"\n\nTotal Build Time : {int(hours):01d}h {int(minutes):01d}m {seconds:.4f}s"
         cmds.addAttr(RIG, longName="notes", dataType="string")
-        cmds.setAttr(f"{RIG}.notes", info, type="string")
+        cmds.setAttr(f"{RIG}.notes", info, typ="string")
         cmds.setAttr(f"{RIG}.notes", lock=True)
         cmds.select(RIG)
 
@@ -1823,6 +1823,8 @@ def build(context, component, attach_guide=False):
         for identifier, value in {
             k: context[k] for k in context.keys() if not k.startswith("_")
         }.items():
+            if isinstance(value, dict):
+                continue
             print_context(
                 identifier=identifier,
                 controller=value["controller"],
@@ -1839,7 +1841,7 @@ def build(context, component, attach_guide=False):
 def serialize():
     """마야 노드에서 json 으로 저장 할 수 있는 데이터로 직렬화합니다."""
     assembly_node = ""
-    for n in cmds.ls(type="transform"):
+    for n in cmds.ls(typ="transform"):
         if (
             cmds.objExists(f"{n}.is_domino_rig_root")
             and cmds.getAttr(f"{n}.component") == "assembly"
@@ -2118,9 +2120,9 @@ def save(file_path, data=None):
         root = data.guide_root
 
     for i, path in enumerate(data["pre_custom_scripts"]["value"]):
-        cmds.setAttr(f"{root}.pre_custom_scripts[{i}]", path, type="string")
+        cmds.setAttr(f"{root}.pre_custom_scripts[{i}]", path, typ="string")
     for i, path in enumerate(data["post_custom_scripts"]["value"]):
-        cmds.setAttr(f"{root}.post_custom_scripts[{i}]", path, type="string")
+        cmds.setAttr(f"{root}.post_custom_scripts[{i}]", path, typ="string")
 
     # blendshape
     if data["blendshape"]:
