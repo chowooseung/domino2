@@ -2950,7 +2950,7 @@ class Rig(component.Rig):
             ),
             parent=single_ik0_guide,
         )
-        cmds.setAttr(f"{single_ik1_guide}.tx", 1)
+        cmds.connectAttr(f"{negate_condition}.outColorR", f"{single_ik1_guide}.tx")
         cmds.hide(single_ik0_guide)
         ikh = cmds.ikHandle(
             startJoint=single_ik0_guide,

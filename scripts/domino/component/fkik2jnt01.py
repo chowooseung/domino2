@@ -925,6 +925,12 @@ class Rig(component.Rig):
 
         name, side, index = self.identifier
 
+        negate_condition = cmds.createNode("condition")
+        cmds.connectAttr(f"{self.rig_root}.side", f"{negate_condition}.firstTerm")
+        cmds.setAttr(f"{negate_condition}.secondTerm", 2)
+        cmds.setAttr(f"{negate_condition}.colorIfTrueR", -1)
+        cmds.setAttr(f"{negate_condition}.colorIfFalseR", 1)
+
         guide_count = len(self["guide_matrix"]["value"])
         if len(self["guide_mirror_type"]["value"]) != guide_count:
             self["guide_mirror_type"]["value"] = [1 for _ in range(guide_count)]
@@ -1129,7 +1135,7 @@ class Rig(component.Rig):
             ),
             parent=single_ik0_guide,
         )
-        cmds.setAttr(f"{single_ik1_guide}.tx", 1)
+        cmds.connectAttr(f"{negate_condition}.outColorR", f"{single_ik1_guide}.tx")
         cmds.hide(single_ik0_guide)
         ikh = cmds.ikHandle(
             startJoint=single_ik0_guide,
