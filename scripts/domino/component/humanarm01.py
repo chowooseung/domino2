@@ -465,50 +465,10 @@ class Rig(component.Rig):
         cmds.setAttr(f"{host_ctl}.mirror_type", 1)
         cmds.addAttr(
             host_ctl,
-            longName="_scapular",
-            attributeType="enum",
-            enumName="____________",
-            keyable=False,
-        )
-        cmds.setAttr(f"{host_ctl}._scapular", channelBox=True)
-        cmds.addAttr(
-            host_ctl,
-            longName="auto_scapular",
-            attributeType="float",
-            minValue=0,
-            maxValue=1,
-            defaultValue=0,
-            keyable=True,
-        )
-        cmds.addAttr(
-            host_ctl,
-            longName="scapular_ctl_visibility",
-            attributeType="enum",
-            enumName="off:on",
-            defaultValue=0,
-            keyable=True,
-        )
-        cmds.addAttr(
-            host_ctl,
-            longName="_arm",
-            attributeType="enum",
-            enumName="____________",
-            keyable=False,
-        )
-        cmds.setAttr(f"{host_ctl}._arm", channelBox=True)
-        cmds.addAttr(
-            host_ctl,
             longName="fkik",
             attributeType="float",
             minValue=0,
             maxValue=1,
-            defaultValue=0,
-            keyable=True,
-        )
-        cmds.addAttr(
-            host_ctl,
-            longName="start_roll",
-            attributeType="float",
             defaultValue=0,
             keyable=True,
         )
@@ -560,7 +520,25 @@ class Rig(component.Rig):
         cmds.setAttr(f"{clavicle_ctl}.mirror_type", 2)
         cmds.addAttr(
             clavicle_ctl,
-            longName="roll",
+            longName="clavicle_roll",
+            attributeType="doubleAngle",
+            minValue=-360,
+            maxValue=360,
+            defaultValue=0,
+            keyable=True,
+        )
+        cmds.addAttr(
+            clavicle_ctl,
+            longName="auto_arm_roll",
+            attributeType="float",
+            minValue=0,
+            maxValue=1,
+            defaultValue=0.2,
+            keyable=True,
+        )
+        cmds.addAttr(
+            clavicle_ctl,
+            longName="arm_roll",
             attributeType="doubleAngle",
             minValue=-360,
             maxValue=360,
@@ -570,6 +548,23 @@ class Rig(component.Rig):
         cmds.addAttr(
             clavicle_ctl,
             longName="clavicle_bone_ctl_visibility",
+            attributeType="enum",
+            enumName="off:on",
+            defaultValue=0,
+            keyable=True,
+        )
+        cmds.addAttr(
+            clavicle_ctl,
+            longName="auto_scapular",
+            attributeType="float",
+            minValue=0,
+            maxValue=1,
+            defaultValue=0,
+            keyable=True,
+        )
+        cmds.addAttr(
+            clavicle_ctl,
+            longName="scapular_ctl_visibility",
             attributeType="enum",
             enumName="off:on",
             defaultValue=0,
@@ -696,7 +691,7 @@ class Rig(component.Rig):
         )
 
         multiply = cmds.createNode("multiplyDivide")
-        cmds.connectAttr(f"{clavicle_ctl}.roll", f"{multiply}.input1X")
+        cmds.connectAttr(f"{clavicle_ctl}.clavicle_roll", f"{multiply}.input1X")
         cmds.setAttr(f"{multiply}.input2X", -1)
         cmds.connectAttr(f"{multiply}.outputX", f"{clavicle_bone_npo}.rx")
         for shape in cmds.listRelatives(clavicle_bone_ctl, shapes=True) or []:
@@ -1068,6 +1063,15 @@ class Rig(component.Rig):
             defaultValue=0,
             keyable=True,
         )
+        cmds.addAttr(
+            ik_ctl,
+            longName="soft_ik",
+            attributeType="float",
+            minValue=0,
+            maxValue=1,
+            defaultValue=0,
+            keyable=True,
+        )
 
         ik_local_npo, ik_local_ctl = self["controller"][9].create(
             parent=ik_ctl,
@@ -1089,6 +1093,7 @@ class Rig(component.Rig):
             cmds.setAttr(f"{ik_local_ctl}.sx", lock=True, keyable=False)
             cmds.setAttr(f"{ik_local_ctl}.sy", lock=True, keyable=False)
             cmds.setAttr(f"{ik_local_ctl}.sz", lock=True, keyable=False)
+        cmds.connectAttr(f"{ik_local_ctl}.message", f"{host_ctl}.ik_match_targets[3]")
         ik_local_loc = cmds.createNode(
             "transform",
             name=Name.create(
@@ -1218,8 +1223,6 @@ class Rig(component.Rig):
                 name=name,
                 side=side,
                 index=index,
-                description="",
-                extension=Name.ikh_extension,
             ),
             initial_matrix_plugs=[
                 f"{self.rig_root}.npo_matrix[2]",
@@ -1235,6 +1238,7 @@ class Rig(component.Rig):
             scale_attr=f"{ik_ctl}.ik_scale",
             slide_attr=f"{ik_ctl}.slide",
             max_stretch_attr=f"{ik_ctl}.max_stretch",
+            soft_ik_attr=f"{ik_ctl}.soft_ik",
             negate_plug=f"{condition}.outColorR",
         )
         mult_m = cmds.createNode("multMatrix")
@@ -1383,7 +1387,16 @@ class Rig(component.Rig):
             ),
             parent=upper_non_twist0_jnt,
         )
-        cmds.connectAttr(f"{host_ctl}.start_roll", f"{start_roll}.rx")
+        md = cmds.createNode("multiplyDivide")
+        cmds.connectAttr(f"{clavicle_ctl}.clavicle_roll", f"{md}.input1X")
+        cmds.setAttr(f"{md}.input2X", -1)
+        md1 = cmds.createNode("multiplyDivide")
+        cmds.connectAttr(f"{md}.outputX", f"{md1}.input1X")
+        cmds.connectAttr(f"{clavicle_ctl}.auto_arm_roll", f"{md1}.input2X")
+        pma = cmds.createNode("plusMinusAverage")
+        cmds.connectAttr(f"{md1}.outputX", f"{pma}.input1D[0]")
+        cmds.connectAttr(f"{clavicle_ctl}.arm_roll", f"{pma}.input1D[1]")
+        cmds.connectAttr(f"{pma}.output1D", f"{start_roll}.rx")
 
         ins = Joint(
             parent=upper_non_twist0_jnt,
@@ -2024,7 +2037,7 @@ class Rig(component.Rig):
         cmds.connectAttr(
             f"{negate_condition}.outColorR", f"{scapular_negate_inverse}.sz"
         )
-        cmds.connectAttr(f"{host_ctl}.scapular_ctl_visibility", f"{scapular_npo}.v")
+        cmds.connectAttr(f"{clavicle_ctl}.scapular_ctl_visibility", f"{scapular_npo}.v")
         cmds.addAttr(
             scapular_ctl,
             longName="rotation",
@@ -2181,7 +2194,7 @@ class Rig(component.Rig):
             f"{mult_m}.matrixSum",
             f"{blend_m}.target[0].targetMatrix",
         )
-        cmds.connectAttr(f"{host_ctl}.auto_scapular", f"{blend_m}.envelope")
+        cmds.connectAttr(f"{clavicle_ctl}.auto_scapular", f"{blend_m}.envelope")
         cmds.connectAttr(
             f"{blend_m}.outputMatrix", f"{scapular_blend_aim_loc}.offsetParentMatrix"
         )
@@ -2204,7 +2217,7 @@ class Rig(component.Rig):
             f"{mult_m}.matrixSum",
             f"{blend_m}.target[0].targetMatrix",
         )
-        cmds.connectAttr(f"{host_ctl}.auto_scapular", f"{blend_m}.envelope")
+        cmds.connectAttr(f"{clavicle_ctl}.auto_scapular", f"{blend_m}.envelope")
         cmds.connectAttr(
             f"{blend_m}.outputMatrix", f"{scapular_blend_up_loc}.offsetParentMatrix"
         )

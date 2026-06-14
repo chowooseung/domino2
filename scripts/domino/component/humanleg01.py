@@ -775,6 +775,15 @@ class Rig(component.Rig):
             defaultValue=0,
             keyable=True,
         )
+        cmds.addAttr(
+            ik_ctl,
+            longName="soft_ik",
+            attributeType="float",
+            minValue=0,
+            maxValue=1,
+            defaultValue=0,
+            keyable=True,
+        )
 
         ik_local_npo, ik_local_ctl = self["controller"][7].create(
             parent=ik_ctl,
@@ -796,6 +805,7 @@ class Rig(component.Rig):
             cmds.setAttr(f"{ik_local_ctl}.sx", lock=True, keyable=False)
             cmds.setAttr(f"{ik_local_ctl}.sy", lock=True, keyable=False)
             cmds.setAttr(f"{ik_local_ctl}.sz", lock=True, keyable=False)
+        cmds.connectAttr(f"{ik_local_ctl}.message", f"{host_ctl}.ik_match_targets[3]")
         ik_local_loc = cmds.createNode(
             "transform",
             name=Name.create(
@@ -923,8 +933,6 @@ class Rig(component.Rig):
                 name=name,
                 side=side,
                 index=index,
-                description="",
-                extension=Name.ikh_extension,
             ),
             initial_matrix_plugs=[
                 f"{self.rig_root}.npo_matrix[0]",
@@ -940,6 +948,7 @@ class Rig(component.Rig):
             scale_attr=f"{ik_ctl}.ik_scale",
             slide_attr=f"{ik_ctl}.slide",
             max_stretch_attr=f"{ik_ctl}.max_stretch",
+            soft_ik_attr=f"{ik_ctl}.soft_ik",
             negate_plug=f"{condition}.outColorR",
         )
         decom_m = cmds.createNode("decomposeMatrix")

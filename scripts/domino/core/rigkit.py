@@ -7,6 +7,7 @@ import json
 import time
 
 # domino
+from domino.core import Name
 from domino.core.utils import logger
 
 
@@ -74,6 +75,7 @@ def ik_2jnt(
     slide_attr,
     max_stretch_attr,
     attach_pole_vector_attr,
+    soft_ik_attr,
     negate_plug,
 ):
     decom_m1 = cmds.createNode("decomposeMatrix")
@@ -223,6 +225,9 @@ def ik_2jnt(
     cmds.connectAttr(negate_plug, f"{md}.input1X")
     cmds.connectAttr(f"{ik_target_condition}.outColorR", f"{md}.input2X")
     cmds.connectAttr(f"{md}.outputX", f"{parent}.tx")
+    db = cmds.createNode("distanceBetween")
+    cmds.connectAttr(f"{parent}.tx", f"{db}.point2X")
+    ik_target_distance_plug = f"{db}.distance"
 
     # max stretch
     multiply1 = cmds.createNode("multiplyDivide")
@@ -260,6 +265,175 @@ def ik_2jnt(
     cmds.connectAttr(stretch_ratio, f"{md4}.input2Y")
     cmds.connectAttr(stretch_ratio, f"{md4}.input2Z")
     stretch_translate2_plug = f"{md4}.output"
+
+    length7 = cmds.createNode("distanceBetween")
+    cmds.connectAttr(stretch_translate1_plug, f"{length7}.point2")
+    stretched_distance1_plug = f"{length7}.distance"
+
+    length8 = cmds.createNode("distanceBetween")
+    cmds.connectAttr(stretch_translate2_plug, f"{length8}.point2")
+    stretched_distance2_plug = f"{length8}.distance"
+
+    # soft ik
+    p = cmds.listRelatives(joints[0], parent=True)[0]
+    softik0_jnt = cmds.createNode("joint", name=f"{name}_softik0", parent=p)
+    softik1_jnt = cmds.createNode("joint", name=f"{name}_softik1", parent=softik0_jnt)
+    softik2_jnt = cmds.createNode("joint", name=f"{name}_softik2", parent=softik1_jnt)
+    cmds.pointConstraint(ik_pos_driver, softik0_jnt)
+    decom_m0 = cmds.createNode("decomposeMatrix")
+    cmds.connectAttr(initial_matrix_plugs[0], f"{decom_m0}.inputMatrix")
+    cmds.connectAttr(f"{decom_m0}.outputRotate", f"{softik0_jnt}.jointOrient")
+    cmds.connectAttr(f"{decom_m1}.outputRotate", f"{softik1_jnt}.jointOrient")
+    cmds.connectAttr(f"{decom_m2}.outputRotate", f"{softik2_jnt}.jointOrient")
+    cmds.connectAttr(stretch_translate1_plug, f"{softik1_jnt}.t")
+    cmds.connectAttr(stretch_translate2_plug, f"{softik2_jnt}.t")
+    cmds.hide(softik0_jnt)
+
+    soft_decom_m0 = cmds.createNode("decomposeMatrix")
+    cmds.connectAttr(f"{softik0_jnt}.worldMatrix[0]", f"{soft_decom_m0}.inputMatrix")
+    soft_decom_m1 = cmds.createNode("decomposeMatrix")
+    cmds.connectAttr(f"{softik1_jnt}.worldMatrix[0]", f"{soft_decom_m1}.inputMatrix")
+    soft_decom_m2 = cmds.createNode("decomposeMatrix")
+    cmds.connectAttr(f"{softik2_jnt}.worldMatrix[0]", f"{soft_decom_m2}.inputMatrix")
+
+    softik_ikh = cmds.ikHandle(
+        startJoint=softik0_jnt,
+        endEffector=softik2_jnt,
+        solver="ikRPsolver",
+        name=f"{name}_soft{Name.ikh_extension}",
+    )[0]
+    cmds.parent(softik_ikh, parent)
+    cmds.poleVectorConstraint(pole_vector, softik_ikh)
+    cmds.setAttr(f"{softik_ikh}.t", 0, 0, 0)
+    cmds.setAttr(f"{softik_ikh}.v", 0)
+
+    softik_grp = cmds.createNode(
+        "transform", name=f"{name}_softIk_grp", parent=ik_pos_driver
+    )
+    cmds.aimConstraint(
+        parent,
+        softik_grp,
+        aimVector=(1, 0, 0),
+        upVector=(0, 1, 0),
+        worldUpType="object",
+        worldUpObject=pole_vector,
+    )
+
+    softik_rot = cmds.createNode(
+        "transform", name=f"{name}_softik_rot", parent=softik_grp
+    )
+    md = cmds.createNode("multiplyDivide")
+    cmds.connectAttr(soft_ik_attr, f"{md}.input1X")
+    cmds.setAttr(f"{md}.input2X", 30)
+    cmds.connectAttr(f"{md}.outputX", f"{softik_rot}.rz")
+    # softik 로 blending 될 시작 점
+    softik0_pos = cmds.createNode(
+        "transform", name=f"{name}_softik0_pos", parent=softik_rot
+    )
+    cmds.connectAttr(slided_init_distance1_plug, f"{softik0_pos}.tx")
+    softik0_target = cmds.createNode(
+        "transform", name=f"{name}_softik0_target", parent=softik_grp
+    )
+    cmds.pointConstraint(softik0_pos, softik0_target)
+    # softik blenging 끝점
+    softik1_pos = cmds.createNode(
+        "transform", name=f"{name}_softik1_pos", parent=softik_grp
+    )
+    md = cmds.createNode("multiplyDivide")
+    cmds.connectAttr(max_stretch_attr, f"{md}.input1X")
+    cmds.connectAttr(slided_init_distance1_plug, f"{md}.input2X")
+    cmds.connectAttr(f"{md}.outputX", f"{softik1_pos}.tx")
+
+    # softik trigger 시작점 끝점
+    radius_md = cmds.createNode("multiplyDivide")
+    cmds.setAttr(f"{radius_md}.operation", 3)
+    cmds.connectAttr(slided_init_distance2_plug, f"{radius_md}.input1X")
+    cmds.setAttr(f"{radius_md}.input2X", 2)
+
+    d_md = cmds.createNode("multiplyDivide")
+    cmds.setAttr(f"{d_md}.operation", 3)
+    cmds.connectAttr(f"{softik0_target}.ty", f"{d_md}.input1X")
+    cmds.setAttr(f"{d_md}.input2X", 2)
+
+    pma = cmds.createNode("plusMinusAverage")
+    cmds.setAttr(f"{pma}.operation", 2)
+    cmds.connectAttr(f"{radius_md}.outputX", f"{pma}.input1D[0]")
+    cmds.connectAttr(f"{d_md}.outputX", f"{pma}.input1D[1]")
+    md = cmds.createNode("multiplyDivide")
+    cmds.setAttr(f"{md}.operation", 3)
+    cmds.connectAttr(f"{pma}.output1D", f"{md}.input1X")
+    cmds.setAttr(f"{md}.input2X", 0.5)
+    pma = cmds.createNode("plusMinusAverage")
+    cmds.connectAttr(f"{softik0_target}.tx", f"{pma}.input1D[0]")
+    cmds.connectAttr(f"{md}.outputX", f"{pma}.input1D[1]")
+
+    start = cmds.createNode("transform", name=f"{name}_softik_start", parent=softik_grp)
+    cmds.connectAttr(f"{pma}.output1D", f"{start}.tx")
+
+    softik_position = cmds.createNode(
+        "transform", name=f"{name}_softik_pos", parent=softik_grp
+    )
+    softik_cons = cmds.pointConstraint(softik0_target, softik1_pos, softik_position)[0]
+    attrs = cmds.pointConstraint(softik_cons, query=True, weightAliasList=True)
+    rv = cmds.createNode("remapValue")
+    cmds.connectAttr(ik_target_distance_plug, f"{rv}.inputValue")
+    cmds.connectAttr(f"{start}.tx", f"{rv}.inputMin")
+    md = cmds.createNode("multiplyDivide")
+    cmds.connectAttr(slided_total_distance_plug, f"{md}.input1X")
+    cmds.connectAttr(max_stretch_attr, f"{md}.input2X")
+    cmds.connectAttr(f"{md}.outputX", f"{rv}.inputMax")
+    cmds.connectAttr(f"{rv}.outValue", f"{softik_cons}.{attrs[1]}")
+    rev = cmds.createNode("reverse")
+    cmds.connectAttr(f"{rv}.outValue", f"{rev}.inputX")
+    cmds.connectAttr(f"{rev}.outputX", f"{softik_cons}.{attrs[0]}")
+    stretch_position = cmds.createNode(
+        "transform", name=f"{name}_stretch_pos", parent=softik_grp
+    )
+    cmds.pointConstraint(softik1_jnt, stretch_position)
+
+    result = cmds.createNode(
+        "transform", name=f"{name}_softik_result", parent=softik_grp
+    )
+    result_cons = cmds.pointConstraint(softik_cons, stretch_position, result)[0]
+    attrs = cmds.pointConstraint(result_cons, query=True, weightAliasList=True)
+    condition = cmds.createNode("condition")
+    cmds.connectAttr(ik_target_distance_plug, f"{condition}.firstTerm")
+    cmds.connectAttr(f"{start}.tx", f"{condition}.secondTerm")
+    cmds.setAttr(f"{condition}.operation", 2)
+    cmds.setAttr(f"{condition}.colorIfTrue", 1, 0, 0)
+    cmds.setAttr(f"{condition}.colorIfFalse", 0, 1, 0)
+    cmds.connectAttr(f"{condition}.outColorR", f"{result_cons}.{attrs[0]}")
+    cmds.connectAttr(f"{condition}.outColorG", f"{result_cons}.{attrs[1]}")
+
+    db = cmds.createNode("distanceBetween")
+    cmds.connectAttr(f"{result}.t", f"{db}.point2")
+    softik_distance1_plug = f"{db}.distance"
+
+    db = cmds.createNode("distanceBetween")
+    cmds.connectAttr(f"{result}.t", f"{db}.point1")
+    cmds.connectAttr(ik_target_distance_plug, f"{db}.point2X")
+    softik_distance2_plug = f"{db}.distance"
+
+    md = cmds.createNode("multiplyDivide")
+    cmds.setAttr(f"{md}.operation", 2)
+    cmds.connectAttr(softik_distance1_plug, f"{md}.input1X")
+    cmds.connectAttr(softik_distance2_plug, f"{md}.input1Y")
+    cmds.connectAttr(stretched_distance1_plug, f"{md}.input2X")
+    cmds.connectAttr(stretched_distance2_plug, f"{md}.input2Y")
+
+    md1 = cmds.createNode("multiplyDivide")
+    cmds.connectAttr(stretch_translate1_plug, f"{md1}.input1")
+    cmds.connectAttr(f"{md}.outputX", f"{md1}.input2X")
+    cmds.connectAttr(f"{md}.outputX", f"{md1}.input2Y")
+    cmds.connectAttr(f"{md}.outputX", f"{md1}.input2Z")
+    softik_translate1_plug = f"{md1}.output"
+
+    md1 = cmds.createNode("multiplyDivide")
+    cmds.connectAttr(stretch_translate2_plug, f"{md1}.input1")
+    cmds.connectAttr(f"{md}.outputY", f"{md1}.input2X")
+    cmds.connectAttr(f"{md}.outputY", f"{md1}.input2Y")
+    cmds.connectAttr(f"{md}.outputY", f"{md1}.input2Z")
+    softik_translate2_plug = f"{md1}.output"
 
     # attach pole vector
     ik_pos_decom_m = cmds.createNode("decomposeMatrix")
@@ -301,55 +475,50 @@ def ik_2jnt(
     cmds.connectAttr(component_scale_plug, f"{md8}.input2X")
     scaled_attach_pv_distance2_plug = f"{md8}.outputX"
 
-    length7 = cmds.createNode("distanceBetween")
-    cmds.connectAttr(stretch_translate1_plug, f"{length7}.point2")
-    stretched_distance1_plug = f"{length7}.distance"
-
-    length8 = cmds.createNode("distanceBetween")
-    cmds.connectAttr(stretch_translate2_plug, f"{length8}.point2")
-    stretched_distance2_plug = f"{length8}.distance"
-
     divide4 = cmds.createNode("multiplyDivide")
     cmds.setAttr(f"{divide4}.operation", 2)
     cmds.connectAttr(scaled_attach_pv_distance1_plug, f"{divide4}.input1X")
-    cmds.connectAttr(stretched_distance1_plug, f"{divide4}.input2X")
+    cmds.connectAttr(softik_distance1_plug, f"{divide4}.input2X")
 
     distance1_multiple = f"{divide4}.outputX"
 
     divide5 = cmds.createNode("multiplyDivide")
     cmds.setAttr(f"{divide5}.operation", 2)
     cmds.connectAttr(scaled_attach_pv_distance2_plug, f"{divide5}.input1X")
-    cmds.connectAttr(stretched_distance2_plug, f"{divide5}.input2X")
+    cmds.connectAttr(softik_distance2_plug, f"{divide5}.input2X")
 
     distance2_multiple = f"{divide5}.outputX"
 
     md5 = cmds.createNode("multiplyDivide")
-    cmds.connectAttr(f"{md3}.output", f"{md5}.input1")
+    cmds.connectAttr(softik_translate1_plug, f"{md5}.input1")
     cmds.connectAttr(distance1_multiple, f"{md5}.input2X")
     cmds.connectAttr(distance1_multiple, f"{md5}.input2Y")
     cmds.connectAttr(distance1_multiple, f"{md5}.input2Z")
 
     md6 = cmds.createNode("multiplyDivide")
-    cmds.connectAttr(f"{md4}.output", f"{md6}.input1")
+    cmds.connectAttr(softik_translate2_plug, f"{md6}.input1")
     cmds.connectAttr(distance2_multiple, f"{md6}.input2X")
     cmds.connectAttr(distance2_multiple, f"{md6}.input2Y")
     cmds.connectAttr(distance2_multiple, f"{md6}.input2Z")
 
     pb1 = cmds.createNode("pairBlend")
     cmds.connectAttr(attach_pole_vector_attr, f"{pb1}.weight")
-    cmds.connectAttr(f"{md3}.output", f"{pb1}.inTranslate1")
+    cmds.connectAttr(softik_translate1_plug, f"{pb1}.inTranslate1")
     cmds.connectAttr(f"{md5}.output", f"{pb1}.inTranslate2")
 
     pb2 = cmds.createNode("pairBlend")
     cmds.connectAttr(attach_pole_vector_attr, f"{pb2}.weight")
-    cmds.connectAttr(f"{md4}.output", f"{pb2}.inTranslate1")
+    cmds.connectAttr(softik_translate2_plug, f"{pb2}.inTranslate1")
     cmds.connectAttr(f"{md6}.output", f"{pb2}.inTranslate2")
 
     cmds.connectAttr(f"{pb1}.outTranslate", f"{joints[1]}.t")
     cmds.connectAttr(f"{pb2}.outTranslate", f"{joints[2]}.t")
 
     ikh = cmds.ikHandle(
-        startJoint=joints[0], endEffector=joints[2], solver="ikRPsolver", name=name
+        startJoint=joints[0],
+        endEffector=joints[2],
+        solver="ikRPsolver",
+        name=f"{name}_{Name.ikh_extension}",
     )[0]
     cmds.parent(ikh, parent)
     cmds.poleVectorConstraint(pole_vector, ikh)
@@ -1498,6 +1667,11 @@ def ribbon_chain_spline_ik(
         cmds.setAttr(f"{m}.input1X", i + 1)
         cmds.connectAttr(initial_chain_distance_attr, f"{m}.input2X")
         cmds.connectAttr(f"{m}.outputX", f"{rv}.inputMin")
+
+        m = cmds.createNode("multiplyDivide")
+        cmds.setAttr(f"{m}.input1X", i)
+        cmds.connectAttr(initial_chain_distance_attr, f"{m}.input2X")
+        cmds.connectAttr(f"{m}.outputX", f"{rv}.inputMax")
         try:
             previous_m = multiplies[i - 1]
             cmds.connectAttr(f"{previous_m}.output", f"{rv}.inputMax")

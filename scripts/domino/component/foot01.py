@@ -482,6 +482,16 @@ class Rig(component.Rig):
             defaultValue=0,
             keyable=True,
         )
+        cmds.addAttr(
+            host_ctl,
+            longName="fkik",
+            attributeType="float",
+            keyable=False,
+            minValue=0,
+            maxValue=1,
+            defaultValue=1,
+        )
+        cmds.addAttr(host_ctl, longName="ik_ctls", attributeType="message", multi=True)
         roll_bank_npo, roll_bank_ctl = self["controller"][1].create(
             parent=self.rig_root,
             shape=(
@@ -492,6 +502,7 @@ class Rig(component.Rig):
             color=12,
             npo_matrix_index=0,
         )
+        cmds.connectAttr(f"{roll_bank_ctl}.message", f"{host_ctl}.ik_ctls[0]")
         for i, angle in enumerate(self["default_inverse_angle"]["value"]):
             cmds.addAttr(
                 roll_bank_ctl,
@@ -627,6 +638,7 @@ class Rig(component.Rig):
         cmds.setAttr(f"{heel_ctl}.tx", lock=True, keyable=False)
         cmds.setAttr(f"{heel_ctl}.ty", lock=True, keyable=False)
         cmds.setAttr(f"{heel_ctl}.tz", lock=True, keyable=False)
+        cmds.connectAttr(f"{heel_ctl}.message", f"{host_ctl}.ik_ctls[1]")
         in_npo, in_ctl = self["controller"][3].create(
             parent=heel_ctl,
             shape=(
@@ -640,6 +652,7 @@ class Rig(component.Rig):
         cmds.setAttr(f"{in_ctl}.tx", lock=True, keyable=False)
         cmds.setAttr(f"{in_ctl}.ty", lock=True, keyable=False)
         cmds.setAttr(f"{in_ctl}.tz", lock=True, keyable=False)
+        cmds.connectAttr(f"{in_ctl}.message", f"{host_ctl}.ik_ctls[2]")
         out_npo, out_ctl = self["controller"][4].create(
             parent=in_ctl,
             shape=(
@@ -653,6 +666,7 @@ class Rig(component.Rig):
         cmds.setAttr(f"{out_ctl}.tx", lock=True, keyable=False)
         cmds.setAttr(f"{out_ctl}.ty", lock=True, keyable=False)
         cmds.setAttr(f"{out_ctl}.tz", lock=True, keyable=False)
+        cmds.connectAttr(f"{out_ctl}.message", f"{host_ctl}.ik_ctls[3]")
         toe_end_npo, toe_end_ctl = self["controller"][5].create(
             parent=out_ctl,
             shape=(
@@ -666,6 +680,7 @@ class Rig(component.Rig):
         cmds.setAttr(f"{toe_end_ctl}.tx", lock=True, keyable=False)
         cmds.setAttr(f"{toe_end_ctl}.ty", lock=True, keyable=False)
         cmds.setAttr(f"{toe_end_ctl}.tz", lock=True, keyable=False)
+        cmds.connectAttr(f"{toe_end_ctl}.message", f"{host_ctl}.ik_ctls[4]")
         legacy_inverse = cmds.createNode(
             "transform",
             name=Name.create(
@@ -712,7 +727,7 @@ class Rig(component.Rig):
         c = 6
         parent = inverse_grp
         reverse_ctls = []
-        fix_objs = []
+        ik_ctl_count = 5
         for i in range(fk_count):
             npo, ctl = self["controller"][c].create(
                 parent=parent,
@@ -727,26 +742,11 @@ class Rig(component.Rig):
             cmds.setAttr(f"{ctl}.tx", lock=True, keyable=False)
             cmds.setAttr(f"{ctl}.ty", lock=True, keyable=False)
             cmds.setAttr(f"{ctl}.tz", lock=True, keyable=False)
-            fix_obj = cmds.createNode(
-                "transform",
-                name=Name.create(
-                    Name.controller_name_convention,
-                    name=name,
-                    side=side,
-                    index=index,
-                    description=f"fix{i}",
-                    extension="source",
-                ),
-                parent=cmds.listRelatives(npo, parent=True)[0],
-            )
-            plug = cmds.listConnections(
-                f"{npo}.offsetParentMatrix", source=True, destination=False, plugs=True
-            )[0]
-            cmds.connectAttr(plug, f"{fix_obj}.offsetParentMatrix")
+            cmds.connectAttr(f"{ctl}.message", f"{host_ctl}.ik_ctls[{ik_ctl_count}]")
             parent = ctl
             reverse_ctls.append(ctl)
-            fix_objs.append(fix_obj)
             c += 1
+            ik_ctl_count += 1
 
         decom_m = cmds.createNode("decomposeMatrix")
         cmds.connectAttr(f"{roll_bank_offset}.worldMatrix[0]", f"{decom_m}.inputMatrix")
@@ -807,22 +807,8 @@ class Rig(component.Rig):
             cmds.connectAttr(f"{enable_md}.output", f"{reverse_npos[i]}.r")
 
         fk_ctls = []
-        rot_refs = []
         parent = self.rig_root
-        rot_parent = inverse_grp
         for i in range(fk_count):
-            rot_ref = cmds.createNode(
-                "transform",
-                name=Name.create(
-                    Name.controller_name_convention,
-                    name=name,
-                    side=side,
-                    index=index,
-                    description=i,
-                    extension="ref",
-                ),
-                parent=rot_parent,
-            )
             npo, ctl = self["controller"][c].create(
                 parent=parent,
                 shape=(
@@ -833,19 +819,25 @@ class Rig(component.Rig):
                 color=12,
                 npo_matrix_index=c - 1,
             )
-            plug = cmds.listConnections(
-                f"{npo}.offsetParentMatrix", source=True, destination=False, plugs=True
-            )[0]
-            cmds.connectAttr(plug, f"{rot_ref}.offsetParentMatrix")
-            cmds.connectAttr(f"{rot_ref}.t", f"{npo}.t")
-            cmds.connectAttr(f"{rot_ref}.r", f"{npo}.r")
             parent = ctl
-            rot_parent = rot_ref
             fk_ctls.append(ctl)
-            rot_refs.append(rot_ref)
             c += 1
-        for ref, obj in zip(rot_refs, reversed(fix_objs)):
-            cmds.parentConstraint(obj, ref)
+
+        for reverse_ctl, fk_ctl in zip(reverse_ctls, reversed(fk_ctls)):
+            reverse_npo = cmds.listRelatives(reverse_ctl, parent=True)[0]
+            fk_npo = cmds.listRelatives(fk_ctl, parent=True)[0]
+            pma = cmds.createNode("plusMinusAverage")
+            cmds.connectAttr(f"{reverse_npo}.r", f"{pma}.input3D[0]")
+            cmds.connectAttr(f"{reverse_ctl}.r", f"{pma}.input3D[1]")
+            md = cmds.createNode("multiplyDivide")
+            cmds.connectAttr(f"{pma}.output3D", f"{md}.input1")
+            cmds.setAttr(f"{md}.input2", -1, -1, -1)
+            md1 = cmds.createNode("multiplyDivide")
+            cmds.connectAttr(f"{md}.output", f"{md1}.input1")
+            cmds.connectAttr(f"{host_ctl}.fkik", f"{md1}.input2X")
+            cmds.connectAttr(f"{host_ctl}.fkik", f"{md1}.input2Y")
+            cmds.connectAttr(f"{host_ctl}.fkik", f"{md1}.input2Z")
+            cmds.connectAttr(f"{md1}.output", f"{fk_npo}.r")
 
         # output
         outputs = []
@@ -1059,9 +1051,11 @@ class Rig(component.Rig):
     # endregion
 
 
-def connect_fkik2jnt01(
+def connect_fkik2jnt(
     foot_name, foot_side, foot_index, fkik2jnt_name, fkik2jnt_side, fkik2jnt_index
 ):
+    """fkik2jnt base component 와 연결하는 함수.
+    fkik2jnt01, humanarm01, humanleg01"""
     roll_bank = Name.create(
         Name.controller_name_convention,
         name=foot_name,
@@ -1107,333 +1101,25 @@ def connect_fkik2jnt01(
         extension=Name.loc_extension,
     )
     cmds.parent(ik_local_loc, inv_ctls[-1])
-
-    last_out = Name.create(
+    host_ctl = Name.create(
+        Name.controller_name_convention,
+        name=foot_name,
+        side=foot_side,
+        index=foot_index,
+        description="host",
+        extension=Name.controller_extension,
+    )
+    fkik_host_ctl = Name.create(
         Name.controller_name_convention,
         name=fkik2jnt_name,
         side=fkik2jnt_side,
         index=fkik2jnt_index,
-        description="2",
-        extension=Name.output_extension,
-    )
-    last_inverse = cmds.createNode(
-        "transform",
-        name=Name.create(
-            Name.controller_name_convention,
-            name=foot_name,
-            side=foot_side,
-            index=foot_index,
-            description="2",
-            extension="inverse",
-        ),
-    )
-
-    last_inverse = cmds.parent(last_inverse, last_out)[0]
-    fk_npo = Name.create(
-        Name.controller_name_convention,
-        name=foot_name,
-        side=foot_side,
-        index=foot_index,
-        description=0,
-        extension=Name.npo_extension,
-    )
-    cmds.parent(fk_npo, last_inverse)
-
-    last_ctl = Name.create(
-        Name.controller_name_convention,
-        name=fkik2jnt_name,
-        side=fkik2jnt_side,
-        index=fkik2jnt_index,
-        description="fk2",
-        extension=Name.controller_extension,
-    )
-    host = Name.create(
-        Name.controller_name_convention,
-        name=foot_name,
-        side=foot_side,
-        index=foot_index,
         description="host",
         extension=Name.controller_extension,
     )
-    sources = (
-        cmds.listConnections(
-            f"{host}.parent_controllers", source=True, destination=False
-        )
-        or []
-    )
-    if last_ctl not in sources:
-        cmds.connectAttr(
-            f"{last_ctl}.child_controllers",
-            f"{host}.parent_controllers[{len(sources)}]",
-        )
-        cmds.connectAttr(
-            f"{ik_local_ctl}.child_controllers",
-            f"{host}.parent_controllers[{len(sources) + 1}]",
-        )
-
-
-def connect_humanleg01(
-    foot_name, foot_side, foot_index, humanleg_name, humanleg_side, humanleg_index
-):
-    roll_bank = Name.create(
-        Name.controller_name_convention,
-        name=foot_name,
-        side=foot_side,
-        index=foot_index,
-        description="rollBank",
-        extension=Name.npo_extension,
-    )
-    heel_npo = Name.create(
-        Name.controller_name_convention,
-        name=foot_name,
-        side=foot_side,
-        index=foot_index,
-        description="heel",
-        extension=Name.npo_extension,
-    )
-    inv_grp = Name.create(
-        Name.controller_name_convention,
-        name=foot_name,
-        side=foot_side,
-        index=foot_index,
-        description="inv",
-        extension=Name.group_extension,
-    )
-    ik_local_ctl = Name.create(
-        Name.controller_name_convention,
-        name=humanleg_name,
-        side=humanleg_side,
-        index=humanleg_index,
-        description="ikLocal",
-        extension=Name.controller_extension,
-    )
-    cmds.parent([roll_bank, heel_npo, inv_grp], ik_local_ctl)
-    inv_ctls = list(
-        [x for x in cmds.ls(inv_grp, dagObjects=True, type="transform") if "ctl" in x]
-    )
-    ik_local_loc = Name.create(
-        Name.controller_name_convention,
-        name=humanleg_name,
-        side=humanleg_side,
-        index=humanleg_index,
-        description="ikLocal",
-        extension=Name.loc_extension,
-    )
-    cmds.parent(ik_local_loc, inv_ctls[-1])
-
-    ankle_out = Name.create(
-        Name.controller_name_convention,
-        name=humanleg_name,
-        side=humanleg_side,
-        index=humanleg_index,
-        description="ankle",
-        extension=Name.output_extension,
-    )
-    ankle_inverse = cmds.createNode(
-        "transform",
-        name=Name.create(
-            Name.controller_name_convention,
-            name=foot_name,
-            side=foot_side,
-            index=foot_index,
-            description="ankle",
-            extension="inverse",
-        ),
-    )
-
-    ankle_inverse = cmds.parent(ankle_inverse, ankle_out)[0]
-    fk_npo = Name.create(
-        Name.controller_name_convention,
-        name=foot_name,
-        side=foot_side,
-        index=foot_index,
-        description=0,
-        extension=Name.npo_extension,
-    )
-    cmds.parent(fk_npo, ankle_inverse)
-
-    ankle_ctl = Name.create(
-        Name.controller_name_convention,
-        name=humanleg_name,
-        side=humanleg_side,
-        index=humanleg_index,
-        description="ankle",
-        extension=Name.controller_extension,
-    )
-    host = Name.create(
-        Name.controller_name_convention,
-        name=foot_name,
-        side=foot_side,
-        index=foot_index,
-        description="host",
-        extension=Name.controller_extension,
-    )
-    sources = (
-        cmds.listConnections(
-            f"{host}.parent_controllers", source=True, destination=False
-        )
-        or []
-    )
-    if ankle_ctl not in sources:
-        cmds.connectAttr(
-            f"{ankle_ctl}.child_controllers",
-            f"{host}.parent_controllers[{len(sources)}]",
-        )
-        cmds.connectAttr(
-            f"{ik_local_ctl}.child_controllers",
-            f"{host}.parent_controllers[{len(sources) + 1}]",
-        )
-
-    rig_root = Name.create(
-        Name.controller_name_convention,
-        name=foot_name,
-        side=foot_side,
-        index=foot_index,
-        extension="rigRoot",
-    )
-    count = len(cmds.listAttr(f"{rig_root}.initialize_output_matrix", multi=True))
-    for c in range(count):
-        md = cmds.createNode("multiplyDivide")
-        inv_npo = Name.create(
-            Name.controller_name_convention,
-            name=foot_name,
-            side=foot_side,
-            index=foot_index,
-            description=f"inv{c}",
-            extension=Name.npo_extension,
-        )
-        inv_ctl = Name.create(
-            Name.controller_name_convention,
-            name=foot_name,
-            side=foot_side,
-            index=foot_index,
-            description=f"inv{c}",
-            extension=Name.controller_extension,
-        )
-        pma = cmds.createNode("plusMinusAverage")
-        cmds.connectAttr(f"{inv_npo}.r", f"{pma}.input3D[0]")
-        cmds.connectAttr(f"{inv_ctl}.r", f"{pma}.input3D[1]")
-        fix_source = Name.create(
-            Name.controller_name_convention,
-            name=foot_name,
-            side=foot_side,
-            index=foot_index,
-            description=f"fix{c}",
-            extension="source",
-        )
-        cmds.connectAttr(f"{pma}.output3D", f"{md}.input1")
-        cmds.setAttr(f"{md}.input2", -1, -1, -1)
-        cmds.connectAttr(f"{md}.output", f"{fix_source}.r")
-
-
-def connect_humanarm01(
-    foot_name, foot_side, foot_index, humanarm_name, humanarm_side, humanarm_index
-):
-    roll_bank = Name.create(
-        Name.controller_name_convention,
-        name=foot_name,
-        side=foot_side,
-        index=foot_index,
-        description="rollBank",
-        extension=Name.npo_extension,
-    )
-    heel_npo = Name.create(
-        Name.controller_name_convention,
-        name=foot_name,
-        side=foot_side,
-        index=foot_index,
-        description="heel",
-        extension=Name.npo_extension,
-    )
-    inv_grp = Name.create(
-        Name.controller_name_convention,
-        name=foot_name,
-        side=foot_side,
-        index=foot_index,
-        description="inv",
-        extension=Name.group_extension,
-    )
-    ik_local_ctl = Name.create(
-        Name.controller_name_convention,
-        name=humanarm_name,
-        side=humanarm_side,
-        index=humanarm_index,
-        description="ikLocal",
-        extension=Name.controller_extension,
-    )
-    cmds.parent([roll_bank, heel_npo, inv_grp], ik_local_ctl)
-    inv_ctls = list(
-        [x for x in cmds.ls(inv_grp, dagObjects=True, type="transform") if "ctl" in x]
-    )
-    ik_local_loc = Name.create(
-        Name.controller_name_convention,
-        name=humanarm_name,
-        side=humanarm_side,
-        index=humanarm_index,
-        description="ikLocal",
-        extension=Name.loc_extension,
-    )
-    cmds.parent(ik_local_loc, inv_ctls[-1])
-
-    wrist_out = Name.create(
-        Name.controller_name_convention,
-        name=humanarm_name,
-        side=humanarm_side,
-        index=humanarm_index,
-        description="wrist",
-        extension=Name.output_extension,
-    )
-    wrist_inverse = cmds.createNode(
-        "transform",
-        name=Name.create(
-            Name.controller_name_convention,
-            name=foot_name,
-            side=foot_side,
-            index=foot_index,
-            description="wrist",
-            extension="inverse",
-        ),
-    )
-
-    wrist_inverse = cmds.parent(wrist_inverse, wrist_out)[0]
-    fk_npo = Name.create(
-        Name.controller_name_convention,
-        name=foot_name,
-        side=foot_side,
-        index=foot_index,
-        description=0,
-        extension=Name.npo_extension,
-    )
-    cmds.parent(fk_npo, wrist_inverse)
-
-    wrist_ctl = Name.create(
-        Name.controller_name_convention,
-        name=humanarm_name,
-        side=humanarm_side,
-        index=humanarm_index,
-        description="wrist",
-        extension=Name.controller_extension,
-    )
-    host = Name.create(
-        Name.controller_name_convention,
-        name=foot_name,
-        side=foot_side,
-        index=foot_index,
-        description="host",
-        extension=Name.controller_extension,
-    )
-    sources = (
-        cmds.listConnections(
-            f"{host}.parent_controllers", source=True, destination=False
-        )
-        or []
-    )
-    if wrist_ctl not in sources:
-        cmds.connectAttr(
-            f"{wrist_ctl}.child_controllers",
-            f"{host}.parent_controllers[{len(sources)}]",
-        )
-        cmds.connectAttr(
-            f"{ik_local_ctl}.child_controllers",
-            f"{host}.parent_controllers[{len(sources) + 1}]",
-        )
+    cmds.connectAttr(f"{fkik_host_ctl}.fkik", f"{host_ctl}.fkik")
+    for i in range(5 + len(inv_ctls)):
+        plug = cmds.listConnections(
+            f"{host_ctl}.ik_ctls[{i}]", source=True, destination=False, plugs=True
+        )[0]
+        cmds.connectAttr(plug, f"{fkik_host_ctl}.ik_match_targets[{4 + i}]")
