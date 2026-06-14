@@ -683,23 +683,24 @@ QTreeView::branch:open:has-children  {{
             path = Path(file_path)
             directory = path.parent
             name, ext = path.name.split(".")
-            return (directory / ".".join([name + "_v001", ext])).as_posix()
+            return (directory / f"{name}_v{str(1).zfill(3)}.{ext}").as_posix()
 
         def increase_version_in_file_path(file_path, version):
-            fill_count = len(version) - 1
-            new_version = int(version[1:]) + 1
-            return file_path.replace(version, f"v{str(new_version).zfill(fill_count)}")
+            new_version = version + 1
+            return file_path.replace(
+                f"_v{str(version).zfill(3)}", f"_v{str(new_version).zfill(3)}"
+            )
 
         file_path = self.domino_path_line_edit.text()
         modifiers = QtWidgets.QApplication.keyboardModifiers()
 
-        pattern = r"(?<=_|^)v\d{2,}"
+        pattern = r"_v\d+"
         if file_path and modifiers == QtCore.Qt.KeyboardModifier.ControlModifier:
             match = re.search(pattern, file_path)
             if not match:
                 file_path = ensure_version_in_file_path(file_path)
             elif match:
-                version = match.group()
+                version = int(match.group()[2:])
                 file_path = increase_version_in_file_path(file_path, version)
         else:
             file_path = cmds.fileDialog2(

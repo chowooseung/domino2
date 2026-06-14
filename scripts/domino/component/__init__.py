@@ -1827,7 +1827,8 @@ def build(context, component, attach_guide=False):
         for identifier, value in {
             k: context[k] for k in context.keys() if not k.startswith("_")
         }.items():
-            if isinstance(value, dict):
+            if not isinstance(value, dict):
+                logging.info(value)
                 continue
             print_context(
                 identifier=identifier,
@@ -1939,25 +1940,31 @@ def serialize():
             rig = component
 
     rig["pre_custom_scripts_str"]["value"] = []
-    for script in rig["pre_custom_scripts"]["value"]:
+    for i, script in enumerate(rig["pre_custom_scripts"]["value"]):
         if not script:
             continue
         content = ""
         if script.startswith("*"):
             script = script[1:]
-        with open(script, "r") as f:
-            content += f.read()
+        if Path(script).exists():
+            with open(script, "r") as f:
+                content += f.read()
+        else:
+            content = cmds.getAttr(f"{assembly_node}.pre_custom_scripts_str[{i}]")
         rig["pre_custom_scripts_str"]["value"].append(content)
 
     rig["post_custom_scripts_str"]["value"] = []
-    for script in rig["post_custom_scripts"]["value"]:
+    for i, script in enumerate(rig["post_custom_scripts"]["value"]):
         if not script:
             continue
         content = ""
         if script.startswith("*"):
             script = script[1:]
-        with open(script, "r") as f:
-            content += f.read()
+        if Path(script).exists():
+            with open(script, "r") as f:
+                content += f.read()
+        else:
+            content = cmds.getAttr(f"{assembly_node}.post_custom_scripts_str[{i}]")
         rig["post_custom_scripts_str"]["value"].append(content)
 
     rig["custom_nurbscurve_data"] = []
@@ -2012,6 +2019,8 @@ def deserialize(data, create=True):
         component = module.Rig()
 
         for attr in module.DATA:
+            if attr.long_name not in component_data:
+                continue
             component[attr.long_name]["value"] = component_data[attr.long_name]["value"]
         # controller
         for controller_data in component_data["controller"]:
@@ -2083,11 +2092,15 @@ def save(file_path, data=None):
         except Exception as e:
             logger.info(f"An error occurred: {e}")
 
+    def make_file(content, path):
+        with open(path, "w", encoding="utf-8") as f:
+            f.write(content)
+
     scripts_dir = metadata_dir / "scripts"
     if not scripts_dir.exists():
         scripts_dir.mkdir()
     replace_scripts = []
-    for script_path in data["pre_custom_scripts"]["value"]:
+    for i, script_path in enumerate(data["pre_custom_scripts"]["value"]):
         if not script_path:
             continue
         disable = False
@@ -2097,13 +2110,18 @@ def save(file_path, data=None):
         source_file = Path(script_path)
         name = source_file.name
         destination_file = scripts_dir / name
-        copy_file(source_file.as_posix(), destination_file.as_posix())
+        if source_file.exists():
+            copy_file(source_file.as_posix(), destination_file.as_posix())
+        else:
+            make_file(
+                data["pre_custom_scripts_str"]["value"][i], destination_file.as_posix()
+            )
         replace_script = "*" if disable else ""
         replace_script += destination_file.as_posix()
         replace_scripts.append(replace_script)
     data["pre_custom_scripts"]["value"] = replace_scripts
     replace_scripts = []
-    for script_path in data["post_custom_scripts"]["value"]:
+    for i, script_path in enumerate(data["post_custom_scripts"]["value"]):
         if not script_path:
             continue
         disable = False
@@ -2113,7 +2131,12 @@ def save(file_path, data=None):
         source_file = Path(script_path)
         name = source_file.name
         destination_file = scripts_dir / name
-        copy_file(source_file.as_posix(), destination_file.as_posix())
+        if source_file.exists():
+            copy_file(source_file.as_posix(), destination_file.as_posix())
+        else:
+            make_file(
+                data["post_custom_scripts_str"]["value"][i], destination_file.as_posix()
+            )
         replace_script = "*" if disable else ""
         replace_script += destination_file.as_posix()
         replace_scripts.append(replace_script)
